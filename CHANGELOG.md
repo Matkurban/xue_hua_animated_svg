@@ -1,26 +1,17 @@
-## 1.2.0
-
-* Add `alignment` (`AlignmentGeometry`, default `Alignment.center`) to every
-  `AnimatedSvgPicture` constructor, aligned with `flutter_svg` / `SvgPicture`.
-* After `applyBoxFit`, leftover / cropped space is placed with
-  `alignment.inscribe` (same path as 1.1.0's hardcoded center). Default center
-  keeps 1.1.0 visuals; `AlignmentDirectional` resolves via ambient
-  `Directionality`.
-* Orthogonal to SVG `preserveAspectRatio` (viewBox → intrinsic) and to
-  `colorFilter` (post-paint tint layer).
-* Example preview page: alignment chips next to Fit / tint controls.
-* Package skill and bilingual README document the parameter.
-
 ## 1.1.0
 
-* Add `fit` (`BoxFit`, default `BoxFit.contain`) and `colorFilter` (`ColorFilter?`)
-  to every `AnimatedSvgPicture` constructor, aligned with `flutter_svg` / `SvgPicture`.
+* Add `fit` (`BoxFit`, default `BoxFit.contain`), `colorFilter` (`ColorFilter?`),
+  and `alignment` (`AlignmentGeometry`, default `Alignment.center`) to every
+  `AnimatedSvgPicture` constructor, aligned with `flutter_svg` / `SvgPicture`.
 * `fit` maps the SVG intrinsic paint box into the widget layout size via
-  `applyBoxFit` (center alignment). SVG `preserveAspectRatio` still applies for
-  viewBox → intrinsic.
+  `applyBoxFit`. SVG `preserveAspectRatio` still applies for viewBox → intrinsic.
+* After `applyBoxFit`, leftover / cropped space is placed with
+  `alignment.inscribe`. Default `Alignment.center` matches the prior centered
+  layout; `AlignmentDirectional` resolves via ambient `Directionality`.
 * `colorFilter` is a Flutter post-process whole-picture tint (`ColorFiltered`);
-  it is **not** SVG `<filter>` / `fe*` support.
-* Example preview page: interactive BoxFit / colorFilter controls.
+  it is **not** SVG `<filter>` / `fe*` support. Orthogonal to `fit` / `alignment`
+  and to SVG `preserveAspectRatio`.
+* Example preview page: interactive Fit / alignment chips and tint controls.
 * Package skill and bilingual README document the new parameters.
 
 ## 1.0.0
