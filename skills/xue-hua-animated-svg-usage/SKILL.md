@@ -2,8 +2,8 @@
 name: xue-hua-animated-svg-usage
 description: >-
   Use when the user works with xue_hua_animated_svg: AnimatedSvgPicture
-  (string/asset/file/network/compiled), AnimatedSvgController playback,
-  SvgParser.compile, or authoring SMIL/CSS animated SVGs for this engine.
+  (string/asset/file/network/compiled, fit, colorFilter), AnimatedSvgController
+  playback, SvgParser.compile, or authoring SMIL/CSS animated SVGs for this engine.
   Enforces supported SVG tags and Out-of-Scope hard boundaries.
 ---
 
@@ -15,6 +15,7 @@ Authoritative guidance for the pure-Dart animated SVG engine. Prefer this skill 
 
 * Import only `package:xue_hua_animated_svg/xue_hua_animated_svg.dart` (single public library entry).
 * Prefer `AnimatedSvgPicture.string` / `.asset` / `.network` / `.file` / `.compiled` — do not invent alternate constructors.
+* Use widget `fit` (`BoxFit`, default `contain`) and `colorFilter` (`ColorFilter?`) like `flutter_svg` / `SvgPicture`. `colorFilter` is a Flutter tint layer, **not** SVG `<filter>` / `fe*`.
 * Always dispose or stop owning `AnimatedSvgController` when the widget tree no longer needs it; pair with `SvgParser.compile` + `CompiledSvgScene.dispose()` when precompiling.
 * Use `AnimatedSvgPicture.file` only on `dart:io` platforms; never on web (use `.asset`, `.network`, or `.string`).
 * Drive playback only through `AnimatedSvgController`: `play`, `pause`, `reset`, `seek`, `setSpeed` — do not wrap the painter in a custom `AnimationController` to scrub the scene.
@@ -24,6 +25,17 @@ Authoritative guidance for the pure-Dart animated SVG engine. Prefer this skill 
 * CSS `filter: blur(...)` is the only blur path (sigma → `MaskFilter`). Do not add SVG `<filter>` / `fe*` support.
 * Prefer SMIL (`<animate>`, `<animateTransform>`, `<animateMotion>` / `<mpath>`) and CSS `@keyframes` + `transform-origin` for motion; keep path morphs isomorphic (`d` command sequences match).
 * Do not expand the engine with a full CSS lexer or text-shaping stack — Out-of-Scope is a hard product boundary.
+
+## `fit` and `colorFilter`
+
+| Parameter | Type | Default | Semantics |
+|-----------|------|---------|-----------|
+| `fit` | `BoxFit` | `BoxFit.contain` | `applyBoxFit` of intrinsic → layout size; leftover space centered (alignment not exposed). |
+| `colorFilter` | `ColorFilter?` | `null` | Wraps paint in `ColorFiltered` for whole-picture tint. Survives animation frames. |
+
+Do **not** confuse `colorFilter` with Out-of-Scope SVG `<filter>` graphs. Prefer `ColorFilter.mode(color, BlendMode.srcIn)` for icon-style tinting.
+
+All named constructors (`string` / `asset` / `file` / `network` / `compiled`) forward both parameters.
 
 ## Supported SVG surface
 
@@ -58,7 +70,9 @@ AnimatedSvgPicture.asset(
   'assets/svgs/elephant.svg',
   controller: controller,
   width: 280,
-  height: 280,
+  height: 160,
+  fit: BoxFit.cover,
+  colorFilter: const ColorFilter.mode(Color(0xFF22C55E), BlendMode.srcIn),
 );
 
 // Playback

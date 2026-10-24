@@ -14,6 +14,13 @@ class PreviewPage extends StatefulWidget {
 
 class _PreviewPageState extends State<PreviewPage> {
   late final AnimatedSvgController _controller;
+  BoxFit _fit = BoxFit.contain;
+  bool _tintEnabled = false;
+
+  static const _tintFilter = ColorFilter.mode(
+    Color(0xFF22C55E),
+    BlendMode.srcIn,
+  );
 
   @override
   void initState() {
@@ -29,27 +36,34 @@ class _PreviewPageState extends State<PreviewPage> {
 
   Widget _buildPicture() {
     final item = widget.item;
+    final filter = _tintEnabled ? _tintFilter : null;
     switch (item.kind) {
       case SvgCatalogSourceKind.asset:
         return AnimatedSvgPicture.asset(
           item.assetPath!,
           controller: _controller,
           width: 320,
-          height: 320,
+          height: 200,
+          fit: _fit,
+          colorFilter: filter,
         );
       case SvgCatalogSourceKind.string:
         return AnimatedSvgPicture.string(
           item.svgString!,
           controller: _controller,
           width: 320,
-          height: 320,
+          height: 200,
+          fit: _fit,
+          colorFilter: filter,
         );
       case SvgCatalogSourceKind.network:
         return AnimatedSvgPicture.network(
           item.networkUrl!,
           controller: _controller,
           width: 320,
-          height: 320,
+          height: 200,
+          fit: _fit,
+          colorFilter: filter,
         );
     }
   }
@@ -73,15 +87,47 @@ class _PreviewPageState extends State<PreviewPage> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('Fit', style: Theme.of(context).textTheme.labelLarge),
+                for (final fit in const [
+                  BoxFit.contain,
+                  BoxFit.cover,
+                  BoxFit.fill,
+                  BoxFit.fitWidth,
+                  BoxFit.scaleDown,
+                ])
+                  ChoiceChip(
+                    label: Text(fit.name),
+                    selected: _fit == fit,
+                    onSelected: (_) => setState(() => _fit = fit),
+                  ),
+                FilterChip(
+                  label: const Text('colorFilter tint'),
+                  selected: _tintEnabled,
+                  onSelected: (v) => setState(() => _tintEnabled = v),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: Center(
               child: Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: SizedBox(
+                    // Wide box so BoxFit differences are visible.
                     width: 320,
-                    height: 320,
-                    child: _buildPicture(),
+                    height: 200,
+                    child: ColoredBox(
+                      color: colorScheme.surfaceContainerHighest,
+                      child: _buildPicture(),
+                    ),
                   ),
                 ),
               ),
