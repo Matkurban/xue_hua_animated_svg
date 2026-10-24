@@ -81,7 +81,7 @@ class AnimatedSvgPicture extends StatefulWidget {
 
   /// How to inscribe the SVG's intrinsic size into the widget layout box.
   ///
-  /// Defaults to [BoxFit.contain], matching `flutter_svg` / `SvgPicture`.
+  /// Defaults to [BoxFit.contain].
   ///
   /// Widget [fit] maps the intrinsic paint box into the layout size. The SVG's
   /// own `preserveAspectRatio` still applies when painting viewBox → intrinsic.
@@ -90,15 +90,15 @@ class AnimatedSvgPicture extends StatefulWidget {
   /// How to align the fitted SVG within the widget layout box when [fit]
   /// leaves leftover space (or crops for [BoxFit.cover] / [BoxFit.none]).
   ///
-  /// Defaults to [Alignment.center], matching `flutter_svg` / `SvgPicture`.
+  /// Defaults to [Alignment.center].
   /// [AlignmentDirectional] resolves against ambient [Directionality].
   final AlignmentGeometry alignment;
 
   /// Optional whole-picture tint applied after painting (Flutter [ColorFilter]).
   ///
-  /// Same role as `SvgPicture.colorFilter` — a post-process layer tint
-  /// (commonly `ColorFilter.mode(color, BlendMode.srcIn)`). This is **not**
-  /// SVG `<filter>` / `fe*` support (still Out-of-Scope).
+  /// A post-process layer tint (commonly
+  /// `ColorFilter.mode(color, BlendMode.srcIn)`). This is **not** SVG
+  /// `<filter>` / `fe*` support (still Out-of-Scope).
   final ColorFilter? colorFilter;
 
   /// Creates an [AnimatedSvgPicture] from an SVG XML string.
@@ -496,7 +496,7 @@ class AnimatedSvgPainter extends CustomPainter {
       return;
     }
 
-    // 2. Fit the SVG intrinsic box into the widget layout size (flutter_svg-aligned).
+    // 2. Fit the SVG intrinsic box into the widget layout size.
     //    [alignment] places the fitted rect inside leftover / cropped space.
     final fitted = applyBoxFit(fit, intrinsic, size);
     if (fitted.source.isEmpty || fitted.destination.isEmpty) {

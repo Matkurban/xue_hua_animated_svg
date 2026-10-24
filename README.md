@@ -112,8 +112,6 @@ scene.dispose();
 
 ### Layout tint: `fit`, `alignment` & `colorFilter`
 
-Aligned with `flutter_svg` / `SvgPicture`:
-
 | Parameter | Type | Default | Notes |
 |-----------|------|---------|-------|
 | `fit` | `BoxFit` | `BoxFit.contain` | How the SVG intrinsic box is inscribed into the widget size (`applyBoxFit`). |

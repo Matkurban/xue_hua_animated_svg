@@ -104,8 +104,6 @@ scene.dispose();
 
 ### 布局与着色：`fit` / `alignment` / `colorFilter`
 
-与 `flutter_svg` / `SvgPicture` 对齐：
-
 | 参数 | 类型 | 默认 | 说明 |
 |------|------|------|------|
 | `fit` | `BoxFit` | `BoxFit.contain` | 将 SVG 固有尺寸铭刻进组件布局框（`applyBoxFit`）。 |

@@ -2,7 +2,7 @@
 
 * Add `fit` (`BoxFit`, default `BoxFit.contain`), `colorFilter` (`ColorFilter?`),
   and `alignment` (`AlignmentGeometry`, default `Alignment.center`) to every
-  `AnimatedSvgPicture` constructor, aligned with `flutter_svg` / `SvgPicture`.
+  `AnimatedSvgPicture` constructor.
 * `fit` maps the SVG intrinsic paint box into the widget layout size via
   `applyBoxFit`. SVG `preserveAspectRatio` still applies for viewBox → intrinsic.
 * After `applyBoxFit`, leftover / cropped space is placed with
