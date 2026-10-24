@@ -15,7 +15,7 @@ Authoritative guidance for the pure-Dart animated SVG engine. Prefer this skill 
 
 * Import only `package:xue_hua_animated_svg/xue_hua_animated_svg.dart` (single public library entry).
 * Prefer `AnimatedSvgPicture.string` / `.asset` / `.network` / `.file` / `.compiled` — do not invent alternate constructors.
-* Use widget `fit` (`BoxFit`, default `contain`), `alignment` (`AlignmentGeometry`, default `center`), and `colorFilter` (`ColorFilter?`) like `flutter_svg` / `SvgPicture`. `colorFilter` is a Flutter tint layer, **not** SVG `<filter>` / `fe*`.
+* Use widget `fit` (`BoxFit`, default `contain`), `alignment` (`AlignmentGeometry`, default `center`), and `colorFilter` (`ColorFilter?`). `colorFilter` is a Flutter tint layer, **not** SVG `<filter>` / `fe*`.
 * Always dispose or stop owning `AnimatedSvgController` when the widget tree no longer needs it; pair with `SvgParser.compile` + `CompiledSvgScene.dispose()` when precompiling.
 * Use `AnimatedSvgPicture.file` only on `dart:io` platforms; never on web (use `.asset`, `.network`, or `.string`).
 * Drive playback only through `AnimatedSvgController`: `play`, `pause`, `reset`, `seek`, `setSpeed` — do not wrap the painter in a custom `AnimationController` to scrub the scene.
