@@ -39,7 +39,10 @@ enum SvgAnimationDirection { normal, reverse, alternate, alternateReverse }
 /// Uses Flutter's built-in [Cubic] solver for `keySplines` cubic-bezier curves.
 class SvgAnimationTiming {
   /// Start offsets in microseconds (supports multiple semicolon-separated `begin` times).
-  final Int64List beginOffsetsUs;
+  ///
+  /// Stored as [List<int>] rather than [Int64List] because dart2js / Flutter Web
+  /// does not support `Int64List`.
+  final List<int> beginOffsetsUs;
 
   /// Simple duration of one cycle in microseconds.
   final int durationUs;
