@@ -1,121 +1,195 @@
 import 'package:flutter/material.dart';
+import 'package:xue_hua_animated_svg/xue_hua_animated_svg.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const AnimatedSvgShowcaseApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+enum DemoSvgSource { elephantAsset, cyberCoreComposite }
 
-  // This widget is the root of your application.
+class AnimatedSvgShowcaseApp extends StatelessWidget {
+  const AnimatedSvgShowcaseApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      title: 'Animated SVG Engine Showcase',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark(useMaterial3: true).copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF00F5D4),
+          brightness: Brightness.dark,
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const ShowcaseHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class ShowcaseHomePage extends StatefulWidget {
+  const ShowcaseHomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<ShowcaseHomePage> createState() => _ShowcaseHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _ShowcaseHomePageState extends State<ShowcaseHomePage> {
+  late final AnimatedSvgController _controller;
+  DemoSvgSource _selectedSource = DemoSvgSource.elephantAsset;
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimatedSvgController(autoPlay: true, speed: 1.0);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _switchSource(DemoSvgSource source) {
+    if (_selectedSource == source) return;
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _selectedSource = source;
+      _controller.reset();
+      _controller.play();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
+      backgroundColor: const Color(0xFF0B132B),
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        backgroundColor: const Color(0xFF1C2541),
+        title: const Text('Animated SVG Engine (120fps Pure Dart)'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: SegmentedButton<DemoSvgSource>(
+              segments: const [
+                ButtonSegment<DemoSvgSource>(
+                  value: DemoSvgSource.elephantAsset,
+                  icon: Icon(Icons.pets),
+                  label: Text('elephant.svg (Asset)'),
+                ),
+                ButtonSegment<DemoSvgSource>(
+                  value: DemoSvgSource.cyberCoreComposite,
+                  icon: Icon(Icons.auto_awesome),
+                  label: Text('CyberCore (3D + Morph)'),
+                ),
+              ],
+              selected: <DemoSvgSource>{_selectedSource},
+              onSelectionChanged: (selection) {
+                if (selection.isNotEmpty) {
+                  _switchSource(selection.first);
+                }
+              },
             ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+          ),
+          Expanded(
+            child: Center(
+              child: Container(
+                width: 340,
+                height: 340,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111936),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFF3A506B)),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: _selectedSource == DemoSvgSource.elephantAsset
+                    ? AnimatedSvgPicture.asset(
+                        'assets/svgs/elephant.svg',
+                        controller: _controller,
+                        width: 308,
+                        height: 308,
+                      )
+                    : AnimatedSvgPicture.string(
+                        AnimatedSvgShowcasePresets.cyberCoreCompositeSvg,
+                        controller: _controller,
+                        width: 308,
+                        height: 308,
+                      ),
+              ),
+            ),
+          ),
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              return Container(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1C2541),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Elapsed: ${(_controller.elapsedMicroseconds / 1000000).toStringAsFixed(2)}s',
+                          style: const TextStyle(fontFamily: 'monospace'),
+                        ),
+                        Text(
+                          'Cycle: ${(_controller.cycleDuration.inMicroseconds / 1000000).toStringAsFixed(2)}s | Speed: ${_controller.speed.toStringAsFixed(2)}x',
+                          style: const TextStyle(fontFamily: 'monospace'),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: _controller.cycleProgress,
+                      onChanged: (v) {
+                        final targetUs =
+                            (_controller.cycleDuration.inMicroseconds * v)
+                                .round();
+                        _controller.seek(Duration(microseconds: targetUs));
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 12,
+                      children: [
+                        FilledButton.icon(
+                          onPressed: () {
+                            if (_controller.isPlaying) {
+                              _controller.pause();
+                            } else {
+                              _controller.play();
+                            }
+                          },
+                          icon: Icon(
+                            _controller.isPlaying
+                                ? Icons.pause
+                                : Icons.play_arrow,
+                          ),
+                          label: Text(_controller.isPlaying ? 'Pause' : 'Play'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _controller.reset,
+                          icon: const Icon(Icons.replay),
+                          label: const Text('Reset'),
+                        ),
+                        for (final spd in [0.5, 1.0, 2.0])
+                          ChoiceChip(
+                            label: Text('${spd}x'),
+                            selected: _controller.speed == spd,
+                            onSelected: (_) => _controller.setSpeed(spd),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

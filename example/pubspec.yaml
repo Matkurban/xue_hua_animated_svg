@@ -1,5 +1,5 @@
 name: example
-description: "A new Flutter project."
+description: "Animated SVG Engine showcase application."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -11,6 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^2.0.0
+  xue_hua_animated_svg:
+    path: ../
 
 dev_dependencies:
   flutter_test:
