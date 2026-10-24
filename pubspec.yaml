@@ -1,8 +1,6 @@
 name: xue_hua_animated_svg
 description: >-
-  High-performance, zero-native-dependency pure Dart animated SVG engine for
-  Flutter. Precompiles SMIL and CSS animations into a typed AST and paints at
-  60/120fps with static subtree Picture caching.
+  Pure Dart animated SVG for Flutter: SMIL/CSS precompiled to a typed AST, 60/120fps paint with static subtree Picture caching, zero native deps.
 version: 1.0.0
 repository: https://github.com/Matkurban/xue_hua_animated_svg
 homepage: https://github.com/Matkurban/xue_hua_animated_svg
