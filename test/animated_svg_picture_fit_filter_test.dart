@@ -13,32 +13,34 @@ const _squareSvg = '''
 ''';
 
 void main() {
-  testWidgets('defaults to BoxFit.contain and paints without ColorFiltered', (
-    tester,
-  ) async {
-    final controller = AnimatedSvgController(autoPlay: false);
-    addTearDown(controller.dispose);
+  testWidgets(
+    'defaults to BoxFit.contain, Alignment.center, no ColorFiltered',
+    (tester) async {
+      final controller = AnimatedSvgController(autoPlay: false);
+      addTearDown(controller.dispose);
 
-    await tester.pumpWidget(
-      Directionality(
-        textDirection: TextDirection.ltr,
-        child: Center(
-          child: AnimatedSvgPicture.string(
-            _squareSvg,
-            controller: controller,
-            width: 80,
-            height: 40,
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: AnimatedSvgPicture.string(
+              _squareSvg,
+              controller: controller,
+              width: 80,
+              height: 40,
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    expect(find.byType(ColorFiltered), findsNothing);
-    final paint = tester.widget<CustomPaint>(find.byType(CustomPaint).first);
-    final painter = paint.painter! as AnimatedSvgPainter;
-    expect(painter.fit, BoxFit.contain);
-    expect(paint.size, const Size(80, 40));
-  });
+      expect(find.byType(ColorFiltered), findsNothing);
+      final paint = tester.widget<CustomPaint>(find.byType(CustomPaint).first);
+      final painter = paint.painter! as AnimatedSvgPainter;
+      expect(painter.fit, BoxFit.contain);
+      expect(painter.alignment, Alignment.center);
+      expect(paint.size, const Size(80, 40));
+    },
+  );
 
   testWidgets('fit parameter is forwarded for each BoxFit value', (
     tester,
@@ -139,7 +141,9 @@ void main() {
     expect(controller.isPlaying, isTrue);
   });
 
-  testWidgets('constraint change keeps fit and colorFilter', (tester) async {
+  testWidgets('constraint change keeps fit, alignment, and colorFilter', (
+    tester,
+  ) async {
     final controller = AnimatedSvgController(autoPlay: false);
     addTearDown(controller.dispose);
     const filter = ColorFilter.mode(Color(0xFF00FF00), BlendMode.srcIn);
@@ -155,6 +159,7 @@ void main() {
               width: size.width,
               height: size.height,
               fit: BoxFit.cover,
+              alignment: Alignment.topLeft,
               colorFilter: filter,
             ),
           ),
@@ -168,6 +173,7 @@ void main() {
     final paint = tester.widget<CustomPaint>(find.byType(CustomPaint).first);
     expect(paint.size, const Size(160, 80));
     expect((paint.painter! as AnimatedSvgPainter).fit, BoxFit.cover);
+    expect((paint.painter! as AnimatedSvgPainter).alignment, Alignment.topLeft);
     expect(find.byType(ColorFiltered), findsOneWidget);
   });
 
@@ -190,7 +196,9 @@ void main() {
     recorder.endRecording().dispose();
   });
 
-  testWidgets('named constructors accept fit and colorFilter', (tester) async {
+  testWidgets('named constructors accept fit, alignment, and colorFilter', (
+    tester,
+  ) async {
     final controller = AnimatedSvgController(autoPlay: false);
     addTearDown(controller.dispose);
     const filter = ColorFilter.mode(Color(0xFFFFFFFF), BlendMode.srcIn);
@@ -204,6 +212,7 @@ void main() {
         width: 20,
         height: 20,
         fit: BoxFit.fill,
+        alignment: Alignment.bottomRight,
         colorFilter: filter,
       ),
       AnimatedSvgPicture.compiled(
@@ -212,6 +221,7 @@ void main() {
         width: 20,
         height: 20,
         fit: BoxFit.fitWidth,
+        alignment: Alignment.topCenter,
         colorFilter: filter,
       ),
     ]) {
@@ -223,7 +233,135 @@ void main() {
       );
       expect(find.byType(ColorFiltered), findsOneWidget);
       final paint = tester.widget<CustomPaint>(find.byType(CustomPaint).first);
-      expect((paint.painter! as AnimatedSvgPainter).fit, isNot(BoxFit.contain));
+      final painter = paint.painter! as AnimatedSvgPainter;
+      expect(painter.fit, isNot(BoxFit.contain));
+      expect(painter.alignment, isNot(Alignment.center));
     }
+  });
+
+  testWidgets('alignment is forwarded for common Alignment values', (
+    tester,
+  ) async {
+    final controller = AnimatedSvgController(autoPlay: false);
+    addTearDown(controller.dispose);
+
+    for (final alignment in const [
+      Alignment.topLeft,
+      Alignment.center,
+      Alignment.bottomRight,
+      Alignment(-1.0, 0.0),
+    ]) {
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: AnimatedSvgPicture.string(
+              _squareSvg,
+              controller: controller,
+              width: 120,
+              height: 60,
+              fit: BoxFit.contain,
+              alignment: alignment,
+            ),
+          ),
+        ),
+      );
+      final paint = tester.widget<CustomPaint>(find.byType(CustomPaint).first);
+      expect((paint.painter! as AnimatedSvgPainter).alignment, alignment);
+    }
+  });
+
+  testWidgets('AlignmentDirectional resolves against Directionality', (
+    tester,
+  ) async {
+    final controller = AnimatedSvgController(autoPlay: false);
+    addTearDown(controller.dispose);
+
+    Future<void> pumpDir(TextDirection dir) {
+      return tester.pumpWidget(
+        Directionality(
+          textDirection: dir,
+          child: Center(
+            child: AnimatedSvgPicture.string(
+              _squareSvg,
+              controller: controller,
+              width: 120,
+              height: 60,
+              fit: BoxFit.contain,
+              alignment: AlignmentDirectional.centerStart,
+            ),
+          ),
+        ),
+      );
+    }
+
+    await pumpDir(TextDirection.ltr);
+    var paint = tester.widget<CustomPaint>(find.byType(CustomPaint).first);
+    expect(
+      (paint.painter! as AnimatedSvgPainter).alignment,
+      Alignment.centerLeft,
+    );
+
+    await pumpDir(TextDirection.rtl);
+    paint = tester.widget<CustomPaint>(find.byType(CustomPaint).first);
+    expect(
+      (paint.painter! as AnimatedSvgPainter).alignment,
+      Alignment.centerRight,
+    );
+  });
+
+  test(
+    'AnimatedSvgPainter alignment topLeft shifts destination for contain',
+    () {
+      final scene = SvgParser.compile(_squareSvg);
+      addTearDown(scene.dispose);
+      final controller = AnimatedSvgController(autoPlay: false);
+      addTearDown(controller.dispose);
+
+      for (final alignment in const [
+        Alignment.center,
+        Alignment.topLeft,
+        Alignment.bottomRight,
+      ]) {
+        final painter = AnimatedSvgPainter(
+          scene: scene,
+          controller: controller,
+          fit: BoxFit.contain,
+          alignment: alignment,
+        );
+        final recorder = ui.PictureRecorder();
+        final canvas = ui.Canvas(recorder);
+        painter.paint(canvas, const ui.Size(200, 80));
+        recorder.endRecording().dispose();
+      }
+    },
+  );
+
+  testWidgets('default Alignment.center matches pre-1.2.0 visual contract', (
+    tester,
+  ) async {
+    final controller = AnimatedSvgController(autoPlay: false);
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: AnimatedSvgPicture.string(
+            _squareSvg,
+            controller: controller,
+            width: 200,
+            height: 80,
+            // omit alignment → default center
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+    );
+
+    final paint = tester.widget<CustomPaint>(find.byType(CustomPaint).first);
+    final painter = paint.painter! as AnimatedSvgPainter;
+    expect(painter.alignment, Alignment.center);
+    expect(painter.fit, BoxFit.contain);
   });
 }

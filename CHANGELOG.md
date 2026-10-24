@@ -1,3 +1,16 @@
+## 1.2.0
+
+* Add `alignment` (`AlignmentGeometry`, default `Alignment.center`) to every
+  `AnimatedSvgPicture` constructor, aligned with `flutter_svg` / `SvgPicture`.
+* After `applyBoxFit`, leftover / cropped space is placed with
+  `alignment.inscribe` (same path as 1.1.0's hardcoded center). Default center
+  keeps 1.1.0 visuals; `AlignmentDirectional` resolves via ambient
+  `Directionality`.
+* Orthogonal to SVG `preserveAspectRatio` (viewBox → intrinsic) and to
+  `colorFilter` (post-paint tint layer).
+* Example preview page: alignment chips next to Fit / tint controls.
+* Package skill and bilingual README document the parameter.
+
 ## 1.1.0
 
 * Add `fit` (`BoxFit`, default `BoxFit.contain`) and `colorFilter` (`ColorFilter?`)
