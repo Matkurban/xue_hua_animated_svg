@@ -337,7 +337,7 @@ void main() {
     },
   );
 
-  testWidgets('default Alignment.center matches pre-1.2.0 visual contract', (
+  testWidgets('default Alignment.center matches prior centered-fit visual contract', (
     tester,
   ) async {
     final controller = AnimatedSvgController(autoPlay: false);
