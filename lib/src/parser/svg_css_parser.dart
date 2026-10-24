@@ -531,7 +531,7 @@ abstract final class SvgCssParser {
       splines.removeLast();
     }
 
-    final beginOffsets = Int64List(1)..[0] = config.delayUs;
+    final beginOffsets = List<int>.unmodifiable([config.delayUs]);
     final timing = SvgAnimationTiming(
       beginOffsetsUs: beginOffsets,
       durationUs: config.durationUs,

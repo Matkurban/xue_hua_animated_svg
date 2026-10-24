@@ -1715,7 +1715,7 @@ class _SvgSceneCompiler {
     }
 
     return SvgAnimationTiming(
-      beginOffsetsUs: Int64List.fromList(beginList),
+      beginOffsetsUs: List<int>.unmodifiable(beginList),
       durationUs: durUs,
       endUs: endUs,
       repeatCount: repeatCount,
