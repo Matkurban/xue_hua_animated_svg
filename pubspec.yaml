@@ -1,7 +1,25 @@
 name: xue_hua_animated_svg
-description: "A new Flutter project."
-version: 0.0.1
-homepage:
+description: >-
+  High-performance, zero-native-dependency pure Dart animated SVG engine for
+  Flutter. Precompiles SMIL and CSS animations into a typed AST and paints at
+  60/120fps with static subtree Picture caching.
+version: 1.0.0
+repository: https://github.com/Matkurban/xue_hua_animated_svg
+homepage: https://github.com/Matkurban/xue_hua_animated_svg
+issue_tracker: https://github.com/Matkurban/xue_hua_animated_svg/issues
+
+topics:
+  - svg
+  - animation
+  - flutter
+  - smil
+  - vector-graphics
+
+screenshots:
+  - description: Example home list of animated SVG demos.
+    path: screenshots/home_list.png
+  - description: Example preview page with playback controls.
+    path: screenshots/preview_controls.png
 
 environment:
   sdk: ^3.13.0
@@ -10,7 +28,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  material_ui: ^1.8.0
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

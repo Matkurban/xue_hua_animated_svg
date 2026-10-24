@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="220" height="220">
+  <!-- SMIL <animateMotion rotate="auto"> along <mpath> -->
+  <defs>
+    <path id="orbit" d="M 110 30 A 80 80 0 1 1 109.9 30 Z" fill="none"/>
+  </defs>
+  <circle cx="110" cy="110" r="80" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="6 8"/>
+  <circle cx="110" cy="110" r="10" fill="#F59E0B"/>
+  <g>
+    <path d="M -10 -6 L 14 0 L -10 6 L -4 0 Z" fill="#F97316" stroke="#FFF7ED" stroke-width="1"/>
+    <animateMotion dur="3s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#orbit"/>
+    </animateMotion>
+  </g>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- CSS @keyframes + transform-origin -->
+  <style>
+    .spinner {
+      transform-origin: 50% 50%;
+      animation: spin-fade 2.4s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+    }
+    @keyframes spin-fade {
+      0%   { transform: rotate(0deg) scale(0.9); opacity: 0.55; }
+      50%  { transform: rotate(180deg) scale(1.1); opacity: 1; }
+      100% { transform: rotate(360deg) scale(0.9); opacity: 0.55; }
+    }
+  </style>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#1E293B" stroke-width="10"/>
+  <circle class="spinner" cx="100" cy="100" r="70" fill="none"
+    stroke="#A855F7" stroke-width="10" stroke-linecap="round"
+    stroke-dasharray="80 360"/>
+</svg>

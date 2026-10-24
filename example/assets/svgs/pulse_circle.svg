@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- SMIL <animate>: opacity + radius pulse -->
+  <circle cx="100" cy="100" r="36" fill="#22C55E" opacity="0.9">
+    <animate attributeName="r" values="28;48;28" dur="1.8s" repeatCount="indefinite"
+      calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+    <animate attributeName="opacity" values="0.95;0.45;0.95" dur="1.8s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="100" cy="100" r="56" fill="none" stroke="#16A34A" stroke-width="4" opacity="0.5">
+    <animate attributeName="r" values="48;72;48" dur="1.8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.6;0.1;0.6" dur="1.8s" repeatCount="indefinite"/>
+  </circle>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" width="240" height="160">
+  <!-- Stroke dash draw with pathLength + dashoffset -->
+  <rect width="240" height="160" rx="16" fill="#0B1220"/>
+  <path d="M 28 110 C 60 30, 100 30, 120 80 S 180 130, 212 50"
+    fill="none" stroke="#22D3EE" stroke-width="8" stroke-linecap="round"
+    pathLength="100" stroke-dasharray="100" stroke-dashoffset="100">
+    <animate attributeName="stroke-dashoffset" values="100;0;100" dur="3s"
+      repeatCount="indefinite" calcMode="spline" keyTimes="0;0.55;1"
+      keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+  </path>
+</svg>

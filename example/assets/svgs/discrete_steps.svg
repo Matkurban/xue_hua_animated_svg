@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Discrete SMIL calcMode="discrete" color/position steps -->
+  <rect width="200" height="200" rx="18" fill="#18181B"/>
+  <circle cx="40" cy="100" r="22" fill="#EF4444">
+    <animate attributeName="cx" values="40;100;160;40" dur="2.4s"
+      calcMode="discrete" repeatCount="indefinite"/>
+    <animate attributeName="fill" values="#EF4444;#EAB308;#22C55E;#EF4444" dur="2.4s"
+      calcMode="discrete" repeatCount="indefinite"/>
+  </circle>
+  <text x="100" y="178" text-anchor="middle" fill="#A1A1AA" font-size="14" font-family="sans-serif">discrete</text>
+</svg>
