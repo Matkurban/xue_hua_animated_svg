@@ -102,6 +102,35 @@ scene.dispose();
 | `SvgParser.compile`                                                         | 预编译 SVG → `CompiledSvgScene`                  |
 | `AnimatedSvgShowcasePresets.cyberCoreCompositeSvg`                          | 合成演示 SVG 字符串                              |
 
+
+## 支持的 SVG 表面
+
+解析器会编入场景图的标签与能力（其余标签直接丢弃）：
+
+| 类别 | 支持 |
+|------|------|
+| 结构 | `<svg>`、`<g>`、`<defs>`、`<symbol>`、`<use>` |
+| 几何 | `<path>`、`<rect>`、`<circle>`、`<ellipse>`、`<line>`、`<polyline>`、`<polygon>` |
+| 填充 | `<linearGradient>`、`<radialGradient>`、`<stop>`、`<clipPath>` |
+| SMIL | `<animate>`、`<animateTransform>`、`<animateMotion>`、`<mpath>` |
+| CSS | `<style>`、`@keyframes`；选择器**仅** `#id`、`.class`、`tagName`；CSS `filter: blur(...)`（模糊半径 → `MaskFilter`，不是 SVG 滤镜图） |
+
+元数据：`<style>` 正文会解析；`<title>`、`<desc>`、`<metadata>` 忽略不绘制。
+
+## Out-of-Scope（明确不做）
+
+下列能力**明确不支持**。未知标签在解析期返回 `null` 并省略。**禁止**为它们扩展引擎（不要写完整 CSS 选择器词法/分析器，不要做半吊子文字排版）：
+
+| 禁止项 | 原因 |
+|--------|------|
+| `<filter>` 及全部 `fe*` 图元（`feGaussianBlur`、`feBlend` 等） | 不做滤镜图；仅可选 CSS `blur()` 半径 |
+| `<text>`、`<tspan>`、`<textPath>`、`<tref>` | 不做字形/文字排版 |
+| `<foreignObject>` | 不嵌入 HTML / Flutter 子树 |
+| 复杂 CSS 选择器 | 不做后代/子代/兄弟（` `、`>`、`+`、`~`）、属性选择器或伪类（`:hover`、`:nth-child` 等）；不做 `@media` / `@import` |
+| 当前一并丢弃 | `<image>`、`<mask>`、`<marker>`、`<pattern>`、`<switch>`、`<a>`、`<script>`、`<view>`、`<set>`，以及一切未列入「支持」表的标签 |
+
+请按「支持」表编写几何与 SMIL/CSS 动效 SVG。Out-of-Scope 为硬边界，不为它们补半吊子实现。
+
 ## 许可证
 
 见 [LICENSE](LICENSE)。
