@@ -337,31 +337,32 @@ void main() {
     },
   );
 
-  testWidgets('default Alignment.center matches prior centered-fit visual contract', (
-    tester,
-  ) async {
-    final controller = AnimatedSvgController(autoPlay: false);
-    addTearDown(controller.dispose);
+  testWidgets(
+    'default Alignment.center matches prior centered-fit visual contract',
+    (tester) async {
+      final controller = AnimatedSvgController(autoPlay: false);
+      addTearDown(controller.dispose);
 
-    await tester.pumpWidget(
-      Directionality(
-        textDirection: TextDirection.ltr,
-        child: Center(
-          child: AnimatedSvgPicture.string(
-            _squareSvg,
-            controller: controller,
-            width: 200,
-            height: 80,
-            // omit alignment → default center
-            fit: BoxFit.contain,
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: AnimatedSvgPicture.string(
+              _squareSvg,
+              controller: controller,
+              width: 200,
+              height: 80,
+              // omit alignment → default center
+              fit: BoxFit.contain,
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    final paint = tester.widget<CustomPaint>(find.byType(CustomPaint).first);
-    final painter = paint.painter! as AnimatedSvgPainter;
-    expect(painter.alignment, Alignment.center);
-    expect(painter.fit, BoxFit.contain);
-  });
+      final paint = tester.widget<CustomPaint>(find.byType(CustomPaint).first);
+      final painter = paint.painter! as AnimatedSvgPainter;
+      expect(painter.alignment, Alignment.center);
+      expect(painter.fit, BoxFit.contain);
+    },
+  );
 }
