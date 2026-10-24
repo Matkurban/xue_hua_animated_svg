@@ -88,12 +88,12 @@ class SvgMotionAnimationTrack extends SvgAnimationTrack {
     double distanceFraction;
     final kp = keyPoints;
     if (kp != null && kp.length >= 2 && timing.keyTimes.length == kp.length) {
-      final localT = timing.resolveSegment(progress, _segBuffer);
-      final seg = _segBuffer[0];
+      final localT = timing.resolveSegment(progress, segBuffer);
+      final seg = segBuffer[0];
       distanceFraction = kp[seg] + (kp[seg + 1] - kp[seg]) * localT;
     } else if (timing.keyTimes.length >= 2) {
-      final localT = timing.resolveSegment(progress, _segBuffer);
-      final seg = _segBuffer[0];
+      final localT = timing.resolveSegment(progress, segBuffer);
+      final seg = segBuffer[0];
       final spanCount = timing.keyTimes.length - 1;
       distanceFraction = (seg + localT) / spanCount;
     } else {
@@ -180,8 +180,8 @@ class SvgPathMorphAnimationTrack extends SvgAnimationTrack {
         outCoords[i] = k0[i];
       }
     } else {
-      final localT = timing.resolveSegment(progress, _segBuffer);
-      final seg = _segBuffer[0];
+      final localT = timing.resolveSegment(progress, segBuffer);
+      final seg = segBuffer[0];
       final k0 = keyframeCoords[seg];
       final k1 = keyframeCoords[seg + 1];
       if (k0.length != coordLen || k1.length != coordLen) return;

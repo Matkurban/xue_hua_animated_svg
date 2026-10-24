@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/animation.dart' show Cubic;
+import 'package:flutter/foundation.dart' show protected;
 
 import '../model/svg_gradient.dart';
 import '../model/svg_node.dart';
@@ -217,7 +218,13 @@ abstract class SvgAnimationTrack {
   final SvgAnimationTiming timing;
 
   /// Pre-allocated single-element buffer for segment index lookup.
-  final Int32List _segBuffer = Int32List(1);
+  ///
+  /// [SvgAnimationTiming.resolveSegment] writes the active keyframe index to
+  /// element `0`. Every track, including motion and path-morph tracks defined
+  /// in other libraries, reuses this buffer so segment resolution stays
+  /// allocation-free.
+  @protected
+  final Int32List segBuffer = Int32List(1);
 
   SvgAnimationTrack({required this.timing});
 
@@ -275,8 +282,8 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
     if (keyframes.length == 1) {
       value = keyframes[0];
     } else {
-      final localT = timing.resolveSegment(progress, _segBuffer);
-      final seg = _segBuffer[0];
+      final localT = timing.resolveSegment(progress, segBuffer);
+      final seg = segBuffer[0];
       final v0 = keyframes[seg];
       final v1 = keyframes[seg + 1];
       value = v0 + (v1 - v0) * localT;
@@ -485,8 +492,8 @@ class SvgColorAnimationTrack extends SvgAnimationTrack {
     if (keyframes.length == 1) {
       color = keyframes[0];
     } else {
-      final localT = timing.resolveSegment(progress, _segBuffer);
-      final seg = _segBuffer[0];
+      final localT = timing.resolveSegment(progress, segBuffer);
+      final seg = segBuffer[0];
       color =
           ui.Color.lerp(keyframes[seg], keyframes[seg + 1], localT) ??
           keyframes[seg];
@@ -534,8 +541,8 @@ class SvgDashArrayAnimationTrack extends SvgAnimationTrack {
         _interpolatedBuffer[i] = k0[i];
       }
     } else {
-      final localT = timing.resolveSegment(progress, _segBuffer);
-      final seg = _segBuffer[0];
+      final localT = timing.resolveSegment(progress, segBuffer);
+      final seg = segBuffer[0];
       final k0 = keyframes[seg];
       final k1 = keyframes[seg + 1];
       for (int i = 0; i < _interpolatedBuffer.length; i++) {
@@ -589,8 +596,8 @@ class SvgTransformAnimationTrack extends SvgAnimationTrack {
       v1 = keyframeValues[1];
       v2 = keyframeValues[2];
     } else {
-      final localT = timing.resolveSegment(progress, _segBuffer);
-      final seg = _segBuffer[0];
+      final localT = timing.resolveSegment(progress, segBuffer);
+      final seg = segBuffer[0];
       final i0 = seg * 3;
       final i1 = (seg + 1) * 3;
       v0 =
@@ -704,8 +711,8 @@ class SvgCssMultiTransformTrack extends SvgAnimationTrack {
         SvgMatrixMath.applyOpInPlace(matrix, ops[i]);
       }
     } else {
-      final localT = timing.resolveSegment(progress, _segBuffer);
-      final seg = _segBuffer[0];
+      final localT = timing.resolveSegment(progress, segBuffer);
+      final seg = segBuffer[0];
       final opsA = keyframeOps[seg];
       final opsB = keyframeOps[seg + 1];
       final maxLen = math.max(opsA.length, opsB.length);
