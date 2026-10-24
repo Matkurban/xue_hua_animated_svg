@@ -15,6 +15,7 @@ class PreviewPage extends StatefulWidget {
 class _PreviewPageState extends State<PreviewPage> {
   late final AnimatedSvgController _controller;
   BoxFit _fit = BoxFit.contain;
+  Alignment _alignment = Alignment.center;
   bool _tintEnabled = false;
 
   static const _tintFilter = ColorFilter.mode(
@@ -45,6 +46,7 @@ class _PreviewPageState extends State<PreviewPage> {
           width: 320,
           height: 200,
           fit: _fit,
+          alignment: _alignment,
           colorFilter: filter,
         );
       case SvgCatalogSourceKind.string:
@@ -54,6 +56,7 @@ class _PreviewPageState extends State<PreviewPage> {
           width: 320,
           height: 200,
           fit: _fit,
+          alignment: _alignment,
           colorFilter: filter,
         );
       case SvgCatalogSourceKind.network:
@@ -63,6 +66,7 @@ class _PreviewPageState extends State<PreviewPage> {
           width: 320,
           height: 200,
           fit: _fit,
+          alignment: _alignment,
           colorFilter: filter,
         );
     }
@@ -112,6 +116,33 @@ class _PreviewPageState extends State<PreviewPage> {
                   selected: _tintEnabled,
                   onSelected: (v) => setState(() => _tintEnabled = v),
                 ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text('Align', style: Theme.of(context).textTheme.labelLarge),
+                for (final entry in const [
+                  (Alignment.topLeft, 'TL'),
+                  (Alignment.topCenter, 'TC'),
+                  (Alignment.topRight, 'TR'),
+                  (Alignment.centerLeft, 'CL'),
+                  (Alignment.center, 'C'),
+                  (Alignment.centerRight, 'CR'),
+                  (Alignment.bottomLeft, 'BL'),
+                  (Alignment.bottomCenter, 'BC'),
+                  (Alignment.bottomRight, 'BR'),
+                ])
+                  ChoiceChip(
+                    label: Text(entry.$2),
+                    selected: _alignment == entry.$1,
+                    onSelected: (_) => setState(() => _alignment = entry.$1),
+                  ),
               ],
             ),
           ),

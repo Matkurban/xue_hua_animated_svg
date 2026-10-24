@@ -102,13 +102,14 @@ scene.dispose();
 | `SvgParser.compile`                                                         | 预编译 SVG → `CompiledSvgScene`                  |
 | `AnimatedSvgShowcasePresets.cyberCoreCompositeSvg`                          | 合成演示 SVG 字符串                              |
 
-### 布局与着色：`fit` / `colorFilter`
+### 布局与着色：`fit` / `alignment` / `colorFilter`
 
 与 `flutter_svg` / `SvgPicture` 对齐：
 
 | 参数 | 类型 | 默认 | 说明 |
 |------|------|------|------|
-| `fit` | `BoxFit` | `BoxFit.contain` | 将 SVG 固有尺寸铭刻进组件布局框（`applyBoxFit`，居中）。 |
+| `fit` | `BoxFit` | `BoxFit.contain` | 将 SVG 固有尺寸铭刻进组件布局框（`applyBoxFit`）。 |
+| `alignment` | `AlignmentGeometry` | `Alignment.center` | 将拟合后的矩形放入剩余 / 裁剪空间（`alignment.inscribe`）。 |
 | `colorFilter` | `ColorFilter?` | `null` | Flutter 整图后处理着色（如 `ColorFilter.mode(color, BlendMode.srcIn)`）。**不是** SVG `<filter>`。 |
 
 ```dart
@@ -117,6 +118,7 @@ AnimatedSvgPicture.asset(
   width: 280,
   height: 160,
   fit: BoxFit.cover,
+  alignment: Alignment.topLeft,
   colorFilter: const ColorFilter.mode(Color(0xFF22C55E), BlendMode.srcIn),
 );
 ```

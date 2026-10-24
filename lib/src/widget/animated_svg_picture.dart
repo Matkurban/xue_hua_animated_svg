@@ -82,11 +82,17 @@ class AnimatedSvgPicture extends StatefulWidget {
   /// How to inscribe the SVG's intrinsic size into the widget layout box.
   ///
   /// Defaults to [BoxFit.contain], matching `flutter_svg` / `SvgPicture`.
-  /// Leftover space uses [Alignment.center] (not exposed as a parameter).
   ///
   /// Widget [fit] maps the intrinsic paint box into the layout size. The SVG's
   /// own `preserveAspectRatio` still applies when painting viewBox → intrinsic.
   final BoxFit fit;
+
+  /// How to align the fitted SVG within the widget layout box when [fit]
+  /// leaves leftover space (or crops for [BoxFit.cover] / [BoxFit.none]).
+  ///
+  /// Defaults to [Alignment.center], matching `flutter_svg` / `SvgPicture`.
+  /// [AlignmentDirectional] resolves against ambient [Directionality].
+  final AlignmentGeometry alignment;
 
   /// Optional whole-picture tint applied after painting (Flutter [ColorFilter]).
   ///
@@ -106,6 +112,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.speed = 1.0,
     this.clipBehavior = Clip.hardEdge,
     this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
     this.colorFilter,
   }) : svgString = svgXml,
        assetName = null,
@@ -130,6 +137,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.speed = 1.0,
     this.clipBehavior = Clip.hardEdge,
     this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
     this.colorFilter,
   }) : assetName = assetPath,
        svgString = null,
@@ -157,6 +165,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.speed = 1.0,
     this.clipBehavior = Clip.hardEdge,
     this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
     this.colorFilter,
   }) : svgString = null,
        assetName = null,
@@ -183,6 +192,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.speed = 1.0,
     this.clipBehavior = Clip.hardEdge,
     this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
     this.colorFilter,
   }) : networkUrl = url,
        svgString = null,
@@ -203,6 +213,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.speed = 1.0,
     this.clipBehavior = Clip.hardEdge,
     this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
     this.colorFilter,
   }) : compiledScene = scene,
        svgString = null,
@@ -432,6 +443,10 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       widget.height ?? intrinsic.height,
     );
 
+    final resolvedAlignment = widget.alignment.resolve(
+      Directionality.maybeOf(context),
+    );
+
     Widget painted = CustomPaint(
       size: targetSize,
       isComplex: true,
@@ -441,6 +456,7 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         controller: _activeController,
         clipBehavior: widget.clipBehavior,
         fit: widget.fit,
+        alignment: resolvedAlignment,
       ),
     );
     final filter = widget.colorFilter;
@@ -458,12 +474,14 @@ class AnimatedSvgPainter extends CustomPainter {
   final AnimatedSvgController controller;
   final Clip clipBehavior;
   final BoxFit fit;
+  final Alignment alignment;
 
   AnimatedSvgPainter({
     required this.scene,
     required this.controller,
     this.clipBehavior = Clip.hardEdge,
     this.fit = BoxFit.contain,
+    this.alignment = Alignment.center,
   }) : super(repaint: controller);
 
   @override
@@ -479,12 +497,11 @@ class AnimatedSvgPainter extends CustomPainter {
     }
 
     // 2. Fit the SVG intrinsic box into the widget layout size (flutter_svg-aligned).
-    //    Alignment inside leftover space is center (matches SvgPicture default).
+    //    [alignment] places the fitted rect inside leftover / cropped space.
     final fitted = applyBoxFit(fit, intrinsic, size);
     if (fitted.source.isEmpty || fitted.destination.isEmpty) {
       return;
     }
-    const alignment = Alignment.center;
     final inputSubrect = alignment.inscribe(
       fitted.source,
       ui.Offset.zero & intrinsic,
@@ -516,7 +533,8 @@ class AnimatedSvgPainter extends CustomPainter {
     return oldDelegate.scene != scene ||
         oldDelegate.controller != controller ||
         oldDelegate.clipBehavior != clipBehavior ||
-        oldDelegate.fit != fit;
+        oldDelegate.fit != fit ||
+        oldDelegate.alignment != alignment;
   }
 }
 

@@ -110,13 +110,14 @@ scene.dispose();
 | `SvgParser.compile`                                                         | Precompile SVG XML → `CompiledSvgScene`          |
 | `AnimatedSvgShowcasePresets.cyberCoreCompositeSvg`                          | Composite showcase SVG string                    |
 
-### Layout tint: `fit` & `colorFilter`
+### Layout tint: `fit`, `alignment` & `colorFilter`
 
 Aligned with `flutter_svg` / `SvgPicture`:
 
 | Parameter | Type | Default | Notes |
 |-----------|------|---------|-------|
-| `fit` | `BoxFit` | `BoxFit.contain` | How the SVG intrinsic box is inscribed into the widget size (`applyBoxFit`, center). |
+| `fit` | `BoxFit` | `BoxFit.contain` | How the SVG intrinsic box is inscribed into the widget size (`applyBoxFit`). |
+| `alignment` | `AlignmentGeometry` | `Alignment.center` | Places the fitted rect in leftover / cropped space (`alignment.inscribe`). |
 | `colorFilter` | `ColorFilter?` | `null` | Whole-picture Flutter tint (e.g. `ColorFilter.mode(color, BlendMode.srcIn)`). **Not** SVG `<filter>`. |
 
 ```dart
@@ -125,6 +126,7 @@ AnimatedSvgPicture.asset(
   width: 280,
   height: 160,
   fit: BoxFit.cover,
+  alignment: Alignment.topLeft,
   colorFilter: const ColorFilter.mode(Color(0xFF22C55E), BlendMode.srcIn),
 );
 ```
