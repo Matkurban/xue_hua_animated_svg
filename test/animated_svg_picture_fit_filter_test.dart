@@ -40,7 +40,9 @@ void main() {
     expect(paint.size, const Size(80, 40));
   });
 
-  testWidgets('fit parameter is forwarded for each BoxFit value', (tester) async {
+  testWidgets('fit parameter is forwarded for each BoxFit value', (
+    tester,
+  ) async {
     final controller = AnimatedSvgController(autoPlay: false);
     addTearDown(controller.dispose);
 
@@ -87,13 +89,18 @@ void main() {
     expect(find.byType(ColorFiltered), findsOneWidget);
     final filtered = tester.widget<ColorFiltered>(find.byType(ColorFiltered));
     expect(filtered.colorFilter, filter);
-    expect(find.descendant(
-      of: find.byType(ColorFiltered),
-      matching: find.byType(CustomPaint),
-    ), findsWidgets);
+    expect(
+      find.descendant(
+        of: find.byType(ColorFiltered),
+        matching: find.byType(CustomPaint),
+      ),
+      findsWidgets,
+    );
   });
 
-  testWidgets('colorFilter remains across seek and play state changes', (tester) async {
+  testWidgets('colorFilter remains across seek and play state changes', (
+    tester,
+  ) async {
     final controller = AnimatedSvgController(autoPlay: true, speed: 1.0);
     addTearDown(controller.dispose);
     const filter = ColorFilter.mode(Color(0xFF0000FF), BlendMode.srcIn);
