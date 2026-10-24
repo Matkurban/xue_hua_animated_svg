@@ -1,31 +1,154 @@
-# Animated SVG Engine (`xue_hua_animated_svg`)
+# xue_hua_animated_svg
 
-零原生依赖、100% 纯 Dart 编写的高性能动态 SVG 渲染引擎插件，专为 Flutter 60fps / 120fps 满帧矢量动效渲染设计。
+[English](README.md) | [中文](README_zh.md)
 
-## 核心架构特性
+High-performance, **zero-native-dependency**, 100% pure Dart animated SVG rendering engine for Flutter.
+Precompiles SMIL and CSS animations into a strongly typed AST and paints at **60fps / 120fps** with
+static subtree `Picture` caching and a zero-allocation paint loop.
 
-1. **解析期指令预编译（Zero-String Parsing at Runtime）**
-   - 所有 XML 词法解析、`<style>` / 内联 `style` 解析、颜色 Hex/RGB/命名色解析、SVG Path `d` 指令归一化、时钟单位（`ms`/`s`）与百分比转换均在 `SvgParser.compile()` 构建 AST 阶段一次性完成，转化为强类型的 `double`、`Color`、`Float64List`、`Int64List` 与 `Cubic` 对象。
-2. **静态子树脏标记与图层缓存（Static Subtree Picture Caching）**
-   - AST 初始化时自底向上冒泡计算 `isAnimated`（包含自身动画、子孙动画、动态渐变引用及 `<use>` 引用）。
-   - 对 `isAnimated == false` 的静态 `<g>` 容器或静态图元，首次绘制时通过 `ui.PictureRecorder` 录制为 `ui.Picture` 缓存，后续帧直接调用 `canvas.drawPicture()`。
-3. **`Path` 与 `PathMetrics` 预计算缓存（Cached PathMetrics）**
-   - 每个图形节点预分配并缓存 `basePath` 与 `dashedStrokePath`。
-   - 涉及 `stroke-dasharray` / `stroke-dashoffset`（支持 `pathLength` 比例重映射与负数 `dashoffset` 回环）或 `<animateMotion>` 的节点在初始化时一次性计算并缓存 `List<ui.PathMetric>`，每帧仅调用轻量的 `extractPath()` 或 `getTangentForOffset()`。
-4. **零内存分配渲染循环（Zero-Allocation Paint Loop）**
-   - 每个 `SvgElement` 预分配并复用 `cachedFillPaint`、`cachedStrokePaint`、`cachedLayerPaint` 以及 16 元素列主序矩阵 `baseTransformMatrix`、`transformMatrix`、`motionMatrix`（`Float64List(16)`），在每帧 `tick` 中原地（In-Place）修改属性。
+**Live demo (GitHub Pages):** https://matkurban.github.io/xue_hua_animated_svg/
 
-## 快速上手
+> Pages are published automatically when a `v*` tag is pushed, a GitHub Release is published,
+> `pubspec.yaml` changes on `main`, or via **Actions → Deploy example to GitHub Pages → Run workflow**.
+> If the link 404s, enable **Settings → Pages → Source: GitHub Actions** once for the repository.
+
+## Features
+
+1. **Parse-time precompilation** — XML, CSS, colors, path `d`, and clock units are resolved once in
+   `SvgParser.compile()` into typed `double` / `Color` / `Float64List` / spline data. Runtime paint
+   never re-parses strings.
+2. **Static subtree Picture caching** — nodes with `isAnimated == false` are recorded into
+   `ui.Picture` on first paint and replayed with `canvas.drawPicture()`.
+3. **Cached PathMetrics** — dash and motion paths keep precomputed `PathMetric` lists; frames only
+   call `extractPath` / `getTangentForOffset`.
+4. **Zero-allocation paint loop** — paints, layer opacity, and 4×4 column-major matrices are reused
+   in place every tick.
+5. **SMIL + CSS** — `<animate>`, `<animateTransform>`, `<animateMotion>` / `<mpath>`, isomorphic
+   path morphing (`d`), stroke dash growth (`pathLength`), and CSS `@keyframes` with
+   `transform-origin`.
+
+## Install
+
+```yaml
+dependencies:
+  xue_hua_animated_svg: ^1.0.0
+```
+
+```bash
+flutter pub get
+```
+
+## Quick start
 
 ```dart
 import 'package:xue_hua_animated_svg/xue_hua_animated_svg.dart';
 
 final controller = AnimatedSvgController(autoPlay: true, speed: 1.0);
 
+// From a raw SVG string (includes the built-in CyberCore composite preset)
 AnimatedSvgPicture.string(
   AnimatedSvgShowcasePresets.cyberCoreCompositeSvg,
   controller: controller,
   width: 280,
   height: 280,
 );
+
+// Or from a Flutter asset
+AnimatedSvgPicture.asset(
+  'assets/svgs/elephant.svg',
+  controller: controller,
+  width: 280,
+  height: 280,
+);
+
+// From a network URL (web + IO)
+AnimatedSvgPicture.network(
+  'https://example.com/motion.svg',
+  headers: {'Authorization': 'Bearer …'}, // optional
+  controller: controller,
+  width: 280,
+  height: 280,
+);
+
+// From a local file (requires dart:io — not available on web)
+AnimatedSvgPicture.file(
+  File('/path/to/motion.svg'), // dart:io File; unsupported on web
+  controller: controller,
+  width: 280,
+  height: 280,
+);
 ```
+
+### Playback control
+
+```dart
+controller.play();
+controller.pause();
+controller.reset();
+controller.seek(const Duration(milliseconds: 500));
+controller.setSpeed(2.0);
+
+final progress = controller.cycleProgress; // 0.0 .. 1.0
+final elapsed = controller.elapsed;
+```
+
+### Precompile once
+
+```dart
+final scene = SvgParser.compile(svgXml);
+AnimatedSvgPicture.compiled(scene, controller: controller);
+// later:
+scene.dispose();
+```
+
+## Example app
+
+The `example/` app is a Chinese UI catalog:
+
+1. **Home** — list of SVG demos (assets + CyberCore memory preset).
+2. **Preview** — `AnimatedSvgPicture` + scrubber, play/pause, reset, speed chips.
+
+Theme: FlexColorScheme `shadGreen` via `material_ui` / `cupertino_ui` (see
+`example/lib/theme/app_theme.dart`). Example UI imports **`package:material_ui/material_ui.dart`**
+only (not `package:flutter/material.dart`).
+
+Demo SVG techniques are documented in [`example/assets/svgs/SOURCES.md`](example/assets/svgs/SOURCES.md).
+
+```bash
+cd example
+flutter run -d chrome   # or any device
+```
+
+## GitHub Pages deploy
+
+Workflow: [`.github/workflows/deploy_github_pages.yml`](.github/workflows/deploy_github_pages.yml)
+
+- Builds `example` with `flutter build web --base-href /xue_hua_animated_svg/`
+- Deploys with `actions/deploy-pages`
+- Triggers: `v*` tags, Releases, `pubspec.yaml` pushes to `main`, `workflow_dispatch`
+
+One-time setup if Pages is not enabled:
+
+```bash
+gh api -X PUT repos/Matkurban/xue_hua_animated_svg/pages \
+  -f build_type=workflow
+```
+
+Or: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+
+## Public API surface
+
+| API | Role |
+|-----|------|
+| `AnimatedSvgPicture.string` / `.asset` / `.file` / `.network` / `.compiled` | Widget entry points |
+| `AnimatedSvgController` | `play` / `pause` / `seek` / `reset` / `setSpeed` |
+| `SvgParser.compile` | Precompile SVG XML → `CompiledSvgScene` |
+| `AnimatedSvgShowcasePresets.cyberCoreCompositeSvg` | Composite showcase SVG string |
+
+## Versioning
+
+Package and example marketing versions are aligned at **1.0.0**.
+
+## License
+
+See [LICENSE](LICENSE).

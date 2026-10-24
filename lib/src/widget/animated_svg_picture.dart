@@ -1,11 +1,23 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:http/http.dart' as http;
 
 import '../controller/animated_svg_controller.dart';
+import '../io/svg_file_reader.dart';
 import '../parser/svg_xml_parser.dart';
+
+String? _svgFilePathOrNull(Object? file) {
+  if (file == null) return null;
+  try {
+    return svgFilePath(file);
+  } catch (_) {
+    return null;
+  }
+}
 
 /// High-performance, zero-native-dependency animated SVG rendering widget.
 ///
@@ -13,6 +25,11 @@ import '../parser/svg_xml_parser.dart';
 /// static subtrees into `ui.Picture` layers, and drives 60fps/120fps animations
 /// directly inside [AnimatedSvgPainter] via `CustomPainter(repaint: controller)`
 /// without rebuilding the widget tree or allocating objects on the Dart heap.
+///
+/// Load sources:
+/// - [AnimatedSvgPicture.string] / [AnimatedSvgPicture.compiled] — sync
+/// - [AnimatedSvgPicture.asset] / [AnimatedSvgPicture.network] — async
+/// - [AnimatedSvgPicture.file] — async; requires `dart:io` (unsupported on web)
 class AnimatedSvgPicture extends StatefulWidget {
   /// Raw SVG XML string to precompile and render.
   final String? svgString;
@@ -25,6 +42,21 @@ class AnimatedSvgPicture extends StatefulWidget {
 
   /// Optional package name used when loading [assetName] from a package dependency.
   final String? package;
+
+  /// Optional local `dart:io` File used by [AnimatedSvgPicture.file].
+  ///
+  /// Typed as [Object] so the library analyzes on web; pass a `dart:io` File
+  /// at the call site. Unsupported on web (see [readSvgFileAsString]).
+  final Object? file;
+
+  /// Optional network URL used by [AnimatedSvgPicture.network].
+  final String? networkUrl;
+
+  /// Optional HTTP headers for [AnimatedSvgPicture.network].
+  final Map<String, String>? headers;
+
+  /// Optional HTTP client for [AnimatedSvgPicture.network] (tests / custom clients).
+  final http.Client? httpClient;
 
   /// Optional precompiled [CompiledSvgScene] if compiled ahead of time.
   final CompiledSvgScene? compiledScene;
@@ -61,6 +93,10 @@ class AnimatedSvgPicture extends StatefulWidget {
        assetName = null,
        bundle = null,
        package = null,
+       file = null,
+       networkUrl = null,
+       headers = null,
+       httpClient = null,
        compiledScene = null;
 
   /// Creates an [AnimatedSvgPicture] from a Flutter asset bundle path (e.g., `'assets/svgs/elephant.svg'`).
@@ -77,6 +113,59 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.clipBehavior = Clip.hardEdge,
   }) : assetName = assetPath,
        svgString = null,
+       file = null,
+       networkUrl = null,
+       headers = null,
+       httpClient = null,
+       compiledScene = null;
+
+  /// Creates an [AnimatedSvgPicture] from a local `dart:io` File.
+  ///
+  /// Pass a `dart:io` [File] instance. Unsupported on web and other platforms
+  /// without `dart:io`; use [AnimatedSvgPicture.network],
+  /// [AnimatedSvgPicture.asset], or [AnimatedSvgPicture.string] instead.
+  ///
+  /// The parameter is typed as [Object] for multi-platform analysis; at runtime
+  /// it must be a `dart:io` File.
+  const AnimatedSvgPicture.file(
+    Object this.file, {
+    super.key,
+    this.controller,
+    this.width,
+    this.height,
+    this.autoPlay = true,
+    this.speed = 1.0,
+    this.clipBehavior = Clip.hardEdge,
+  }) : svgString = null,
+       assetName = null,
+       bundle = null,
+       package = null,
+       networkUrl = null,
+       headers = null,
+       httpClient = null,
+       compiledScene = null;
+
+  /// Creates an [AnimatedSvgPicture] by downloading SVG XML from [url].
+  ///
+  /// Uses `package:http`. Non-2xx responses and network errors are logged with
+  /// [debugPrint] and leave an empty [SizedBox] (same pattern as asset load failures).
+  const AnimatedSvgPicture.network(
+    String url, {
+    super.key,
+    this.headers,
+    this.httpClient,
+    this.controller,
+    this.width,
+    this.height,
+    this.autoPlay = true,
+    this.speed = 1.0,
+    this.clipBehavior = Clip.hardEdge,
+  }) : networkUrl = url,
+       svgString = null,
+       assetName = null,
+       bundle = null,
+       package = null,
+       file = null,
        compiledScene = null;
 
   /// Creates an [AnimatedSvgPicture] from a precompiled [CompiledSvgScene].
@@ -93,7 +182,11 @@ class AnimatedSvgPicture extends StatefulWidget {
        svgString = null,
        assetName = null,
        bundle = null,
-       package = null;
+       package = null,
+       file = null,
+       networkUrl = null,
+       headers = null,
+       httpClient = null;
 
   @override
   State<AnimatedSvgPicture> createState() => _AnimatedSvgPictureState();
@@ -104,11 +197,16 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   CompiledSvgScene? _internalScene;
   AnimatedSvgController? _internalController;
   Ticker? _ticker;
-  int _assetLoadGeneration = 0;
+  int _loadGeneration = 0;
 
   CompiledSvgScene? get _activeScene => widget.compiledScene ?? _internalScene;
   AnimatedSvgController get _activeController =>
       widget.controller ?? _internalController!;
+
+  bool get _needsAsyncLoad =>
+      widget.assetName != null ||
+      widget.file != null ||
+      widget.networkUrl != null;
 
   @override
   void initState() {
@@ -116,6 +214,9 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     _compileSyncSceneIfNeeded();
     _setupController();
     _ticker = createTicker(_onTick);
+    if (_needsAsyncLoad) {
+      _loadAsyncScene();
+    }
     _syncTickerState();
   }
 
@@ -123,22 +224,28 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (widget.assetName != null && _internalScene == null) {
-      _loadAssetScene();
+      _loadAsyncScene();
     }
   }
 
   @override
   void didUpdateWidget(covariant AnimatedSvgPicture oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.svgString != oldWidget.svgString ||
+    final sourceChanged =
+        widget.svgString != oldWidget.svgString ||
         widget.compiledScene != oldWidget.compiledScene ||
         widget.assetName != oldWidget.assetName ||
         widget.package != oldWidget.package ||
-        widget.bundle != oldWidget.bundle) {
+        widget.bundle != oldWidget.bundle ||
+        _svgFilePathOrNull(widget.file) != _svgFilePathOrNull(oldWidget.file) ||
+        widget.networkUrl != oldWidget.networkUrl ||
+        !mapEquals(widget.headers, oldWidget.headers) ||
+        widget.httpClient != oldWidget.httpClient;
+    if (sourceChanged) {
       _internalScene?.dispose();
       _internalScene = null;
-      if (widget.assetName != null) {
-        _loadAssetScene();
+      if (_needsAsyncLoad) {
+        _loadAsyncScene();
       } else {
         _compileSyncSceneIfNeeded();
         _bindControllerToScene();
@@ -160,19 +267,11 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     }
   }
 
-  Future<void> _loadAssetScene() async {
-    final asset = widget.assetName;
-    if (asset == null) return;
-    final gen = ++_assetLoadGeneration;
-    final effectiveBundle =
-        widget.bundle ??
-        (mounted ? DefaultAssetBundle.of(context) : rootBundle);
-    final keyName = widget.package == null
-        ? asset
-        : 'packages/${widget.package}/$asset';
+  Future<void> _loadAsyncScene() async {
+    final gen = ++_loadGeneration;
     try {
-      final xmlStr = await effectiveBundle.loadString(keyName);
-      if (!mounted || gen != _assetLoadGeneration) return;
+      final xmlStr = await _readSvgXml();
+      if (!mounted || gen != _loadGeneration || xmlStr == null) return;
       final compiled = SvgParser.compile(xmlStr);
       setState(() {
         _internalScene?.dispose();
@@ -181,8 +280,69 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         _syncTickerState();
       });
     } catch (e) {
-      debugPrint('AnimatedSvgPicture.asset failed to load "$keyName": $e');
+      debugPrint('AnimatedSvgPicture async load failed: $e');
     }
+  }
+
+  Future<String?> _readSvgXml() async {
+    final asset = widget.assetName;
+    if (asset != null) {
+      final effectiveBundle =
+          widget.bundle ??
+          (mounted ? DefaultAssetBundle.of(context) : rootBundle);
+      final keyName = widget.package == null
+          ? asset
+          : 'packages/${widget.package}/$asset';
+      try {
+        return await effectiveBundle.loadString(keyName);
+      } catch (e) {
+        debugPrint('AnimatedSvgPicture.asset failed to load "$keyName": $e');
+        return null;
+      }
+    }
+
+    final file = widget.file;
+    if (file != null) {
+      try {
+        return await readSvgFileAsString(file);
+      } catch (e) {
+        debugPrint(
+          'AnimatedSvgPicture.file failed to load '
+          '"${_svgFilePathOrNull(file) ?? file}": $e',
+        );
+        return null;
+      }
+    }
+
+    final url = widget.networkUrl;
+    if (url != null) {
+      final client = widget.httpClient;
+      final ownsClient = client == null;
+      final effectiveClient = client ?? http.Client();
+      try {
+        final response = await effectiveClient.get(
+          Uri.parse(url),
+          headers: widget.headers,
+        );
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          debugPrint(
+            'AnimatedSvgPicture.network failed to load "$url": '
+            'HTTP ${response.statusCode}',
+          );
+          return null;
+        }
+        return response.body;
+      } catch (e) {
+        debugPrint('AnimatedSvgPicture.network failed to load "$url": $e');
+        return null;
+      } finally {
+        if (ownsClient) {
+          effectiveClient.close();
+        }
+      }
+    }
+
+    return null;
   }
 
   void _setupController() {
@@ -224,7 +384,7 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
 
   @override
   void dispose() {
-    _assetLoadGeneration++;
+    _loadGeneration++;
     _ticker?.dispose();
     widget.controller?.removeListener(_syncTickerState);
     _internalController?.removeListener(_syncTickerState);
