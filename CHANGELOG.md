@@ -1,3 +1,15 @@
+## 1.1.0
+
+* Add `fit` (`BoxFit`, default `BoxFit.contain`) and `colorFilter` (`ColorFilter?`)
+  to every `AnimatedSvgPicture` constructor, aligned with `flutter_svg` / `SvgPicture`.
+* `fit` maps the SVG intrinsic paint box into the widget layout size via
+  `applyBoxFit` (center alignment). SVG `preserveAspectRatio` still applies for
+  viewBox → intrinsic.
+* `colorFilter` is a Flutter post-process whole-picture tint (`ColorFiltered`);
+  it is **not** SVG `<filter>` / `fe*` support.
+* Example preview page: interactive BoxFit / colorFilter controls.
+* Package skill and bilingual README document the new parameters.
+
 ## 1.0.0
 
 * Initial public release of the pure-Dart animated SVG engine.

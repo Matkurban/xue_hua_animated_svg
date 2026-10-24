@@ -79,6 +79,22 @@ class AnimatedSvgPicture extends StatefulWidget {
   /// Whether to clip the canvas to the widget's bounds.
   final Clip clipBehavior;
 
+  /// How to inscribe the SVG's intrinsic size into the widget layout box.
+  ///
+  /// Defaults to [BoxFit.contain], matching `flutter_svg` / `SvgPicture`.
+  /// Leftover space uses [Alignment.center] (not exposed as a parameter).
+  ///
+  /// Widget [fit] maps the intrinsic paint box into the layout size. The SVG's
+  /// own `preserveAspectRatio` still applies when painting viewBox → intrinsic.
+  final BoxFit fit;
+
+  /// Optional whole-picture tint applied after painting (Flutter [ColorFilter]).
+  ///
+  /// Same role as `SvgPicture.colorFilter` — a post-process layer tint
+  /// (commonly `ColorFilter.mode(color, BlendMode.srcIn)`). This is **not**
+  /// SVG `<filter>` / `fe*` support (still Out-of-Scope).
+  final ColorFilter? colorFilter;
+
   /// Creates an [AnimatedSvgPicture] from an SVG XML string.
   const AnimatedSvgPicture.string(
     String svgXml, {
@@ -89,6 +105,8 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.autoPlay = true,
     this.speed = 1.0,
     this.clipBehavior = Clip.hardEdge,
+    this.fit = BoxFit.contain,
+    this.colorFilter,
   }) : svgString = svgXml,
        assetName = null,
        bundle = null,
@@ -111,6 +129,8 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.autoPlay = true,
     this.speed = 1.0,
     this.clipBehavior = Clip.hardEdge,
+    this.fit = BoxFit.contain,
+    this.colorFilter,
   }) : assetName = assetPath,
        svgString = null,
        file = null,
@@ -136,6 +156,8 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.autoPlay = true,
     this.speed = 1.0,
     this.clipBehavior = Clip.hardEdge,
+    this.fit = BoxFit.contain,
+    this.colorFilter,
   }) : svgString = null,
        assetName = null,
        bundle = null,
@@ -160,6 +182,8 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.autoPlay = true,
     this.speed = 1.0,
     this.clipBehavior = Clip.hardEdge,
+    this.fit = BoxFit.contain,
+    this.colorFilter,
   }) : networkUrl = url,
        svgString = null,
        assetName = null,
@@ -178,6 +202,8 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.autoPlay = true,
     this.speed = 1.0,
     this.clipBehavior = Clip.hardEdge,
+    this.fit = BoxFit.contain,
+    this.colorFilter,
   }) : compiledScene = scene,
        svgString = null,
        assetName = null,
@@ -406,7 +432,7 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
       widget.height ?? intrinsic.height,
     );
 
-    return CustomPaint(
+    Widget painted = CustomPaint(
       size: targetSize,
       isComplex: true,
       willChange: scene.timeline.hasAnimations,
@@ -414,8 +440,14 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         scene: scene,
         controller: _activeController,
         clipBehavior: widget.clipBehavior,
+        fit: widget.fit,
       ),
     );
+    final filter = widget.colorFilter;
+    if (filter != null) {
+      painted = ColorFiltered(colorFilter: filter, child: painted);
+    }
+    return painted;
   }
 }
 
@@ -425,11 +457,13 @@ class AnimatedSvgPainter extends CustomPainter {
   final CompiledSvgScene scene;
   final AnimatedSvgController controller;
   final Clip clipBehavior;
+  final BoxFit fit;
 
   AnimatedSvgPainter({
     required this.scene,
     required this.controller,
     this.clipBehavior = Clip.hardEdge,
+    this.fit = BoxFit.contain,
   }) : super(repaint: controller);
 
   @override
@@ -439,22 +473,50 @@ class AnimatedSvgPainter extends CustomPainter {
     // 1. Evaluate all precompiled SMIL & CSS animation tracks in-place
     scene.timeline.seekMicroseconds(controller.elapsedMicroseconds);
 
-    // 2. Clip to widget bounds if requested
-    if (clipBehavior != Clip.none) {
-      canvas.save();
-      canvas.clipRect(ui.Offset.zero & size);
-      scene.document.paint(canvas, size);
-      canvas.restore();
-    } else {
-      scene.document.paint(canvas, size);
+    final intrinsic = scene.document.intrinsicSize;
+    if (intrinsic.width <= 0.0 || intrinsic.height <= 0.0) {
+      return;
     }
+
+    // 2. Fit the SVG intrinsic box into the widget layout size (flutter_svg-aligned).
+    //    Alignment inside leftover space is center (matches SvgPicture default).
+    final fitted = applyBoxFit(fit, intrinsic, size);
+    if (fitted.source.isEmpty || fitted.destination.isEmpty) {
+      return;
+    }
+    const alignment = Alignment.center;
+    final inputSubrect = alignment.inscribe(
+      fitted.source,
+      ui.Offset.zero & intrinsic,
+    );
+    final outputSubrect = alignment.inscribe(
+      fitted.destination,
+      ui.Offset.zero & size,
+    );
+
+    canvas.save();
+    if (clipBehavior != Clip.none) {
+      canvas.clipRect(ui.Offset.zero & size);
+    }
+
+    final scaleX = outputSubrect.width / inputSubrect.width;
+    final scaleY = outputSubrect.height / inputSubrect.height;
+    canvas.translate(outputSubrect.left, outputSubrect.top);
+    canvas.scale(scaleX, scaleY);
+    canvas.translate(-inputSubrect.left, -inputSubrect.top);
+
+    // Paint into the intrinsic viewport; SVG preserveAspectRatio still applies
+    // for viewBox → intrinsic. Widget [fit] then maps intrinsic → [size].
+    scene.document.paint(canvas, intrinsic);
+    canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant AnimatedSvgPainter oldDelegate) {
     return oldDelegate.scene != scene ||
         oldDelegate.controller != controller ||
-        oldDelegate.clipBehavior != clipBehavior;
+        oldDelegate.clipBehavior != clipBehavior ||
+        oldDelegate.fit != fit;
   }
 }
 

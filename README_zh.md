@@ -23,7 +23,7 @@
 
 ```yaml
 dependencies:
-  xue_hua_animated_svg: ^1.0.0
+  xue_hua_animated_svg: ^1.1.0
 ```
 
 ```bash
@@ -102,6 +102,24 @@ scene.dispose();
 | `SvgParser.compile`                                                         | 预编译 SVG → `CompiledSvgScene`                  |
 | `AnimatedSvgShowcasePresets.cyberCoreCompositeSvg`                          | 合成演示 SVG 字符串                              |
 
+### 布局与着色：`fit` / `colorFilter`
+
+与 `flutter_svg` / `SvgPicture` 对齐：
+
+| 参数 | 类型 | 默认 | 说明 |
+|------|------|------|------|
+| `fit` | `BoxFit` | `BoxFit.contain` | 将 SVG 固有尺寸铭刻进组件布局框（`applyBoxFit`，居中）。 |
+| `colorFilter` | `ColorFilter?` | `null` | Flutter 整图后处理着色（如 `ColorFilter.mode(color, BlendMode.srcIn)`）。**不是** SVG `<filter>`。 |
+
+```dart
+AnimatedSvgPicture.asset(
+  'assets/svgs/elephant.svg',
+  width: 280,
+  height: 160,
+  fit: BoxFit.cover,
+  colorFilter: const ColorFilter.mode(Color(0xFF22C55E), BlendMode.srcIn),
+);
+```
 
 ## 支持的 SVG 表面
 

@@ -31,7 +31,7 @@ static subtree `Picture` caching and a zero-allocation paint loop.
 
 ```yaml
 dependencies:
-  xue_hua_animated_svg: ^1.0.0
+  xue_hua_animated_svg: ^1.1.0
 ```
 
 ```bash
@@ -110,6 +110,24 @@ scene.dispose();
 | `SvgParser.compile`                                                         | Precompile SVG XML → `CompiledSvgScene`          |
 | `AnimatedSvgShowcasePresets.cyberCoreCompositeSvg`                          | Composite showcase SVG string                    |
 
+### Layout tint: `fit` & `colorFilter`
+
+Aligned with `flutter_svg` / `SvgPicture`:
+
+| Parameter | Type | Default | Notes |
+|-----------|------|---------|-------|
+| `fit` | `BoxFit` | `BoxFit.contain` | How the SVG intrinsic box is inscribed into the widget size (`applyBoxFit`, center). |
+| `colorFilter` | `ColorFilter?` | `null` | Whole-picture Flutter tint (e.g. `ColorFilter.mode(color, BlendMode.srcIn)`). **Not** SVG `<filter>`. |
+
+```dart
+AnimatedSvgPicture.asset(
+  'assets/svgs/elephant.svg',
+  width: 280,
+  height: 160,
+  fit: BoxFit.cover,
+  colorFilter: const ColorFilter.mode(Color(0xFF22C55E), BlendMode.srcIn),
+);
+```
 
 ## Supported SVG surface
 
