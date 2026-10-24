@@ -15,7 +15,3 @@
 * GitHub Pages workflow builds the web example for live demos on version tags /
   releases / pubspec version bumps on `main`.
 * Package metadata: repository, topics, and screenshots for pub.dev.
-
-## 0.0.1
-
-* Early development snapshot (superseded by 1.0.0).
