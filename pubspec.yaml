@@ -16,10 +16,18 @@ topics:
   - vector-graphics
 
 screenshots:
-  - description: Example home list of animated SVG demos.
-    path: screenshots/home_list.png
-  - description: Example preview page with playback controls.
-    path: screenshots/preview_controls.png
+  - description: CyberCore composite demo — gradients, morph, orbit motion.
+    path: screenshots/render_cybercore.gif
+  - description: Elephant outline with rotating animateTransform accent.
+    path: screenshots/render_elephant.gif
+  - description: Breathing circle — SMIL radius and opacity pulse.
+    path: screenshots/render_breathing.gif
+  - description: Orbit probe along an animateMotion path.
+    path: screenshots/render_orbit.gif
+  - description: CSS @keyframes rotating ring.
+    path: screenshots/render_css_ring.gif
+  - description: Path morph between polygon and star.
+    path: screenshots/render_morph.gif
 
 environment:
   sdk: ^3.13.0
