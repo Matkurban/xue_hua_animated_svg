@@ -8,10 +8,6 @@
 
 **在线演示（GitHub Pages）：** https://matkurban.github.io/xue_hua_animated_svg/
 
-> 当推送 `v*` 标签、发布 GitHub Release、在 `main` 上改动 `pubspec.yaml`，或手动触发
-> **Actions → Deploy example to GitHub Pages** 时会自动构建并部署。
-> 若链接 404，请在仓库 **Settings → Pages → Source: GitHub Actions** 中启用一次。
-
 ## 特性
 
 1. **解析期指令预编译** — XML、CSS、颜色、Path `d`、时间单位在 `SvgParser.compile()` 一次性完成，
@@ -97,52 +93,14 @@ AnimatedSvgPicture.compiled(scene, controller: controller);
 scene.dispose();
 ```
 
-## 示例应用
-
-`example/` 为中文界面目录式演示：
-
-1. **首页** — SVG 资源列表（本地 assets + CyberCore 内存预设）。
-2. **预览页** — `AnimatedSvgPicture` + 进度条、播放/暂停、重置、倍速。
-
-主题：FlexColorScheme `shadGreen`（`example/lib/theme/app_theme.dart`），示例 UI 仅使用
-`package:material_ui/material_ui.dart`，不使用旧的 `package:flutter/material.dart`。
-
-各演示 SVG 技术点说明见 [`example/assets/svgs/SOURCES.md`](example/assets/svgs/SOURCES.md)。
-
-```bash
-cd example
-flutter run -d chrome   # 或其他设备
-```
-
-## GitHub Pages 部署
-
-工作流：[`.github/workflows/deploy_github_pages.yml`](.github/workflows/deploy_github_pages.yml)
-
-- 使用 `flutter build web --base-href /xue_hua_animated_svg/` 构建 example
-- 通过 `actions/deploy-pages` 发布
-- 触发：`v*` 标签、Release、`main` 上 `pubspec.yaml` 变更、手动 `workflow_dispatch`
-
-若尚未开通 Pages：
-
-```bash
-gh api -X PUT repos/Matkurban/xue_hua_animated_svg/pages \
-  -f build_type=workflow
-```
-
-或在网页：**Settings → Pages → Build and deployment → Source: GitHub Actions**。
-
 ## 公开 API
 
-| API | 作用 |
-|-----|------|
-| `AnimatedSvgPicture.string` / `.asset` / `.file` / `.network` / `.compiled` | 组件入口 |
-| `AnimatedSvgController` | `play` / `pause` / `seek` / `reset` / `setSpeed` |
-| `SvgParser.compile` | 预编译 SVG → `CompiledSvgScene` |
-| `AnimatedSvgShowcasePresets.cyberCoreCompositeSvg` | 合成演示 SVG 字符串 |
-
-## 版本
-
-插件与 example 原生营销版本均对齐为 **1.0.0**。
+| API                                                                         | 作用                                             |
+|-----------------------------------------------------------------------------|--------------------------------------------------|
+| `AnimatedSvgPicture.string` / `.asset` / `.file` / `.network` / `.compiled` | 组件入口                                         |
+| `AnimatedSvgController`                                                     | `play` / `pause` / `seek` / `reset` / `setSpeed` |
+| `SvgParser.compile`                                                         | 预编译 SVG → `CompiledSvgScene`                  |
+| `AnimatedSvgShowcasePresets.cyberCoreCompositeSvg`                          | 合成演示 SVG 字符串                              |
 
 ## 许可证
 

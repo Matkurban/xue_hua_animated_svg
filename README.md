@@ -101,53 +101,14 @@ AnimatedSvgPicture.compiled(scene, controller: controller);
 scene.dispose();
 ```
 
-## Example app
-
-The `example/` app is a Chinese UI catalog:
-
-1. **Home** — list of SVG demos (assets + CyberCore memory preset).
-2. **Preview** — `AnimatedSvgPicture` + scrubber, play/pause, reset, speed chips.
-
-Theme: FlexColorScheme `shadGreen` via `material_ui` / `cupertino_ui` (see
-`example/lib/theme/app_theme.dart`). Example UI imports **`package:material_ui/material_ui.dart`**
-only (not `package:flutter/material.dart`).
-
-Demo SVG techniques are documented in [`example/assets/svgs/SOURCES.md`](example/assets/svgs/SOURCES.md).
-
-```bash
-cd example
-flutter run -d chrome   # or any device
-```
-
-## GitHub Pages deploy
-
-Workflow: [`.github/workflows/deploy_github_pages.yml`](.github/workflows/deploy_github_pages.yml)
-
-- Builds `example` with `flutter build web --base-href /xue_hua_animated_svg/`
-- Deploys with `actions/deploy-pages`
-- Triggers: `v*` tags, Releases, `pubspec.yaml` pushes to `main`, `workflow_dispatch`
-
-One-time setup if Pages is not enabled:
-
-```bash
-gh api -X PUT repos/Matkurban/xue_hua_animated_svg/pages \
-  -f build_type=workflow
-```
-
-Or: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-
 ## Public API surface
 
-| API | Role |
-|-----|------|
-| `AnimatedSvgPicture.string` / `.asset` / `.file` / `.network` / `.compiled` | Widget entry points |
-| `AnimatedSvgController` | `play` / `pause` / `seek` / `reset` / `setSpeed` |
-| `SvgParser.compile` | Precompile SVG XML → `CompiledSvgScene` |
-| `AnimatedSvgShowcasePresets.cyberCoreCompositeSvg` | Composite showcase SVG string |
-
-## Versioning
-
-Package and example marketing versions are aligned at **1.0.0**.
+| API                                                                         | Role                                             |
+|-----------------------------------------------------------------------------|--------------------------------------------------|
+| `AnimatedSvgPicture.string` / `.asset` / `.file` / `.network` / `.compiled` | Widget entry points                              |
+| `AnimatedSvgController`                                                     | `play` / `pause` / `seek` / `reset` / `setSpeed` |
+| `SvgParser.compile`                                                         | Precompile SVG XML → `CompiledSvgScene`          |
+| `AnimatedSvgShowcasePresets.cyberCoreCompositeSvg`                          | Composite showcase SVG string                    |
 
 ## License
 
