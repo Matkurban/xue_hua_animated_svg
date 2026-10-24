@@ -1117,7 +1117,12 @@ abstract final class SvgCssParser {
     return null;
   }
 
-  /// Extracts `id` from `url(#id)` or `#id`.
+  /// Extracts `id` from `url(#id)`, or from a bare `#id` that is not a color.
+  ///
+  /// `url(#ffffff)` still returns `ffffff`. A bare hex color (`#rgb`, `#rgba`,
+  /// `#rrggbb`, `#rrggbbaa`) returns null so fill and stroke can stay solid
+  /// colors. Non-hex bare references such as `#clip1` still resolve for
+  /// `clip-path` and href-style uses.
   static String? extractUrlId(String raw) {
     final s = raw.trim();
     if (s.startsWith('url(') && s.endsWith(')')) {
@@ -1132,27 +1137,52 @@ abstract final class SvgCssParser {
       return inner;
     }
     if (s.startsWith('#')) {
+      if (_isHexColor(s)) return null;
       return s.substring(1);
     }
     return null;
   }
 
+  /// True for `#rgb`, `#rgba`, `#rrggbb`, and `#rrggbbaa` (case-insensitive).
+  static bool _isHexColor(String raw) {
+    final n = raw.length - 1;
+    if (raw.isEmpty || raw.codeUnitAt(0) != 0x23) return false;
+    if (n != 3 && n != 4 && n != 6 && n != 8) return false;
+    for (var i = 1; i < raw.length; i++) {
+      final c = raw.codeUnitAt(i);
+      final isHex =
+          (c >= 0x30 && c <= 0x39) ||
+          (c >= 0x41 && c <= 0x46) ||
+          (c >= 0x61 && c <= 0x66);
+      if (!isHex) return false;
+    }
+    return true;
+  }
+
   /// Parses an SVG `fill` or `stroke` value into an [SvgPaintServer].
+  ///
+  /// Solid colors (hex, `rgb()` / `rgba()`, named) are resolved before
+  /// `url(#id)` paint servers. Bare `#rrggbb` is never a gradient id.
+  /// `none` and `transparent` are handled after those two forms.
   static SvgPaintServer? parsePaintServer(String raw) {
     final s = raw.trim();
     if (s.isEmpty) return null;
-    if (s == 'none' || s == 'transparent') {
-      return s == 'none'
-          ? SvgPaintServer.none
-          : SvgPaintServer.fromColor(const ui.Color(0x00000000));
-    }
-    final urlId = extractUrlId(s);
-    if (urlId != null) {
-      return SvgPaintServer.fromGradient(urlId);
-    }
+
     final color = parseColor(s);
     if (color != null) {
       return SvgPaintServer.fromColor(color);
+    }
+
+    if (s.startsWith('url(')) {
+      final urlId = extractUrlId(s);
+      if (urlId != null && urlId.isNotEmpty) {
+        return SvgPaintServer.fromGradient(urlId);
+      }
+    }
+
+    if (s == 'none') return SvgPaintServer.none;
+    if (s == 'transparent') {
+      return SvgPaintServer.fromColor(const ui.Color(0x00000000));
     }
     return null;
   }
