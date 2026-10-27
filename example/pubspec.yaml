@@ -16,7 +16,6 @@ dependencies:
   material_ui: ^1.8.0
   xue_hua_animated_svg:
     path: ../
-  flex_seed_scheme: ^5.0.1
 
 dev_dependencies:
   flutter_test:
