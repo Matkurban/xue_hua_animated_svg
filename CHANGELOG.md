@@ -1,3 +1,10 @@
+## 1.1.1
+
+* Fixed `SvgGroupNode.initializeGeometry`: When aggregating the `cachedBounds` of child nodes, 
+  the implementation now filters out non-visible elements—specifically `<defs>`, `<clipPath>`, 
+  and nodes with `display: none`. It uses `_transformRectByMatrix` to map each child's local bounding box into the parent container's coordinate system based on the child's `baseTransformMatrix`. 
+  Additionally, it now correctly handles horizontal or vertical `<line>` elements (which are non-empty line segments with zero width or height), ensuring more precise alignment for percentage-based or keyword-based `transform-origin` values ​​on container nodes.
+
 ## 1.1.0
 
 * Add `fit` (`BoxFit`, default `BoxFit.contain`), `colorFilter` (`ColorFilter?`),
