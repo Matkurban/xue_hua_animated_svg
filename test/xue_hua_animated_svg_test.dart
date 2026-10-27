@@ -33,103 +33,97 @@ class _MemorySvgAssetBundle extends CachingAssetBundle {
 
 void main() {
   group('Phase 1: High-Performance AST, ViewBox, Nodes & Picture Caching', () {
-    test(
-      'bubbles isAnimated dirty flag bottom-up and caches static subtrees into ui.Picture',
-      () {
-        final scene = SvgParser.compile(
-          AnimatedSvgShowcasePresets.cyberCoreCompositeSvg,
-        );
-        final doc = scene.document;
+    test('bubbles isAnimated dirty flag bottom-up and caches static subtrees into ui.Picture', () {
+      final scene = SvgParser.compile(
+        AnimatedSvgShowcasePresets.cyberCoreCompositeSvg,
+      );
+      final doc = scene.document;
 
-        final staticBackdrop = doc.elementsById['staticBackdrop']!;
-        final growingRing = doc.elementsById['growingStrokeRing']!;
-        final css3dGroup = doc.elementsById['css3dGroup']!;
-        final morphingCore = doc.elementsById['morphingCore']!;
-        final orbitingProbe = doc.elementsById['orbitingProbe']!;
+      final staticBackdrop = doc.elementsById['staticBackdrop']!;
+      final growingRing = doc.elementsById['growingStrokeRing']!;
+      final css3dGroup = doc.elementsById['css3dGroup']!;
+      final morphingCore = doc.elementsById['morphingCore']!;
+      final orbitingProbe = doc.elementsById['orbitingProbe']!;
 
-        expect(staticBackdrop.isAnimated, isFalse);
-        expect(growingRing.isAnimated, isTrue);
-        expect(css3dGroup.isAnimated, isTrue);
-        expect(morphingCore.isAnimated, isTrue);
-        expect(orbitingProbe.isAnimated, isTrue);
-        expect(doc.rootGroup.isAnimated, isTrue);
+      expect(staticBackdrop.isAnimated, isFalse);
+      expect(growingRing.isAnimated, isTrue);
+      expect(css3dGroup.isAnimated, isTrue);
+      expect(morphingCore.isAnimated, isTrue);
+      expect(orbitingProbe.isAnimated, isTrue);
+      expect(doc.rootGroup.isAnimated, isTrue);
 
-        expect(staticBackdrop.cachedPicture, isNull);
+      expect(staticBackdrop.cachedPicture, isNull);
 
-        // Paint frame 0 -> staticBackdrop records and caches a ui.Picture
-        final recorder = ui.PictureRecorder();
-        final canvas = ui.Canvas(recorder);
-        doc.paint(canvas, const ui.Size(240, 240));
-        recorder.endRecording().dispose();
+      // Paint frame 0 -> staticBackdrop records and caches a ui.Picture
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+      doc.paint(canvas, const ui.Size(240, 240));
+      recorder.endRecording().dispose();
 
-        final firstCachedPicture = staticBackdrop.cachedPicture;
-        expect(firstCachedPicture, isNotNull);
-        expect(growingRing.cachedPicture, isNull);
+      final firstCachedPicture = staticBackdrop.cachedPicture;
+      expect(firstCachedPicture, isNotNull);
+      expect(growingRing.cachedPicture, isNull);
 
-        // Painting a subsequent frame reuses the exact same cached ui.Picture instance
-        scene.timeline.seekMicroseconds(500000);
-        final recorder2 = ui.PictureRecorder();
-        final canvas2 = ui.Canvas(recorder2);
-        doc.paint(canvas2, const ui.Size(240, 240));
-        recorder2.endRecording().dispose();
-        expect(identical(staticBackdrop.cachedPicture, firstCachedPicture), isTrue);
+      // Painting a subsequent frame reuses the exact same cached ui.Picture instance
+      scene.timeline.seekMicroseconds(500000);
+      final recorder2 = ui.PictureRecorder();
+      final canvas2 = ui.Canvas(recorder2);
+      doc.paint(canvas2, const ui.Size(240, 240));
+      recorder2.endRecording().dispose();
+      expect(
+        identical(staticBackdrop.cachedPicture, firstCachedPicture),
+        isTrue,
+      );
 
-        scene.dispose();
-        expect(staticBackdrop.cachedPicture, isNull);
-      },
-    );
+      scene.dispose();
+      expect(staticBackdrop.cachedPicture, isNull);
+    });
 
-    test(
-      'computes preserveAspectRatio matrices across all alignments and meet/slice modes',
-      () {
-        final matrix = SvgMatrixMath.createIdentity();
+    test('computes preserveAspectRatio matrices across all alignments and meet/slice modes', () {
+      final matrix = SvgMatrixMath.createIdentity();
 
-        // 1. xMidYMid meet (default)
-        const SvgPreserveAspectRatio(
-          align: SvgAspectRatioAlign.xMidYMid,
-          meetOrSlice: SvgMeetOrSlice.meet,
-        ).computeMatrixInPlace(
-          const ui.Rect.fromLTWH(0, 0, 100, 100),
-          const ui.Size(200, 400),
-          matrix,
-        );
-        expect(matrix[0], closeTo(2.0, 1e-6));
-        expect(matrix[5], closeTo(2.0, 1e-6));
-        expect(matrix[12], closeTo(0.0, 1e-6));
-        expect(matrix[13], closeTo(100.0, 1e-6));
+      // 1. xMidYMid meet (default)
+      const SvgPreserveAspectRatio(
+        align: SvgAspectRatioAlign.xMidYMid,
+        meetOrSlice: SvgMeetOrSlice.meet,
+      ).computeMatrixInPlace(
+        const ui.Rect.fromLTWH(0, 0, 100, 100),
+        const ui.Size(200, 400),
+        matrix,
+      );
+      expect(matrix[0], closeTo(2.0, 1e-6));
+      expect(matrix[5], closeTo(2.0, 1e-6));
+      expect(matrix[12], closeTo(0.0, 1e-6));
+      expect(matrix[13], closeTo(100.0, 1e-6));
 
-        // 2. xMaxYMax slice
-        const SvgPreserveAspectRatio(
-          align: SvgAspectRatioAlign.xMaxYMax,
-          meetOrSlice: SvgMeetOrSlice.slice,
-        ).computeMatrixInPlace(
-          const ui.Rect.fromLTWH(10, 20, 100, 100),
-          const ui.Size(200, 400),
-          matrix,
-        );
-        // scale = max(2, 4) = 4.0, spareX = 200 - 400 = -200, spareY = 0
-        expect(matrix[0], closeTo(4.0, 1e-6));
-        expect(matrix[5], closeTo(4.0, 1e-6));
-        expect(matrix[12], closeTo(-200.0 - 10.0 * 4.0, 1e-6));
-        expect(matrix[13], closeTo(0.0 - 20.0 * 4.0, 1e-6));
+      // 2. xMaxYMax slice
+      const SvgPreserveAspectRatio(
+        align: SvgAspectRatioAlign.xMaxYMax,
+        meetOrSlice: SvgMeetOrSlice.slice,
+      ).computeMatrixInPlace(
+        const ui.Rect.fromLTWH(10, 20, 100, 100),
+        const ui.Size(200, 400),
+        matrix,
+      );
+      // scale = max(2, 4) = 4.0, spareX = 200 - 400 = -200, spareY = 0
+      expect(matrix[0], closeTo(4.0, 1e-6));
+      expect(matrix[5], closeTo(4.0, 1e-6));
+      expect(matrix[12], closeTo(-200.0 - 10.0 * 4.0, 1e-6));
+      expect(matrix[13], closeTo(0.0 - 20.0 * 4.0, 1e-6));
 
-        // 3. none (non-uniform stretch)
-        const SvgPreserveAspectRatio(
-          align: SvgAspectRatioAlign.none,
-        ).computeMatrixInPlace(
-          const ui.Rect.fromLTWH(0, 0, 100, 50),
-          const ui.Size(300, 200),
-          matrix,
-        );
-        expect(matrix[0], closeTo(3.0, 1e-6));
-        expect(matrix[5], closeTo(4.0, 1e-6));
-      },
-    );
+      // 3. none (non-uniform stretch)
+      const SvgPreserveAspectRatio(align: SvgAspectRatioAlign.none)
+          .computeMatrixInPlace(
+            const ui.Rect.fromLTWH(0, 0, 100, 50),
+            const ui.Size(300, 200),
+            matrix,
+          );
+      expect(matrix[0], closeTo(3.0, 1e-6));
+      expect(matrix[5], closeTo(4.0, 1e-6));
+    });
 
-    test(
-      'supports all geometry primitives, defs, use with style override, clipPath, and fill-rule',
-      () {
-        const svg = '''
+    test('supports all geometry primitives, defs, use with style override, clipPath, and fill-rule', () {
+      const svg = '''
 <svg viewBox="0 0 200 200" width="100%" height="100%">
   <defs>
     <circle id="templateDot" cx="0" cy="0" r="8" />
@@ -150,63 +144,57 @@ void main() {
   </g>
 </svg>
 ''';
-        final scene = SvgParser.compile(svg);
-        final doc = scene.document;
+      final scene = SvgParser.compile(svg);
+      final doc = scene.document;
 
-        expect(doc.intrinsicSize, equals(const ui.Size(200, 200)));
-        expect(doc.clipPathsById['halfClip'], isNotNull);
-        expect(doc.elementsById['r1'], isA<SvgRectNode>());
-        expect(doc.elementsById['c1'], isA<SvgCircleNode>());
-        expect(doc.elementsById['e1'], isA<SvgEllipseNode>());
-        expect(doc.elementsById['l1'], isA<SvgLineNode>());
-        expect(doc.elementsById['pl1'], isA<SvgPolyNode>());
-        expect(doc.elementsById['pg1'], isA<SvgPolyNode>());
+      expect(doc.intrinsicSize, equals(const ui.Size(200, 200)));
+      expect(doc.clipPathsById['halfClip'], isNotNull);
+      expect(doc.elementsById['r1'], isA<SvgRectNode>());
+      expect(doc.elementsById['c1'], isA<SvgCircleNode>());
+      expect(doc.elementsById['e1'], isA<SvgEllipseNode>());
+      expect(doc.elementsById['l1'], isA<SvgLineNode>());
+      expect(doc.elementsById['pl1'], isA<SvgPolyNode>());
+      expect(doc.elementsById['pg1'], isA<SvgPolyNode>());
 
-        final pg1 = doc.elementsById['pg1'] as SvgPolyNode;
-        expect(pg1.style.currentFillRule, equals(ui.PathFillType.evenOdd));
+      final pg1 = doc.elementsById['pg1'] as SvgPolyNode;
+      expect(pg1.style.currentFillRule, equals(ui.PathFillType.evenOdd));
 
-        final u1 = doc.elementsById['u1'] as SvgUseNode;
-        scene.timeline.seekMicroseconds(500000);
-        expect(u1.currentX, closeTo(55.0, 1e-4));
+      final u1 = doc.elementsById['u1'] as SvgUseNode;
+      scene.timeline.seekMicroseconds(500000);
+      expect(u1.currentX, closeTo(55.0, 1e-4));
 
-        final recorder = ui.PictureRecorder();
-        final canvas = ui.Canvas(recorder);
-        doc.paint(canvas, const ui.Size(200, 200));
-        recorder.endRecording().dispose();
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+      doc.paint(canvas, const ui.Size(200, 200));
+      recorder.endRecording().dispose();
 
-        scene.dispose();
-      },
-    );
+      scene.dispose();
+    });
 
-    test(
-      'parses all SVG path commands (M/m, L/l, H/h, V/v, C/c, S/s, Q/q, T/t, A/a, Z/z) and scientific notation',
-      () {
-        const d =
-            'M 10,10 l 20,0 H 50 h 10 V 30 v 10 '
-            'C 60,50 70,50 80,40 S 100,30 110,40 '
-            'c 5,5 10,5 15,0 s 10,-5 15,0 '
-            'Q 150,20 160,40 T 180,40 '
-            'q 5,-10 10,0 t 10,0 '
-            'A 25,25 -30 01220,20 a 1e1,1.5e1 0 1010,10 z';
-        final parsed = SvgPathParser.parse(d);
-        expect(parsed.commands.first, equals(SvgPathCmdType.moveTo));
-        expect(parsed.commands.last, equals(SvgPathCmdType.close));
-        expect(parsed.commands.contains(SvgPathCmdType.cubicTo), isTrue);
-        expect(parsed.commands.contains(SvgPathCmdType.quadTo), isTrue);
-        expect(parsed.commands.contains(SvgPathCmdType.arcTo), isTrue);
+    test('parses all SVG path commands (M/m, L/l, H/h, V/v, C/c, S/s, Q/q, T/t, A/a, Z/z) and scientific notation', () {
+      const d =
+          'M 10,10 l 20,0 H 50 h 10 V 30 v 10 '
+          'C 60,50 70,50 80,40 S 100,30 110,40 '
+          'c 5,5 10,5 15,0 s 10,-5 15,0 '
+          'Q 150,20 160,40 T 180,40 '
+          'q 5,-10 10,0 t 10,0 '
+          'A 25,25 -30 01220,20 a 1e1,1.5e1 0 1010,10 z';
+      final parsed = SvgPathParser.parse(d);
+      expect(parsed.commands.first, equals(SvgPathCmdType.moveTo));
+      expect(parsed.commands.last, equals(SvgPathCmdType.close));
+      expect(parsed.commands.contains(SvgPathCmdType.cubicTo), isTrue);
+      expect(parsed.commands.contains(SvgPathCmdType.quadTo), isTrue);
+      expect(parsed.commands.contains(SvgPathCmdType.arcTo), isTrue);
 
-        final path = ui.Path();
-        parsed.buildUiPath(path);
-        expect(path.getBounds().width, greaterThan(100.0));
-      },
-    );
+      final path = ui.Path();
+      parsed.buildUiPath(path);
+      expect(path.getBounds().width, greaterThan(100.0));
+    });
   });
 
   group('Phase 2: Gradients, Timeline Timing & SMIL Core Interpolators', () {
-    test(
-      'supports linearGradient and radialGradient template inheritance, focal points, and animated coordinates',
-      () {
-        const svg = '''
+    test('supports linearGradient and radialGradient template inheritance, focal points, and animated coordinates', () {
+      const svg = '''
 <svg viewBox="0 0 100 100">
   <defs>
     <linearGradient id="baseStops">
@@ -224,30 +212,27 @@ void main() {
   <circle id="c" cx="50" cy="50" r="45" fill="url(#radGrad)" />
 </svg>
 ''';
-        final scene = SvgParser.compile(svg);
-        final radGrad =
-            scene.document.gradientsById['radGrad'] as SvgRadialGradientNode;
-        final c = scene.document.elementsById['c']!;
+      final scene = SvgParser.compile(svg);
+      final radGrad =
+          scene.document.gradientsById['radGrad'] as SvgRadialGradientNode;
+      final c = scene.document.elementsById['c']!;
 
-        expect(radGrad.stops.length, equals(2));
-        expect(radGrad.isAnimated, isTrue);
-        expect(c.isAnimated, isTrue);
+      expect(radGrad.stops.length, equals(2));
+      expect(radGrad.isAnimated, isTrue);
+      expect(c.isAnimated, isTrue);
 
-        scene.timeline.seekMicroseconds(500000);
-        expect(radGrad.currentR, closeTo(40.0, 1e-4));
-        expect(radGrad.currentFx, closeTo(50.0, 1e-4));
-        expect(radGrad.stops.first.currentOpacity, closeTo(0.75, 1e-4));
+      scene.timeline.seekMicroseconds(500000);
+      expect(radGrad.currentR, closeTo(40.0, 1e-4));
+      expect(radGrad.currentFx, closeTo(50.0, 1e-4));
+      expect(radGrad.stops.first.currentOpacity, closeTo(0.75, 1e-4));
 
-        final shader = radGrad.createShader(c.cachedBounds);
-        expect(shader, isNotNull);
-        scene.dispose();
-      },
-    );
+      final shader = radGrad.createShader(c.cachedBounds);
+      expect(shader, isNotNull);
+      scene.dispose();
+    });
 
-    test(
-      'handles calcMode discrete, linear, paced, spline, multiple begin offsets, end, and fill remove vs freeze',
-      () {
-        const svg = '''
+    test('handles calcMode discrete, linear, paced, spline, multiple begin offsets, end, and fill remove vs freeze', () {
+      const svg = '''
 <svg viewBox="0 0 100 100">
   <rect id="discreteRect" x="0" y="0" width="20" height="20">
     <animate attributeName="x" values="10;50;90" keyTimes="0;0.5;1"
@@ -263,46 +248,42 @@ void main() {
   </rect>
 </svg>
 ''';
-        final scene = SvgParser.compile(svg);
-        final discreteRect =
-            scene.document.elementsById['discreteRect'] as SvgRectNode;
-        final pacedRect =
-            scene.document.elementsById['pacedRect'] as SvgRectNode;
-        final multiBeginRect =
-            scene.document.elementsById['multiBeginRect'] as SvgRectNode;
+      final scene = SvgParser.compile(svg);
+      final discreteRect =
+          scene.document.elementsById['discreteRect'] as SvgRectNode;
+      final pacedRect = scene.document.elementsById['pacedRect'] as SvgRectNode;
+      final multiBeginRect =
+          scene.document.elementsById['multiBeginRect'] as SvgRectNode;
 
-        // At t = 0.25s: discrete is at first value (10), paced is at 25% of total distance 100 -> 25.0
-        // multiBeginRect has not started yet (begin=0.5s) -> stays at baseX = 5
-        scene.timeline.seekMicroseconds(250000);
-        expect(discreteRect.currentX, closeTo(10.0, 1e-4));
-        expect(pacedRect.currentX, closeTo(25.0, 1e-4));
-        expect(multiBeginRect.currentX, closeTo(5.0, 1e-4));
+      // At t = 0.25s: discrete is at first value (10), paced is at 25% of total distance 100 -> 25.0
+      // multiBeginRect has not started yet (begin=0.5s) -> stays at baseX = 5
+      scene.timeline.seekMicroseconds(250000);
+      expect(discreteRect.currentX, closeTo(10.0, 1e-4));
+      expect(pacedRect.currentX, closeTo(25.0, 1e-4));
+      expect(multiBeginRect.currentX, closeTo(5.0, 1e-4));
 
-        // At t = 0.6s: discrete is at second value (50), multiBeginRect is 0.1s into [0.5s, 1.5s] -> 15.0
-        scene.timeline.seekMicroseconds(600000);
-        expect(discreteRect.currentX, closeTo(50.0, 1e-4));
-        expect(multiBeginRect.currentX, closeTo(15.0, 1e-4));
+      // At t = 0.6s: discrete is at second value (50), multiBeginRect is 0.1s into [0.5s, 1.5s] -> 15.0
+      scene.timeline.seekMicroseconds(600000);
+      expect(discreteRect.currentX, closeTo(50.0, 1e-4));
+      expect(multiBeginRect.currentX, closeTo(15.0, 1e-4));
 
-        // At t = 1.6s: multiBeginRect first run ended and fill="remove" -> back to baseX = 5.0
-        scene.timeline.seekMicroseconds(1600000);
-        expect(multiBeginRect.currentX, closeTo(5.0, 1e-4));
+      // At t = 1.6s: multiBeginRect first run ended and fill="remove" -> back to baseX = 5.0
+      scene.timeline.seekMicroseconds(1600000);
+      expect(multiBeginRect.currentX, closeTo(5.0, 1e-4));
 
-        // At t = 2.25s: multiBeginRect second run [2.0s..2.5s] is at 0.25s -> 22.5
-        scene.timeline.seekMicroseconds(2250000);
-        expect(multiBeginRect.currentX, closeTo(22.5, 1e-4));
+      // At t = 2.25s: multiBeginRect second run [2.0s..2.5s] is at 0.25s -> 22.5
+      scene.timeline.seekMicroseconds(2250000);
+      expect(multiBeginRect.currentX, closeTo(22.5, 1e-4));
 
-        // At t = 2.6s: past explicit end="2.5s" with fill="remove" -> back to 5.0
-        scene.timeline.seekMicroseconds(2600000);
-        expect(multiBeginRect.currentX, closeTo(5.0, 1e-4));
+      // At t = 2.6s: past explicit end="2.5s" with fill="remove" -> back to 5.0
+      scene.timeline.seekMicroseconds(2600000);
+      expect(multiBeginRect.currentX, closeTo(5.0, 1e-4));
 
-        scene.dispose();
-      },
-    );
+      scene.dispose();
+    });
 
-    test(
-      'supports skewX, skewY, by-animations, and parent-to-child animated style inheritance',
-      () {
-        const svg = '''
+    test('supports skewX, skewY, by-animations, and parent-to-child animated style inheritance', () {
+      const svg = '''
 <svg viewBox="0 0 100 100">
   <g id="parentGroup" fill="#FF0000" stroke-width="2">
     <animate attributeName="fill" to="#00FF00" dur="1s" fill="freeze" />
@@ -314,41 +295,40 @@ void main() {
   </g>
 </svg>
 ''';
-        final scene = SvgParser.compile(svg);
-        final parentGroup = scene.document.elementsById['parentGroup']!;
-        final childRect = scene.document.elementsById['childRect']!;
+      final scene = SvgParser.compile(svg);
+      final parentGroup = scene.document.elementsById['parentGroup']!;
+      final childRect = scene.document.elementsById['childRect']!;
 
-        scene.timeline.seekMicroseconds(1000000);
-        expect(
-          parentGroup.style.currentFillColor.toARGB32(),
-          equals(const ui.Color(0xFF00FF00).toARGB32()),
-        );
-        expect(parentGroup.style.currentStrokeWidth, closeTo(8.0, 1e-4));
+      scene.timeline.seekMicroseconds(1000000);
+      expect(
+        parentGroup.style.currentFillColor.toARGB32(),
+        equals(const ui.Color(0xFF00FF00).toARGB32()),
+      );
+      expect(parentGroup.style.currentStrokeWidth, closeTo(8.0, 1e-4));
 
-        // Paint to trigger parent-to-child animated style synchronization
-        final recorder = ui.PictureRecorder();
-        final canvas = ui.Canvas(recorder);
-        scene.document.paint(canvas, const ui.Size(100, 100));
-        recorder.endRecording().dispose();
+      // Paint to trigger parent-to-child animated style synchronization
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+      scene.document.paint(canvas, const ui.Size(100, 100));
+      recorder.endRecording().dispose();
 
-        expect(
-          childRect.style.currentFillColor.toARGB32(),
-          equals(const ui.Color(0xFF00FF00).toARGB32()),
-        );
-        expect(childRect.style.currentStrokeWidth, closeTo(8.0, 1e-4));
-        // tan(45 deg) = 1.0 in skewX and skewY
-        expect(childRect.transformMatrix[4], closeTo(1.0, 1e-4));
-        expect(childRect.transformMatrix[1], closeTo(1.0, 1e-4));
+      expect(
+        childRect.style.currentFillColor.toARGB32(),
+        equals(const ui.Color(0xFF00FF00).toARGB32()),
+      );
+      expect(childRect.style.currentStrokeWidth, closeTo(8.0, 1e-4));
+      // tan(45 deg) = 1.0 in skewX and skewY
+      expect(childRect.transformMatrix[4], closeTo(1.0, 1e-4));
+      expect(childRect.transformMatrix[1], closeTo(1.0, 1e-4));
 
-        scene.dispose();
-      },
-    );
+      scene.dispose();
+    });
   });
 
-  group('Phase 3: CSS Selectors, @keyframes, Blur Filter & transform-origin', () {
-    test(
-      'enforces CSS selector specificity (#id > .class > tag) and inline style override',
-      () {
+  group(
+    'Phase 3: CSS Selectors, @keyframes, Blur Filter & transform-origin',
+    () {
+      test('enforces CSS selector specificity (#id > .class > tag) and inline style override', () {
         const svg = '''
 <svg viewBox="0 0 100 100">
   <style>
@@ -368,12 +348,9 @@ void main() {
         expect(special.style.currentStrokeWidth, closeTo(4.0, 1e-5));
         expect(special.style.currentOpacity, closeTo(0.75, 1e-5));
         scene.dispose();
-      },
-    );
+      });
 
-    test(
-      'compiles @keyframes with alternate direction, backwards/both fill-mode, blur filter, and keyword transform-origin',
-      () {
+      test('compiles @keyframes with alternate direction, backwards/both fill-mode, blur filter, and keyword transform-origin', () {
         const svg = '''
 <svg viewBox="0 0 200 200">
   <style>
@@ -424,17 +401,13 @@ void main() {
         expect(card.transformMatrix[0], closeTo(0.5, 1e-4));
 
         scene.dispose();
-      },
-    );
-  });
+      });
+    },
+  );
 
-  group(
-    'Phase 4: Stroke Dash Animation, <animateMotion>, Path Morphing & Real Assets',
-    () {
-      test(
-        'normalizes odd-length stroke-dasharray keyframes via LCM and wraps negative dashoffset',
-        () {
-          const svg = '''
+  group('Phase 4: Stroke Dash Animation, <animateMotion>, Path Morphing & Real Assets', () {
+    test('normalizes odd-length stroke-dasharray keyframes via LCM and wraps negative dashoffset', () {
+      const svg = '''
 <svg viewBox="0 0 100 100">
   <line id="dashLine" x1="0" y1="50" x2="100" y2="50"
     stroke="#00FF00" stroke-width="4" pathLength="50"
@@ -443,34 +416,27 @@ void main() {
   </line>
 </svg>
 ''';
-          final scene = SvgParser.compile(svg);
-          final dashLine =
-              scene.document.elementsById['dashLine'] as SvgLineNode;
+      final scene = SvgParser.compile(svg);
+      final dashLine = scene.document.elementsById['dashLine'] as SvgLineNode;
 
-          // "5" (odd len 1 -> even 2) and "10 20 30" (odd len 3 -> even 6) -> LCM length is 6
-          scene.timeline.seekMicroseconds(500000);
-          final dash = dashLine.style.currentStrokeDasharray!;
-          expect(dash.length, equals(6));
-          expect(dash[0], closeTo(7.5, 1e-4)); // lerp(5, 10, 0.5)
-          expect(dash[1], closeTo(12.5, 1e-4)); // lerp(5, 20, 0.5)
-          expect(dash[2], closeTo(17.5, 1e-4)); // lerp(5, 30, 0.5)
+      // "5" (odd len 1 -> even 2) and "10 20 30" (odd len 3 -> even 6) -> LCM length is 6
+      scene.timeline.seekMicroseconds(500000);
+      final dash = dashLine.style.currentStrokeDasharray!;
+      expect(dash.length, equals(6));
+      expect(dash[0], closeTo(7.5, 1e-4)); // lerp(5, 10, 0.5)
+      expect(dash[1], closeTo(12.5, 1e-4)); // lerp(5, 20, 0.5)
+      expect(dash[2], closeTo(17.5, 1e-4)); // lerp(5, 30, 0.5)
 
-          final recorder = ui.PictureRecorder();
-          final canvas = ui.Canvas(recorder);
-          scene.document.paint(canvas, const ui.Size(100, 100));
-          recorder.endRecording().dispose();
-          expect(
-            dashLine.dashedStrokePath.computeMetrics().isNotEmpty,
-            isTrue,
-          );
-          scene.dispose();
-        },
-      );
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+      scene.document.paint(canvas, const ui.Size(100, 100));
+      recorder.endRecording().dispose();
+      expect(dashLine.dashedStrokePath.computeMetrics().isNotEmpty, isTrue);
+      scene.dispose();
+    });
 
-      test(
-        'supports <animateMotion> with inline path, values/from/to, auto-reverse, and keyPoints',
-        () {
-          const svg = '''
+    test('supports <animateMotion> with inline path, values/from/to, auto-reverse, and keyPoints', () {
+      const svg = '''
 <svg viewBox="0 0 200 200">
   <circle id="runner1" r="5" fill="#FF0000">
     <animateMotion path="M 0 0 L 100 0" dur="1s" rotate="auto-reverse"
@@ -481,100 +447,90 @@ void main() {
   </circle>
 </svg>
 ''';
-          final scene = SvgParser.compile(svg);
-          final runner1 = scene.document.elementsById['runner1']!;
-          final runner2 = scene.document.elementsById['runner2']!;
+      final scene = SvgParser.compile(svg);
+      final runner1 = scene.document.elementsById['runner1']!;
+      final runner2 = scene.document.elementsById['runner2']!;
 
-          // At t = 0.25s: runner1 has keyPoints="1;0" -> at 75% of (0,0)->(100,0) = (75, 0)
-          // with auto-reverse tangent (180 deg -> cos = -1)
-          scene.timeline.seekMicroseconds(250000);
-          expect(runner1.motionMatrix[12], closeTo(75.0, 1e-3));
-          expect(runner1.motionMatrix[0], closeTo(-1.0, 1e-3));
+      // At t = 0.25s: runner1 has keyPoints="1;0" -> at 75% of (0,0)->(100,0) = (75, 0)
+      // with auto-reverse tangent (180 deg -> cos = -1)
+      scene.timeline.seekMicroseconds(250000);
+      expect(runner1.motionMatrix[12], closeTo(75.0, 1e-3));
+      expect(runner1.motionMatrix[0], closeTo(-1.0, 1e-3));
 
-          // runner2 at t = 0.5s -> halfway between (10, 20) and (90, 100) = (50, 60)
-          scene.timeline.seekMicroseconds(500000);
-          expect(runner2.motionMatrix[12], closeTo(50.0, 1e-3));
-          expect(runner2.motionMatrix[13], closeTo(60.0, 1e-3));
+      // runner2 at t = 0.5s -> halfway between (10, 20) and (90, 100) = (50, 60)
+      scene.timeline.seekMicroseconds(500000);
+      expect(runner2.motionMatrix[12], closeTo(50.0, 1e-3));
+      expect(runner2.motionMatrix[13], closeTo(60.0, 1e-3));
 
-          scene.dispose();
-        },
+      scene.dispose();
+    });
+
+    test('compiles and animates example/assets/svgs/elephant.svg, solar_orbit.svg, and neon_equalizer.svg smoothly', () {
+      final elephantXml = File('example/assets/svgs/elephant.svg')
+          .readAsStringSync();
+      final elephantScene = SvgParser.compile(elephantXml);
+
+      expect(
+        elephantScene.document.intrinsicSize,
+        equals(const ui.Size(1080, 1080)),
+      );
+      expect(elephantScene.timeline.hasAnimations, isTrue);
+      expect(
+        elephantScene.timeline.cycleDuration,
+        equals(const Duration(seconds: 2)),
       );
 
-      test(
-        'compiles and animates example/assets/svgs/elephant.svg, solar_orbit.svg, and neon_equalizer.svg smoothly',
-        () {
-          final elephantXml = File(
-            'example/assets/svgs/elephant.svg',
-          ).readAsStringSync();
-          final elephantScene = SvgParser.compile(elephantXml);
+      final sceneScale = elephantScene.document.elementsById['scene-scale']!;
+      final rotatingCard =
+          elephantScene.document.elementsById['rotating-card']!;
+      final elephantMotion =
+          elephantScene.document.elementsById['elephant-motion']!;
 
-          expect(
-            elephantScene.document.intrinsicSize,
-            equals(const ui.Size(1080, 1080)),
-          );
-          expect(elephantScene.timeline.hasAnimations, isTrue);
-          expect(
-            elephantScene.timeline.cycleDuration,
-            equals(const Duration(seconds: 2)),
-          );
+      // Sample across multiple timestamps in the 2-second cycle and paint each frame
+      for (final us in [0, 416200, 1000000, 1415200, 2000000]) {
+        elephantScene.timeline.seekMicroseconds(us);
+        final recorder = ui.PictureRecorder();
+        final canvas = ui.Canvas(recorder);
+        elephantScene.document.paint(canvas, const ui.Size(300, 300));
+        recorder.endRecording().dispose();
+      }
 
-          final sceneScale = elephantScene.document.elementsById['scene-scale']!;
-          final rotatingCard =
-              elephantScene.document.elementsById['rotating-card']!;
-          final elephantMotion =
-              elephantScene.document.elementsById['elephant-motion']!;
+      // At t = 1.0s (50% of 2s): scene-scale is 0.9 around (540, 540), rotating-card is at 45 deg
+      elephantScene.timeline.seekMicroseconds(1000000);
+      expect(sceneScale.transformMatrix[0], closeTo(0.9, 1e-3));
+      expect(SvgMatrixMath.isIdentity(rotatingCard.transformMatrix), isFalse);
 
-          // Sample across multiple timestamps in the 2-second cycle and paint each frame
-          for (final us in [0, 416200, 1000000, 1415200, 2000000]) {
-            elephantScene.timeline.seekMicroseconds(us);
-            final recorder = ui.PictureRecorder();
-            final canvas = ui.Canvas(recorder);
-            elephantScene.document.paint(canvas, const ui.Size(300, 300));
-            recorder.endRecording().dispose();
-          }
+      // At t = 0.4162s (keyTime 0.2081): elephant-motion translates Y by 44
+      elephantScene.timeline.seekMicroseconds(416200);
+      expect(elephantMotion.transformMatrix[13], closeTo(44.0, 0.5));
 
-          // At t = 1.0s (50% of 2s): scene-scale is 0.9 around (540, 540), rotating-card is at 45 deg
-          elephantScene.timeline.seekMicroseconds(1000000);
-          expect(sceneScale.transformMatrix[0], closeTo(0.9, 1e-3));
-          expect(
-            SvgMatrixMath.isIdentity(rotatingCard.transformMatrix),
-            isFalse,
-          );
+      elephantScene.dispose();
 
-          // At t = 0.4162s (keyTime 0.2081): elephant-motion translates Y by 44
-          elephantScene.timeline.seekMicroseconds(416200);
-          expect(elephantMotion.transformMatrix[13], closeTo(44.0, 0.5));
-
-          elephantScene.dispose();
-
-          // Also verify solar_orbit.svg and neon_equalizer.svg compile and paint cleanly
-          for (final path in [
-            'example/assets/svgs/solar_orbit.svg',
-            'example/assets/svgs/neon_equalizer.svg',
-          ]) {
-            final xml = File(path).readAsStringSync();
-            final scene = SvgParser.compile(xml);
-            expect(scene.timeline.hasAnimations, isTrue);
-            scene.timeline.seekMicroseconds(600000);
-            final recorder = ui.PictureRecorder();
-            final canvas = ui.Canvas(recorder);
-            scene.document.paint(canvas, const ui.Size(260, 260));
-            recorder.endRecording().dispose();
-            scene.dispose();
-          }
-        },
-      );
-    },
-  );
+      // Also verify solar_orbit.svg and neon_equalizer.svg compile and paint cleanly
+      for (final path in [
+        'example/assets/svgs/solar_orbit.svg',
+        'example/assets/svgs/neon_equalizer.svg',
+      ]) {
+        final xml = File(path).readAsStringSync();
+        final scene = SvgParser.compile(xml);
+        expect(scene.timeline.hasAnimations, isTrue);
+        scene.timeline.seekMicroseconds(600000);
+        final recorder = ui.PictureRecorder();
+        final canvas = ui.Canvas(recorder);
+        scene.document.paint(canvas, const ui.Size(260, 260));
+        recorder.endRecording().dispose();
+        scene.dispose();
+      }
+    });
+  });
 
   group('Phase 5: AnimatedSvgController & AnimatedSvgPicture Widget (.string, .asset, .compiled)', () {
     testWidgets(
       'renders AnimatedSvgPicture.string, .asset, and .compiled and responds to controller commands',
       (tester) async {
         final controller = AnimatedSvgController(autoPlay: false);
-        final elephantXml = File(
-          'example/assets/svgs/elephant.svg',
-        ).readAsStringSync();
+        final elephantXml = File('example/assets/svgs/elephant.svg')
+            .readAsStringSync();
         final bundle = _MemorySvgAssetBundle({
           'assets/svgs/elephant.svg': elephantXml,
         });

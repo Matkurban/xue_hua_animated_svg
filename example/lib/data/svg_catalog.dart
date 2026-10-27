@@ -91,8 +91,7 @@ abstract final class SvgCatalog {
       subtitle: 'AnimatedSvgPicture.network：从 GitHub raw 拉取 elephant.svg',
       tags: ['network', 'http'],
       kind: SvgCatalogSourceKind.network,
-      networkUrl:
-          'https://raw.githubusercontent.com/Matkurban/xue_hua_animated_svg/main/example/assets/svgs/elephant.svg',
+      networkUrl: 'https://raw.githubusercontent.com/Matkurban/xue_hua_animated_svg/main/example/assets/svgs/elephant.svg',
       iconName: 'cloud_download',
     ),
     const SvgCatalogItem(
