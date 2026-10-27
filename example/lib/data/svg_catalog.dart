@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart' show BoxFit;
 import 'package:xue_hua_animated_svg/xue_hua_animated_svg.dart';
 
 /// How a catalog entry loads its SVG content.
@@ -24,6 +25,7 @@ class SvgCatalogItem {
     this.svgString,
     this.networkUrl,
     this.iconName = 'auto_awesome',
+    this.initialFit = BoxFit.contain,
   });
 
   final String id;
@@ -37,11 +39,34 @@ class SvgCatalogItem {
 
   /// Logical icon key used by the home list (mapped to Material Icons).
   final String iconName;
+
+  /// Initial [BoxFit] mode selected when opening [PreviewPage].
+  final BoxFit initialFit;
 }
 
 /// Curated showcase catalog (Chinese UI copy).
 abstract final class SvgCatalog {
   static final List<SvgCatalogItem> items = [
+    const SvgCatalogItem(
+      id: 'alignment_badge',
+      title: '九宫格对齐测试 (110×70)',
+      subtitle: '小尺寸徽章 + scaleDown：同时支持靠上/居中/靠下与左/中/右全方向对齐',
+      tags: ['alignment', 'scaleDown', '9-grid'],
+      kind: SvgCatalogSourceKind.asset,
+      assetPath: 'assets/svgs/alignment_badge.svg',
+      iconName: 'grid_view',
+      initialFit: BoxFit.scaleDown,
+    ),
+    const SvgCatalogItem(
+      id: 'alignment_banner',
+      title: '垂直对齐横幅 (280×64)',
+      subtitle: '宽幅胶囊横幅 + contain：在 320×200 容器中测试靠上居中(TC)/居中(C)/靠下居中(BC)',
+      tags: ['alignment', 'contain', 'vertical'],
+      kind: SvgCatalogSourceKind.asset,
+      assetPath: 'assets/svgs/alignment_banner.svg',
+      iconName: 'vertical_align_center',
+      initialFit: BoxFit.contain,
+    ),
     const SvgCatalogItem(
       id: 'elephant',
       title: '大象描边',

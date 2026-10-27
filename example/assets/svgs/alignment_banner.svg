@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" width="280" height="64">
+  <!-- 宽幅胶囊横幅 (280x64, 宽高比 4.375:1)：在 320x200 预览框中使用 BoxFit.contain 时留有充足垂直空间，专门用于测试靠上居中(TC)/居中(C)/靠下居中(BC)，切换为 scaleDown 且尺寸更小时可同时测试九宫格对齐 -->
+  <defs>
+    <linearGradient id="bannerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06B6D4">
+        <animate attributeName="stop-color" values="#06B6D4;#8B5CF6;#EC4899;#06B6D4" dur="3.6s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" stop-color="#8B5CF6">
+        <animate attributeName="stop-color" values="#8B5CF6;#EC4899;#06B6D4;#8B5CF6" dur="3.6s" repeatCount="indefinite" />
+      </stop>
+    </linearGradient>
+  </defs>
+
+  <!-- 外框胶囊底座 -->
+  <rect x="2" y="2" width="276" height="60" rx="16" ry="16"
+    fill="#0F172A" stroke="url(#bannerGrad)" stroke-width="3" />
+
+  <!-- 左侧脉冲定位靶心 -->
+  <g transform="translate(36, 32)">
+    <circle cx="0" cy="0" r="16" fill="#06B6D4" fill-opacity="0.22">
+      <animate attributeName="r" values="10;18;10" dur="1.6s" repeatCount="indefinite" />
+      <animate attributeName="fill-opacity" values="0.35;0.1;0.35" dur="1.6s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="0" cy="0" r="6" fill="#22D3EE" />
+    <line x1="-12" y1="0" x2="12" y2="0" stroke="#E0F2FE" stroke-width="1.5" />
+    <line x1="0" y1="-12" x2="0" y2="12" stroke="#E0F2FE" stroke-width="1.5" />
+  </g>
+
+  <!-- 中间动态进度扫描条 -->
+  <rect x="70" y="18" width="140" height="10" rx="5" fill="#1E293B" />
+  <rect x="70" y="18" width="60" height="10" rx="5" fill="url(#bannerGrad)">
+    <animate attributeName="width" values="28;140;28" dur="2.2s"
+      calcMode="spline" keyTimes="0;0.5;1"
+      keySplines="0.42 0 0.58 1;0.42 0 0.58 1" repeatCount="indefinite" />
+  </rect>
+
+  <!-- 底部三枚呼吸指示灯 -->
+  <circle cx="82" cy="42" r="5" fill="#22D3EE">
+    <animate attributeName="opacity" values="0.3;1;0.3" dur="1.2s" begin="0s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="102" cy="42" r="5" fill="#A855F7">
+    <animate attributeName="opacity" values="0.3;1;0.3" dur="1.2s" begin="0.4s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="122" cy="42" r="5" fill="#EC4899">
+    <animate attributeName="opacity" values="0.3;1;0.3" dur="1.2s" begin="0.8s" repeatCount="indefinite" />
+  </circle>
+
+  <!-- 右侧上下双向箭头指示器（提示垂直对齐） -->
+  <g transform="translate(244, 32)">
+    <g>
+      <animateTransform attributeName="transform" type="translate"
+        values="0 -4; 0 4; 0 -4" dur="1.4s" repeatCount="indefinite" />
+      <polygon points="0,-16 -8,-6 8,-6" fill="#22D3EE" />
+      <polygon points="0,16 -8,6 8,6" fill="#EC4899" />
+      <rect x="-2.5" y="-6" width="5" height="12" rx="2" fill="#F8FAFC" />
+    </g>
+  </g>
+</svg>

@@ -26,6 +26,7 @@ class _PreviewPageState extends State<PreviewPage> {
   @override
   void initState() {
     super.initState();
+    _fit = widget.item.initialFit;
     _controller = AnimatedSvgController(autoPlay: true, speed: 1.0);
   }
 
@@ -104,7 +105,9 @@ class _PreviewPageState extends State<PreviewPage> {
                   BoxFit.cover,
                   BoxFit.fill,
                   BoxFit.fitWidth,
+                  BoxFit.fitHeight,
                   BoxFit.scaleDown,
+                  BoxFit.none,
                 ])
                   ChoiceChip(
                     label: Text(fit.name),

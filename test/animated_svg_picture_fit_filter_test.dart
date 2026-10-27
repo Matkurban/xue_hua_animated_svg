@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
@@ -247,7 +248,13 @@ void main() {
 
     for (final alignment in const [
       Alignment.topLeft,
+      Alignment.topCenter,
+      Alignment.topRight,
+      Alignment.centerLeft,
       Alignment.center,
+      Alignment.centerRight,
+      Alignment.bottomLeft,
+      Alignment.bottomCenter,
       Alignment.bottomRight,
       Alignment(-1.0, 0.0),
     ]) {
@@ -311,18 +318,48 @@ void main() {
   });
 
   test(
-    'AnimatedSvgPainter alignment topLeft shifts destination for contain',
-    () {
-      final scene = SvgParser.compile(_squareSvg);
+    'alignment_banner.svg (280x64) shifts vertically for topCenter, center, and bottomCenter under BoxFit.contain in 320x200',
+    () async {
+      final bannerXml = File(
+        'example/assets/svgs/alignment_banner.svg',
+      ).readAsStringSync();
+      final scene = SvgParser.compile(bannerXml);
       addTearDown(scene.dispose);
       final controller = AnimatedSvgController(autoPlay: false);
       addTearDown(controller.dispose);
 
+      expect(scene.document.intrinsicSize, const ui.Size(280, 64));
+
+      // Under BoxFit.contain in 320x200, destination height is 64 * (320 / 280) = 73.1428,
+      // leaving ~126.86px of vertical slack so topCenter, center, and bottomCenter place pixels at different Y bands.
       for (final alignment in const [
+        Alignment.topCenter,
         Alignment.center,
-        Alignment.topLeft,
-        Alignment.bottomRight,
+        Alignment.bottomCenter,
       ]) {
+        final fitted = applyBoxFit(
+          BoxFit.contain,
+          scene.document.intrinsicSize,
+          const ui.Size(320, 200),
+        );
+        final outRect = alignment.inscribe(
+          fitted.destination,
+          ui.Offset.zero & const ui.Size(320, 200),
+        );
+        if (alignment == Alignment.topCenter) {
+          expect(outRect.top, closeTo(0.0, 1e-4));
+        } else if (alignment == Alignment.center) {
+          expect(
+            outRect.top,
+            closeTo((200.0 - fitted.destination.height) * 0.5, 1e-4),
+          );
+        } else if (alignment == Alignment.bottomCenter) {
+          expect(
+            outRect.bottom,
+            closeTo(200.0, 1e-4),
+          );
+        }
+
         final painter = AnimatedSvgPainter(
           scene: scene,
           controller: controller,
@@ -331,7 +368,72 @@ void main() {
         );
         final recorder = ui.PictureRecorder();
         final canvas = ui.Canvas(recorder);
-        painter.paint(canvas, const ui.Size(200, 80));
+        painter.paint(canvas, const ui.Size(320, 200));
+        recorder.endRecording().dispose();
+      }
+    },
+  );
+
+  test(
+    'alignment_badge.svg (110x70) shifts in all 9 grid positions (both X and Y) under BoxFit.scaleDown in 320x200',
+    () {
+      final badgeXml = File(
+        'example/assets/svgs/alignment_badge.svg',
+      ).readAsStringSync();
+      final scene = SvgParser.compile(badgeXml);
+      addTearDown(scene.dispose);
+      final controller = AnimatedSvgController(autoPlay: false);
+      addTearDown(controller.dispose);
+
+      expect(scene.document.intrinsicSize, const ui.Size(110, 70));
+
+      final fitted = applyBoxFit(
+        BoxFit.scaleDown,
+        scene.document.intrinsicSize,
+        const ui.Size(320, 200),
+      );
+      expect(fitted.destination, const ui.Size(110, 70));
+
+      final topCenterRect = Alignment.topCenter.inscribe(
+        fitted.destination,
+        ui.Offset.zero & const ui.Size(320, 200),
+      );
+      final centerRect = Alignment.center.inscribe(
+        fitted.destination,
+        ui.Offset.zero & const ui.Size(320, 200),
+      );
+      final bottomCenterRect = Alignment.bottomCenter.inscribe(
+        fitted.destination,
+        ui.Offset.zero & const ui.Size(320, 200),
+      );
+
+      expect(topCenterRect.left, closeTo(105.0, 1e-4));
+      expect(topCenterRect.top, closeTo(0.0, 1e-4));
+      expect(centerRect.left, closeTo(105.0, 1e-4));
+      expect(centerRect.top, closeTo(65.0, 1e-4));
+      expect(bottomCenterRect.left, closeTo(105.0, 1e-4));
+      expect(bottomCenterRect.top, closeTo(130.0, 1e-4));
+
+      for (final alignment in const [
+        Alignment.topLeft,
+        Alignment.topCenter,
+        Alignment.topRight,
+        Alignment.centerLeft,
+        Alignment.center,
+        Alignment.centerRight,
+        Alignment.bottomLeft,
+        Alignment.bottomCenter,
+        Alignment.bottomRight,
+      ]) {
+        final painter = AnimatedSvgPainter(
+          scene: scene,
+          controller: controller,
+          fit: BoxFit.scaleDown,
+          alignment: alignment,
+        );
+        final recorder = ui.PictureRecorder();
+        final canvas = ui.Canvas(recorder);
+        painter.paint(canvas, const ui.Size(320, 200));
         recorder.endRecording().dispose();
       }
     },
