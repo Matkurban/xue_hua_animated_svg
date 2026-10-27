@@ -26,6 +26,10 @@ class HomePage extends StatelessWidget {
         return Icons.timeline;
       case 'stairs':
         return Icons.stairs;
+      case 'public':
+        return Icons.public;
+      case 'equalizer':
+        return Icons.equalizer;
       case 'auto_awesome':
       default:
         return Icons.auto_awesome;

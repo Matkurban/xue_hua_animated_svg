@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
+  <defs>
+    <radialGradient id="sunCore" cx="50%" cy="50%" r="50%" fx="35%" fy="35%">
+      <stop offset="0%" stop-color="#FFF3B0" />
+      <stop offset="55%" stop-color="#FF9F1C">
+        <animate attributeName="stop-color" values="#FF9F1C;#FF5400;#FF9F1C" dur="3s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" stop-color="#E71D36" stop-opacity="0" />
+      <animate attributeName="r" values="0.42;0.55;0.42" dur="2.5s" repeatCount="indefinite" />
+    </radialGradient>
+
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%" spreadMethod="reflect">
+      <stop offset="0%" stop-color="#00BBF9" />
+      <stop offset="100%" stop-color="#9B5DE5" />
+    </linearGradient>
+
+    <clipPath id="viewportClip">
+      <circle cx="150" cy="150" r="142" />
+    </clipPath>
+
+    <polygon id="starDef" points="0,-5 1.5,-1.5 5,0 1.5,1.5 0,5 -1.5,1.5 -5,0 -1.5,-1.5" />
+
+    <path id="ellipticalOrbit" d="M 150 55 A 110 95 0 1 1 149.9 55 Z" fill="none" />
+  </defs>
+
+  <g clip-path="url(#viewportClip)">
+    <!-- Static Starfield using <use> (cached into static Picture) -->
+    <g id="staticStarfield">
+      <rect x="0" y="0" width="300" height="300" fill="#070B19" />
+      <use href="#starDef" x="45" y="52" fill="#8ECAE6" opacity="0.7" />
+      <use href="#starDef" x="248" y="64" fill="#FFB703" opacity="0.8" />
+      <use href="#starDef" x="62" y="238" fill="#FFFFFF" opacity="0.6" />
+      <use href="#starDef" x="235" y="228" fill="#00F5D4" opacity="0.75" />
+    </g>
+
+    <!-- Dashed Orbit Track -->
+    <ellipse cx="150" cy="150" rx="110" ry="95"
+      fill="none" stroke="url(#ringGrad)" stroke-width="2"
+      pathLength="100" stroke-dasharray="6 4" stroke-dashoffset="0">
+      <animate attributeName="stroke-dashoffset" from="0" to="-100" dur="6s" repeatCount="indefinite" />
+    </ellipse>
+
+    <!-- Pulsing Sun -->
+    <circle id="sun" cx="150" cy="150" r="54" fill="url(#sunCore)" />
+
+    <!-- Orbiting Satellite with auto-tangent rotation -->
+    <g id="satellite">
+      <polygon points="-10,-6 12,0 -10,6 -5,0" fill="#00F5D4" stroke="#FFFFFF" stroke-width="1.5" />
+      <animateMotion dur="4s" repeatCount="indefinite" rotate="auto"
+        calcMode="spline" keyPoints="0;0.5;1" keyTimes="0;0.5;1"
+        keySplines="0.42 0 0.58 1;0.42 0 0.58 1">
+        <mpath href="#ellipticalOrbit" />
+      </animateMotion>
+    </g>
+  </g>
+</svg>

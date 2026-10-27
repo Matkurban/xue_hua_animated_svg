@@ -366,7 +366,10 @@ class _PathNumberScanner {
       }
     }
 
-    if (_pos == start) return 0.0;
+    if (_pos == start) {
+      _pos++;
+      return 0.0;
+    }
     return double.tryParse(_src.substring(start, _pos)) ?? 0.0;
   }
 }

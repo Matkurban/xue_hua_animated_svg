@@ -623,6 +623,7 @@ class _SvgSceneCompiler {
           style: style,
           baseTransformOps: baseTransformOps,
           precompiledPath: precompiled,
+          xmlBaseD: d,
         );
 
       case 'rect':
@@ -1339,6 +1340,17 @@ class _SvgSceneCompiler {
       case 'y2':
         if (element is SvgLineNode) return '${element.baseY2}';
         return '0';
+      case 'fill':
+        final c = element.style.currentFillColor;
+        return '#${c.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
+      case 'stroke':
+        final c = element.style.currentStrokeColor;
+        return '#${c.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
+      case 'd':
+        if (element is SvgPathNode) {
+          return element.xmlBaseD;
+        }
+        return null;
       default:
         return null;
     }

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" width="260" height="260">
+  <style>
+    .bar {
+      transform-origin: center bottom;
+    }
+    #bar1 {
+      animation: bounceBar 1.2s ease-in-out infinite alternate;
+    }
+    #bar2 {
+      animation: bounceBar 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.2s infinite alternate;
+    }
+    #bar3 {
+      animation: bounceBar 1.4s ease-out 0.4s infinite alternate;
+    }
+    #waveLine {
+      animation: colorShift 2.4s linear infinite alternate;
+    }
+    @keyframes bounceBar {
+      0% { transform: scaleY(0.25); opacity: 0.55; }
+      100% { transform: scaleY(1.0); opacity: 1.0; }
+    }
+    @keyframes colorShift {
+      0% { stroke: #00F5D4; stroke-width: 3; }
+      50% { stroke: #FF007F; stroke-width: 6; }
+      100% { stroke: #FEE440; stroke-width: 3; }
+    }
+  </style>
+
+  <!-- Static Frame -->
+  <g id="staticFrame">
+    <rect x="16" y="16" width="228" height="228" rx="24" ry="24"
+      fill="#0F172A" stroke="#334155" stroke-width="2" />
+    <line x1="36" y1="204" x2="224" y2="204" stroke="#475569" stroke-width="2" stroke-linecap="round" />
+  </g>
+
+  <!-- Equalizer Bars using CSS @keyframes + transform-origin: center bottom -->
+  <rect id="bar1" class="bar" x="56" y="74" width="28" height="130" rx="8" fill="#00F5D4" />
+  <rect id="bar2" class="bar" x="116" y="54" width="28" height="150" rx="8" fill="#9B5DE5" />
+  <rect id="bar3" class="bar" x="176" y="84" width="28" height="120" rx="8" fill="#F15BB5" />
+
+  <!-- Animated Polyline Wave -->
+  <polyline id="waveLine" points="36,52 78,34 130,62 182,30 224,48"
+    fill="none" stroke="#00F5D4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

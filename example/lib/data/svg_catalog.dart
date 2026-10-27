@@ -66,7 +66,8 @@ abstract final class SvgCatalog {
       subtitle: 'AnimatedSvgPicture.network：从 GitHub raw 拉取 elephant.svg',
       tags: ['network', 'http'],
       kind: SvgCatalogSourceKind.network,
-      networkUrl: 'https://raw.githubusercontent.com/Matkurban/xue_hua_animated_svg/main/example/assets/svgs/elephant.svg',
+      networkUrl:
+          'https://raw.githubusercontent.com/Matkurban/xue_hua_animated_svg/main/example/assets/svgs/elephant.svg',
       iconName: 'cloud_download',
     ),
     const SvgCatalogItem(
@@ -131,6 +132,24 @@ abstract final class SvgCatalog {
       kind: SvgCatalogSourceKind.asset,
       assetPath: 'assets/svgs/discrete_steps.svg',
       iconName: 'stairs',
+    ),
+    const SvgCatalogItem(
+      id: 'solar_orbit',
+      title: '星系轨道',
+      subtitle: '径向渐变焦点动画 + clipPath + use 星空 + keyPoints 切线轨道',
+      tags: ['radialGradient', 'clipPath', 'use', 'animateMotion'],
+      kind: SvgCatalogSourceKind.asset,
+      assetPath: 'assets/svgs/solar_orbit.svg',
+      iconName: 'public',
+    ),
+    const SvgCatalogItem(
+      id: 'neon_equalizer',
+      title: '霓虹均衡器',
+      subtitle: 'CSS @keyframes alternate + transform-origin 底部锚点 + 折线变色',
+      tags: ['css', 'transform-origin', 'polyline'],
+      kind: SvgCatalogSourceKind.asset,
+      assetPath: 'assets/svgs/neon_equalizer.svg',
+      iconName: 'equalizer',
     ),
   ];
 

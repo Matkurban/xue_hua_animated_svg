@@ -217,6 +217,48 @@ class SvgStyle {
     }
   }
 
+  /// Synchronizes any unset (inherited) presentation properties from [parentStyle]
+  /// at render time without allocating heap objects.
+  void syncInheritedFromParent(SvgStyle? parentStyle) {
+    if (parentStyle == null) return;
+    if (baseFill == null) {
+      resolvedFill = parentStyle.resolvedFill;
+      currentFillColor = parentStyle.currentFillColor;
+    }
+    if (baseStroke == null) {
+      resolvedStroke = parentStyle.resolvedStroke;
+      currentStrokeColor = parentStyle.currentStrokeColor;
+    }
+    if (baseFillOpacity == null) {
+      currentFillOpacity = parentStyle.currentFillOpacity;
+    }
+    if (baseStrokeOpacity == null) {
+      currentStrokeOpacity = parentStyle.currentStrokeOpacity;
+    }
+    if (baseStrokeWidth == null) {
+      currentStrokeWidth = parentStyle.currentStrokeWidth;
+    }
+    if (baseStrokeCap == null) {
+      currentStrokeCap = parentStyle.currentStrokeCap;
+    }
+    if (baseStrokeJoin == null) {
+      currentStrokeJoin = parentStyle.currentStrokeJoin;
+    }
+    if (baseStrokeMiterLimit == null) {
+      currentStrokeMiterLimit = parentStyle.currentStrokeMiterLimit;
+    }
+    if (baseFillRule == null) {
+      currentFillRule = parentStyle.currentFillRule;
+    }
+    if (baseStrokeDashoffset == null) {
+      currentStrokeDashoffset = parentStyle.currentStrokeDashoffset;
+    }
+    if (baseStrokeDasharray == null &&
+        parentStyle.currentStrokeDasharray != null) {
+      currentStrokeDasharray = parentStyle.currentStrokeDasharray;
+    }
+  }
+
   /// Merges incoming style rules (e.g., from CSS selector matching or inline style)
   /// into this [SvgStyle] during the build phase.
   void mergeFrom(SvgStyle other) {
