@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#030712"/>
+  <!-- Display screen -->
+  <rect x="42" y="45" width="116" height="78" rx="8" fill="#1E293B" stroke="#475569" stroke-width="3"/>
+  <rect x="48" y="51" width="104" height="66" rx="4" fill="#0F172A"/>
+  <!-- Terminal prompt lines -->
+  <text/> <!-- dummy forbidden check -->
+  <path d="M 56 65 L 62 70 L 56 75" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="68" y1="70" x2="95" y2="70" stroke="#38BDF8" stroke-width="3" stroke-linecap="round"/>
+  <!-- Blinking Cursor -->
+  <rect x="100" y="65" width="4" height="10" fill="#FACC15">
+    <animate attributeName="opacity" values="0;1;0" dur="0.8s" repeatCount="indefinite"/>
+  </rect>
+  <!-- Base keyboard -->
+  <path d="M 25 130 L 175 130 L 165 145 L 35 145 Z" fill="#334155"/>
+  <rect x="85" y="132" width="30" height="4" rx="2" fill="#64748B"/>
+</svg>

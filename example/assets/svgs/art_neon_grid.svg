@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <linearGradient id="retroSun" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FACC15"/>
+      <stop offset="60%" stop-color="#F43F5E"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="20" fill="#0B091A"/>
+  <!-- Retro Sunset -->
+  <circle cx="100" cy="95" r="38" fill="url(#retroSun)"/>
+  <!-- Horizon Line -->
+  <line x1="10" y1="120" x2="190" y2="120" stroke="#EC4899" stroke-width="3"/>
+  <!-- Perspective Lines -->
+  <g stroke="#06B6D4" stroke-width="2">
+    <line x1="100" y1="120" x2="20" y2="190"/>
+    <line x1="100" y1="120" x2="60" y2="190"/>
+    <line x1="100" y1="120" x2="100" y2="190"/>
+    <line x1="100" y1="120" x2="140" y2="190"/>
+    <line x1="100" y1="120" x2="180" y2="190"/>
+  </g>
+  <!-- Moving horizontal grid lines -->
+  <g stroke="#06B6D4" stroke-width="2">
+    <line x1="30" y1="135" x2="170" y2="135">
+      <animate attributeName="y1" values="120;185" dur="1.5s" repeatCount="indefinite"/>
+      <animate attributeName="y2" values="120;185" dur="1.5s" repeatCount="indefinite"/>
+    </line>
+    <line x1="30" y1="155" x2="170" y2="155">
+      <animate attributeName="y1" values="120;185" dur="1.5s" begin="0.75s" repeatCount="indefinite"/>
+      <animate attributeName="y2" values="120;185" dur="1.5s" begin="0.75s" repeatCount="indefinite"/>
+    </line>
+  </g>
+</svg>

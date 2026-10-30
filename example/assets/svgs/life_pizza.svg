@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0C0A09"/>
+  <!-- Pizza Slice rocking -->
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="rotate" values="-5 100 100; 5 100 100; -5 100 100" dur="2.4s" repeatCount="indefinite"/>
+    <!-- Crust Arc -->
+    <path d="M 50 65 Q 100 40, 150 65" fill="none" stroke="#D97706" stroke-width="14" stroke-linecap="round"/>
+    <!-- Cheese Body -->
+    <polygon points="53,70 147,70 100,165" fill="#FBBF24"/>
+    <!-- Pepperoni -->
+    <circle cx="85" cy="85" r="9" fill="#DC2626"/>
+    <circle cx="115" cy="95" r="8" fill="#DC2626"/>
+    <circle cx="100" cy="125" r="7" fill="#DC2626"/>
+    <!-- Basil leaves -->
+    <ellipse cx="98" cy="80" rx="4" ry="2" fill="#16A34A"/>
+    <ellipse cx="85" cy="115" rx="4" ry="2" fill="#16A34A"/>
+  </g>
+</svg>

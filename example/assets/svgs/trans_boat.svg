@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0C4A6E"/>
+  <!-- Ocean Waves -->
+  <path d="M 10 160 Q 55 145, 100 160 T 190 160" fill="none" stroke="#38BDF8" stroke-width="5" stroke-linecap="round">
+    <animateTransform attributeName="transform" type="translate" values="-15 0; 15 0; -15 0" dur="2.5s" repeatCount="indefinite"/>
+  </path>
+  <!-- Boat rocking -->
+  <g transform-origin="100 140">
+    <animateTransform attributeName="transform" type="rotate" values="-8 100 140; 8 100 140; -8 100 140" dur="2.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+    <!-- Hull -->
+    <polygon points="50,140 150,140 135,160 65,160" fill="#D97706"/>
+    <!-- Mast -->
+    <line x1="100" y1="60" x2="100" y2="140" stroke="#78350F" stroke-width="4"/>
+    <!-- Main Sail -->
+    <polygon points="103,65 145,130 103,130" fill="#F8FAFC"/>
+    <!-- Front Jib Sail -->
+    <polygon points="97,75 65,130 97,130" fill="#BAE6FD"/>
+  </g>
+</svg>

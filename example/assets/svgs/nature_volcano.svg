@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#180A0A"/>
+  <!-- Flying lava particles -->
+  <circle cx="100" cy="80" r="4" fill="#FACC15">
+    <animateTransform attributeName="transform" type="translate" values="0 0; -25 -40" dur="1.2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;0" dur="1.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="100" cy="80" r="3.5" fill="#F97316">
+    <animateTransform attributeName="transform" type="translate" values="0 0; 20 -45" dur="1.4s" begin="0.3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;0" dur="1.4s" begin="0.3s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Volcano cone -->
+  <polygon points="30,185 85,90 115,90 170,185" fill="#442222"/>
+  <!-- Lava crater -->
+  <ellipse cx="100" cy="90" rx="15" ry="5" fill="#EF4444">
+    <animate attributeName="fill" values="#EF4444;#F59E0B;#EF4444" dur="1.5s" repeatCount="indefinite"/>
+  </ellipse>
+  <!-- Lava river down the slope -->
+  <path d="M 98 93 Q 102 120, 95 140 T 92 185" fill="none" stroke="#F97316" stroke-width="4" stroke-linecap="round"/>
+</svg>

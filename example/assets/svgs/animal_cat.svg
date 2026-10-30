@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#18181B"/>
+  <!-- Ears twitching -->
+  <polygon points="60,95 45,45 85,75" fill="#F97316"/>
+  <polygon points="55,85 50,55 75,75" fill="#FCA5A5"/>
+  <polygon points="140,95 155,45 115,75" fill="#F97316"/>
+  <polygon points="145,85 150,55 125,75" fill="#FCA5A5"/>
+  <!-- Cat Face -->
+  <circle cx="100" cy="115" r="45" fill="#FB923C"/>
+  <!-- Blinking Eyes -->
+  <ellipse cx="82" cy="110" rx="7" ry="8" fill="#10B981">
+    <animate attributeName="ry" values="8;8;1;8" keyTimes="0;0.7;0.75;1" dur="2.8s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="118" cy="110" rx="7" ry="8" fill="#10B981">
+    <animate attributeName="ry" values="8;8;1;8" keyTimes="0;0.7;0.75;1" dur="2.8s" repeatCount="indefinite"/>
+  </ellipse>
+  <!-- Nose & Mouth -->
+  <polygon points="97,125 103,125 100,129" fill="#F43F5E"/>
+  <path d="M 94 130 Q 100 134, 100 130 Q 100 134, 106 130" fill="none" stroke="#7C2D12" stroke-width="2"/>
+  <!-- Whiskers -->
+  <line x1="50" y1="122" x2="72" y2="124" stroke="#FFFFFF" stroke-width="2"/>
+  <line x1="150" y1="122" x2="128" y2="124" stroke="#FFFFFF" stroke-width="2"/>
+</svg>

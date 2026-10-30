@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Track rails -->
+  <line x1="20" y1="145" x2="180" y2="145" stroke="#475569" stroke-width="6"/>
+  <!-- High-speed bullet nose -->
+  <g transform-origin="100 110">
+    <animateTransform attributeName="transform" type="translate" values="-2 0; 2 0; -2 0" dur="0.18s" repeatCount="indefinite"/>
+    <!-- Train Carriage -->
+    <path d="M 30 138 L 135 138 C 160 138, 175 125, 175 115 C 175 105, 155 95, 130 95 L 30 95 Z" fill="#F8FAFC"/>
+    <!-- Blue Streamline Stripe -->
+    <path d="M 30 115 L 150 115 C 165 115, 172 120, 172 122 L 30 122 Z" fill="#2563EB"/>
+    <!-- Cockpit Windshield -->
+    <path d="M 140 100 L 165 108 L 155 112 L 135 112 Z" fill="#0F172A"/>
+    <!-- Windows -->
+    <rect x="45" y="102" width="16" height="8" rx="2" fill="#0F172A"/>
+    <rect x="70" y="102" width="16" height="8" rx="2" fill="#0F172A"/>
+    <rect x="95" y="102" width="16" height="8" rx="2" fill="#0F172A"/>
+  </g>
+</svg>

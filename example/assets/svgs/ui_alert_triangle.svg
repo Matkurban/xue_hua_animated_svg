@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#291402"/>
+  <g transform-origin="100 110">
+    <animateTransform attributeName="transform" type="rotate" values="-2 100 110; 2 100 110; -2 100 110" dur="0.4s" repeatCount="indefinite"/>
+    <!-- Yellow Triangle -->
+    <polygon points="100,42 165,150 35,150" fill="#FBBF24" stroke="#F59E0B" stroke-width="8" stroke-linejoin="round"/>
+    <!-- Exclamation mark -->
+    <line x1="100" y1="78" x2="100" y2="115" stroke="#1E293B" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="100" cy="132" r="5" fill="#1E293B">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="0.8s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>

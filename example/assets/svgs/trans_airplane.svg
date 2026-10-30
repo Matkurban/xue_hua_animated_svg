@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0284C7"/>
+  <!-- Drifting Cloud 1 -->
+  <g fill="#E0F2FE" opacity="0.7">
+    <animateTransform attributeName="transform" type="translate" values="60 0; -140 0" dur="4s" repeatCount="indefinite"/>
+    <circle cx="140" cy="50" r="16"/>
+    <circle cx="160" cy="50" r="12"/>
+    <circle cx="125" cy="52" r="10"/>
+  </g>
+  <!-- Drifting Cloud 2 -->
+  <g fill="#BAE6FD" opacity="0.6">
+    <animateTransform attributeName="transform" type="translate" values="120 0; -100 0" dur="3s" repeatCount="indefinite"/>
+    <circle cx="80" cy="150" r="20"/>
+    <circle cx="105" cy="150" r="15"/>
+  </g>
+  <!-- Airplane Flying -->
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="translate" values="0 -6; 0 6; 0 -6" dur="2.8s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+    <animateTransform attributeName="transform" type="rotate" values="-3 100 100; 3 100 100; -3 100 100" dur="3.5s" additive="sum" repeatCount="indefinite"/>
+    <!-- Wings -->
+    <polygon points="100,75 88,140 106,140" fill="#CBD5E1"/>
+    <polygon points="100,75 112,140 94,140" fill="#94A3B8"/>
+    <!-- Fuselage -->
+    <path d="M 100 45 C 93 60, 93 130, 95 155 L 105 155 C 107 130, 107 60, 100 45 Z" fill="#F8FAFC"/>
+    <!-- Cockpit -->
+    <ellipse cx="100" cy="65" rx="4" ry="7" fill="#0369A1"/>
+    <!-- Tail Fin -->
+    <polygon points="100,140 90,162 110,162" fill="#EF4444"/>
+  </g>
+</svg>

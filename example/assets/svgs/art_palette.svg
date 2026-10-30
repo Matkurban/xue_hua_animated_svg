@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Palette Board -->
+  <path d="M 60 50 C 130 30, 165 80, 155 125 C 145 165, 80 175, 45 135 C 25 110, 25 70, 60 50 Z" fill="#D97706"/>
+  <!-- Thumb Hole -->
+  <ellipse cx="60" cy="135" rx="10" ry="14" fill="#0F172A"/>
+  <!-- Paint Blobs -->
+  <circle cx="80" cy="65" r="9" fill="#EF4444"/>
+  <circle cx="110" cy="62" r="9" fill="#FACC15"/>
+  <circle cx="138" cy="80" r="9" fill="#22C55E"/>
+  <circle cx="140" cy="115" r="9" fill="#3B82F6"/>
+  <circle cx="105" cy="145" r="9" fill="#A855F7"/>
+  <!-- Brush Painting -->
+  <g transform-origin="120 100">
+    <animateTransform attributeName="transform" type="rotate" values="-15 120 100; 15 120 100; -15 120 100" dur="2s" repeatCount="indefinite"/>
+    <line x1="80" y1="140" x2="160" y2="60" stroke="#78350F" stroke-width="7" stroke-linecap="round"/>
+    <polygon points="75,145 85,135 70,150" fill="#3B82F6"/>
+  </g>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#1E1B4B"/>
+  <!-- Hot Air Balloon floating -->
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="translate" values="0 -10; 0 10; 0 -10" dur="3.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+    <animateTransform attributeName="transform" type="rotate" values="-4 100 100; 4 100 100; -4 100 100" dur="4s" additive="sum" repeatCount="indefinite"/>
+    <!-- Balloon Body Outer -->
+    <path d="M 60 75 C 60 40, 140 40, 140 75 C 140 105, 115 130, 115 135 L 85 135 C 85 130, 60 105, 60 75 Z" fill="#F43F5E"/>
+    <!-- Stripes -->
+    <path d="M 75 75 C 75 45, 125 45, 125 75 C 125 105, 108 135, 108 135 L 92 135 C 92 135, 75 105, 75 75 Z" fill="#FBBF24"/>
+    <path d="M 88 75 C 88 50, 112 50, 112 75 C 112 105, 102 135, 102 135 L 98 135 C 98 135, 88 105, 88 75 Z" fill="#38BDF8"/>
+    <!-- Basket Ropes -->
+    <line x1="88" y1="135" x2="90" y2="152" stroke="#CBD5E1" stroke-width="1.5"/>
+    <line x1="112" y1="135" x2="110" y2="152" stroke="#CBD5E1" stroke-width="1.5"/>
+    <!-- Basket -->
+    <rect x="88" y="152" width="24" height="18" rx="3" fill="#B45309"/>
+  </g>
+</svg>

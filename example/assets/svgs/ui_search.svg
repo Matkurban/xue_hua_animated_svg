@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0B132B"/>
+  <g transform-origin="90 90">
+    <animateTransform attributeName="transform" type="translate" values="0 0; 8 -8; -6 6; 0 0" dur="3s" repeatCount="indefinite"/>
+    <!-- Radar ripple inside lens -->
+    <circle cx="85" cy="85" r="30" fill="none" stroke="#38BDF8" stroke-width="2">
+      <animate attributeName="r" values="10;35" dur="1.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0" dur="1.8s" repeatCount="indefinite"/>
+    </circle>
+    <!-- Magnifier Glass Circle -->
+    <circle cx="85" cy="85" r="36" fill="#1E293B" stroke="#60A5FA" stroke-width="8"/>
+    <!-- Lens reflection -->
+    <path d="M 68 65 A 25 25 0 0 1 100 60" fill="none" stroke="#93C5FD" stroke-width="3" stroke-linecap="round"/>
+    <!-- Handle -->
+    <line x1="112" y1="112" x2="145" y2="145" stroke="#60A5FA" stroke-width="12" stroke-linecap="round"/>
+  </g>
+</svg>

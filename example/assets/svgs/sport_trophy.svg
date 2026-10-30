@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Star Glints -->
+  <polygon points="135,45 138,52 145,55 138,58 135,65 132,58 125,55 132,52" fill="#FEF08A">
+    <animate attributeName="opacity" values="0.2;1;0.2" dur="1.2s" repeatCount="indefinite"/>
+  </polygon>
+  <!-- Trophy Group scaling -->
+  <g transform-origin="100 120">
+    <animateTransform attributeName="transform" type="scale" values="0.97; 1.03; 0.97" dur="2s" repeatCount="indefinite"/>
+    <!-- Handles -->
+    <path d="M 68 65 C 45 65, 45 105, 75 105" fill="none" stroke="#EAB308" stroke-width="7" stroke-linecap="round"/>
+    <path d="M 132 65 C 155 65, 155 105, 125 105" fill="none" stroke="#EAB308" stroke-width="7" stroke-linecap="round"/>
+    <!-- Cup Bowl -->
+    <path d="M 68 50 L 132 50 C 132 105, 110 125, 100 125 C 90 125, 68 105, 68 50 Z" fill="#FACC15"/>
+    <!-- Stem & Base -->
+    <rect x="94" y="125" width="12" height="22" fill="#CA8A04"/>
+    <rect x="75" y="147" width="50" height="15" rx="3" fill="#713F12"/>
+    <rect x="68" y="162" width="64" height="10" rx="2" fill="#451A03"/>
+  </g>
+</svg>

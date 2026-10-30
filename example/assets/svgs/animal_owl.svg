@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0B0F19"/>
+  <!-- Branch -->
+  <line x1="30" y1="165" x2="170" y2="165" stroke="#78350F" stroke-width="8" stroke-linecap="round"/>
+  <!-- Owl Body -->
+  <ellipse cx="100" cy="120" rx="38" ry="44" fill="#44281D"/>
+  <!-- Owl Head tilting -->
+  <g transform-origin="100 85">
+    <animateTransform attributeName="transform" type="rotate" values="-10 100 85; 10 100 85; -10 100 85" dur="3s" repeatCount="indefinite"/>
+    <circle cx="100" cy="85" r="32" fill="#583526"/>
+    <!-- Feather Tufts -->
+    <polygon points="75,60 85,75 70,75" fill="#583526"/>
+    <polygon points="125,60 115,75 130,75" fill="#583526"/>
+    <!-- Eye Rings -->
+    <circle cx="85" cy="85" r="14" fill="#FEF08A"/>
+    <circle cx="115" cy="85" r="14" fill="#FEF08A"/>
+    <!-- Pupils blinking -->
+    <circle cx="85" cy="85" r="7" fill="#0F172A">
+      <animate attributeName="r" values="7;7;1;7" keyTimes="0;0.7;0.75;1" dur="3.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="115" cy="85" r="7" fill="#0F172A">
+      <animate attributeName="r" values="7;7;1;7" keyTimes="0;0.7;0.75;1" dur="3.5s" repeatCount="indefinite"/>
+    </circle>
+    <!-- Beak -->
+    <polygon points="97,95 103,95 100,105" fill="#F59E0B"/>
+  </g>
+</svg>

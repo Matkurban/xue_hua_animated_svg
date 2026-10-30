@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Sun rising -->
+  <circle cx="100" cy="110" r="28" fill="#F59E0B">
+    <animate attributeName="cy" values="120;75;120" dur="6s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+  </circle>
+  <!-- Background ridge -->
+  <polygon points="10,185 80,105 150,185" fill="#334155"/>
+  <polygon points="70,117 80,105 90,117" fill="#E2E8F0"/>
+  <!-- Foreground mountain -->
+  <polygon points="70,185 135,95 200,185" fill="#1E293B"/>
+  <polygon points="123,112 135,95 147,112" fill="#F8FAFC"/>
+</svg>

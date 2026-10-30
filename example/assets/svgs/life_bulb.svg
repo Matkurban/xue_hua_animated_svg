@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Radiating Rays -->
+  <g stroke="#FDE047" stroke-width="3" stroke-linecap="round">
+    <line x1="100" y1="20" x2="100" y2="32">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1.2s" repeatCount="indefinite"/>
+    </line>
+    <line x1="45" y1="50" x2="55" y2="60">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1.2s" begin="0.3s" repeatCount="indefinite"/>
+    </line>
+    <line x1="155" y1="50" x2="145" y2="60">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="1.2s" begin="0.3s" repeatCount="indefinite"/>
+    </line>
+  </g>
+  <!-- Bulb Glass pulsing -->
+  <path d="M 70 85 C 70 60, 130 60, 130 85 C 130 102, 115 115, 115 130 L 85 130 C 85 115, 70 102, 70 85 Z" fill="#FACC15">
+    <animate attributeName="fill" values="#FACC15;#FEF08A;#FACC15" dur="1.5s" repeatCount="indefinite"/>
+  </path>
+  <!-- Filament -->
+  <path d="M 92 110 L 96 90 L 104 90 L 108 110" fill="none" stroke="#D97706" stroke-width="2.5"/>
+  <!-- Screw Base -->
+  <rect x="85" y="132" width="30" height="6" rx="2" fill="#94A3B8"/>
+  <rect x="87" y="140" width="26" height="6" rx="2" fill="#94A3B8"/>
+  <rect x="91" y="148" width="18" height="6" rx="2" fill="#64748B"/>
+</svg>

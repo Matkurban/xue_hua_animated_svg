@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#2A1B14"/>
+  <!-- Rising Steam 1 -->
+  <path d="M 85 80 Q 75 60, 85 45 T 85 20" fill="none" stroke="#E2E8F0" stroke-width="3" stroke-linecap="round" opacity="0.7">
+    <animateTransform attributeName="transform" type="translate" values="0 10; 0 -15" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0.7;0" dur="2s" repeatCount="indefinite"/>
+  </path>
+  <!-- Rising Steam 2 -->
+  <path d="M 105 80 Q 115 60, 105 45 T 105 20" fill="none" stroke="#E2E8F0" stroke-width="3" stroke-linecap="round" opacity="0.7">
+    <animateTransform attributeName="transform" type="translate" values="0 10; 0 -15" dur="2s" begin="0.7s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;0.7;0" dur="2s" begin="0.7s" repeatCount="indefinite"/>
+  </path>
+  <!-- Mug Saucer -->
+  <ellipse cx="100" cy="165" rx="55" ry="10" fill="#78350F"/>
+  <!-- Coffee Mug Body -->
+  <path d="M 60 90 L 68 150 C 70 158, 130 158, 132 150 L 140 90 Z" fill="#F8FAFC"/>
+  <!-- Handle -->
+  <path d="M 136 100 C 158 100, 158 135, 133 138" fill="none" stroke="#F8FAFC" stroke-width="8" stroke-linecap="round"/>
+  <!-- Coffee surface -->
+  <ellipse cx="100" cy="90" rx="38" ry="10" fill="#451A03"/>
+</svg>

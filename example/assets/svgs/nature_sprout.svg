@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#064E3B"/>
+  <!-- Earth mound -->
+  <path d="M 40 160 Q 100 135, 160 160 L 160 185 L 40 185 Z" fill="#78350F"/>
+  <!-- Growing stem -->
+  <path d="M 100 150 Q 95 110, 100 80" fill="none" stroke="#22C55E" stroke-width="5" stroke-linecap="round"/>
+  <!-- Left leaf -->
+  <g transform-origin="98 100">
+    <animateTransform attributeName="transform" type="rotate" values="0 98 100; -12 98 100; 0 98 100" dur="2.8s" repeatCount="indefinite"/>
+    <path d="M 98 100 C 70 95, 60 70, 75 60 C 90 70, 95 85, 98 100 Z" fill="#4ADE80"/>
+  </g>
+  <!-- Right leaf -->
+  <g transform-origin="100 80">
+    <animateTransform attributeName="transform" type="rotate" values="0 100 80; 15 100 80; 0 100 80" dur="2.4s" repeatCount="indefinite"/>
+    <path d="M 100 80 C 128 75, 138 50, 125 40 C 110 50, 105 65, 100 80 Z" fill="#86EFAC"/>
+  </g>
+</svg>

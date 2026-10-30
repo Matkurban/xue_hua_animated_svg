@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Road Speed Line -->
+  <line x1="20" y1="165" x2="180" y2="165" stroke="#334155" stroke-width="4" stroke-dasharray="20 15">
+    <animate attributeName="stroke-dashoffset" values="0;70" dur="0.8s" repeatCount="indefinite"/>
+  </line>
+  <!-- Car Body Bobbing -->
+  <g transform-origin="100 130">
+    <animateTransform attributeName="transform" type="translate" values="0 0; 0 -2.5; 0 0" dur="0.25s" repeatCount="indefinite"/>
+    <!-- Roof & Windows -->
+    <path d="M 65 115 L 85 92 L 135 92 L 152 115 Z" fill="#38BDF8"/>
+    <!-- Body Chassis -->
+    <path d="M 38 128 C 38 118, 55 115, 62 115 L 158 115 C 168 115, 175 122, 172 135 L 35 135 Z" fill="#DC2626"/>
+    <!-- Headlight beam -->
+    <polygon points="172,125 195,120 195,140 172,132" fill="#FEF08A" opacity="0.4"/>
+  </g>
+  <!-- Front Wheel Spinning -->
+  <g transform-origin="65 142">
+    <animateTransform attributeName="transform" type="rotate" from="0 65 142" to="360 65 142" dur="0.5s" repeatCount="indefinite"/>
+    <circle cx="65" cy="142" r="15" fill="#1E293B" stroke="#64748B" stroke-width="4"/>
+    <circle cx="65" cy="142" r="6" fill="#CBD5E1"/>
+    <line x1="65" y1="130" x2="65" y2="154" stroke="#CBD5E1" stroke-width="2"/>
+  </g>
+  <!-- Rear Wheel Spinning -->
+  <g transform-origin="145 142">
+    <animateTransform attributeName="transform" type="rotate" from="0 145 142" to="360 145 142" dur="0.5s" repeatCount="indefinite"/>
+    <circle cx="145" cy="142" r="15" fill="#1E293B" stroke="#64748B" stroke-width="4"/>
+    <circle cx="145" cy="142" r="6" fill="#CBD5E1"/>
+    <line x1="145" y1="130" x2="145" y2="154" stroke="#CBD5E1" stroke-width="2"/>
+  </g>
+</svg>

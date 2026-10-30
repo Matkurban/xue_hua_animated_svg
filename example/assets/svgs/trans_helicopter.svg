@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Helicopter Body hovering -->
+  <g transform-origin="100 105">
+    <animateTransform attributeName="transform" type="translate" values="0 -5; 0 5; 0 -5" dur="1.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+    <!-- Cabin -->
+    <ellipse cx="85" cy="105" rx="42" ry="24" fill="#DC2626"/>
+    <!-- Cockpit glass -->
+    <path d="M 85 85 C 110 85, 125 95, 125 105 L 85 105 Z" fill="#38BDF8"/>
+    <!-- Tail Boom -->
+    <line x1="85" y1="105" x2="165" y2="92" stroke="#DC2626" stroke-width="7" stroke-linecap="round"/>
+    <polygon points="160,92 172,78 172,96" fill="#B91C1C"/>
+    <!-- Landing Skids -->
+    <line x1="60" y1="140" x2="115" y2="140" stroke="#64748B" stroke-width="4" stroke-linecap="round"/>
+    <line x1="72" y1="125" x2="72" y2="140" stroke="#64748B" stroke-width="3"/>
+    <line x1="102" y1="125" x2="102" y2="140" stroke="#64748B" stroke-width="3"/>
+    <!-- Main Rotor Shaft -->
+    <line x1="85" y1="81" x2="85" y2="70" stroke="#64748B" stroke-width="4"/>
+    <!-- Main Rotor Spinning -->
+    <g transform-origin="85 70">
+      <animateTransform attributeName="transform" type="scale" values="1; -1; 1" dur="0.15s" repeatCount="indefinite"/>
+      <line x1="30" y1="70" x2="140" y2="70" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>

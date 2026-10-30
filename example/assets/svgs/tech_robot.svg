@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#111827"/>
+  <!-- Antenna -->
+  <line x1="100" y1="60" x2="100" y2="35" stroke="#94A3B8" stroke-width="4"/>
+  <circle cx="100" cy="30" r="7" fill="#EF4444">
+    <animate attributeName="fill" values="#EF4444;#22C55E;#EF4444" dur="1.2s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Ears -->
+  <rect x="42" y="85" width="10" height="30" rx="3" fill="#64748B"/>
+  <rect x="148" y="85" width="10" height="30" rx="3" fill="#64748B"/>
+  <!-- Robot Head -->
+  <rect x="52" y="60" width="96" height="85" rx="16" fill="#475569" stroke="#94A3B8" stroke-width="3"/>
+  <!-- Visor Screen -->
+  <rect x="64" y="78" width="72" height="30" rx="8" fill="#0F172A"/>
+  <!-- Scanning Eyes -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="-10 0; 10 0; -10 0" dur="1.6s" repeatCount="indefinite"/>
+    <circle cx="90" cy="93" r="6" fill="#38BDF8"/>
+    <circle cx="110" cy="93" r="6" fill="#38BDF8"/>
+  </g>
+  <!-- Mouth Grille -->
+  <line x1="80" y1="125" x2="120" y2="125" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+</svg>

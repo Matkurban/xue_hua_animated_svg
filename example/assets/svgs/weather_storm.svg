@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0A0E1A"/>
+  <!-- Dark storm cloud -->
+  <path d="M 50 100 C 45 75, 75 60, 95 70 C 110 50, 150 55, 155 80 C 175 85, 175 110, 155 115 L 55 115 C 40 115, 38 100, 50 100 Z" fill="#334155">
+    <animate attributeName="fill" values="#334155;#475569;#334155" dur="2s" repeatCount="indefinite"/>
+  </path>
+  <!-- Lightning bolt -->
+  <polygon points="105,95 90,130 105,130 92,165 125,120 107,120 120,95" fill="#FACC15">
+    <animate attributeName="opacity" values="0; 0; 1; 0.2; 1; 0; 0" keyTimes="0; 0.6; 0.65; 0.7; 0.75; 0.8; 1" dur="2s" repeatCount="indefinite"/>
+  </polygon>
+  <!-- Rain lines -->
+  <line x1="65" y1="130" x2="58" y2="155" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round">
+    <animateTransform attributeName="transform" type="translate" values="0 -20; 0 20" dur="0.8s" repeatCount="indefinite"/>
+  </line>
+  <line x1="145" y1="130" x2="138" y2="155" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round">
+    <animateTransform attributeName="transform" type="translate" values="0 -20; 0 20" dur="0.8s" begin="0.4s" repeatCount="indefinite"/>
+  </line>
+</svg>

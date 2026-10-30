@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#020617"/>
+  <!-- Jellyfish Pulsing upward -->
+  <g transform-origin="100 80">
+    <animateTransform attributeName="transform" type="translate" values="0 15; 0 -15; 0 15" dur="3s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+    <!-- Bell dome scaling -->
+    <g transform-origin="100 70">
+      <animateTransform attributeName="transform" type="scale" values="1 0.9; 0.85 1.15; 1 0.9" dur="1.5s" repeatCount="indefinite"/>
+      <path d="M 50 85 C 50 45, 150 45, 150 85 C 130 92, 110 85, 100 88 C 90 85, 70 92, 50 85 Z" fill="#38BDF8" opacity="0.8"/>
+    </g>
+    <!-- Tentacles swaying -->
+    <path d="M 70 90 Q 60 125, 75 160" fill="none" stroke="#BAE6FD" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 85 90 Q 95 125, 80 165" fill="none" stroke="#7DD3FC" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 100 90 Q 110 130, 100 170" fill="none" stroke="#BAE6FD" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 115 90 Q 105 125, 120 165" fill="none" stroke="#7DD3FC" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 130 90 Q 140 125, 125 160" fill="none" stroke="#BAE6FD" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+</svg>

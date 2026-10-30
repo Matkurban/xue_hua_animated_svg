@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#3B0764"/>
+  <!-- Floating Star Sparks -->
+  <polygon points="65,45 68,52 75,54 68,56 65,63 62,56 55,54 62,52" fill="#FDE047">
+    <animate attributeName="opacity" values="0.2;1;0.2" dur="1.2s" repeatCount="indefinite"/>
+  </polygon>
+  <polygon points="145,55 147,60 152,62 147,64 145,69 143,64 138,62 143,60" fill="#FDE047">
+    <animate attributeName="opacity" values="1;0.2;1" dur="1.4s" repeatCount="indefinite"/>
+  </polygon>
+  <!-- Box Base -->
+  <rect x="55" y="95" width="90" height="70" rx="8" fill="#EC4899"/>
+  <rect x="92" y="95" width="16" height="70" fill="#FACC15"/>
+  <!-- Bouncing Box Lid with Bow -->
+  <g transform-origin="100 90">
+    <animateTransform attributeName="transform" type="translate" values="0 0; 0 -14; 0 0" dur="1.5s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+    <!-- Lid -->
+    <rect x="50" y="82" width="100" height="18" rx="5" fill="#DB2777"/>
+    <rect x="92" y="82" width="16" height="18" fill="#FACC15"/>
+    <!-- Ribbon Bow -->
+    <ellipse cx="85" cy="74" rx="14" ry="9" fill="#FACC15"/>
+    <ellipse cx="115" cy="74" rx="14" ry="9" fill="#FACC15"/>
+    <circle cx="100" cy="75" r="6" fill="#EAB308"/>
+  </g>
+</svg>

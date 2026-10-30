@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#18181B"/>
+  <!-- Vibration Waves -->
+  <path d="M 45 75 Q 38 100, 45 125" fill="none" stroke="#A1A1AA" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 155 75 Q 162 100, 155 125" fill="none" stroke="#A1A1AA" stroke-width="3" stroke-linecap="round"/>
+  <!-- Phone with vibration -->
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="translate" values="-2 0; 2 0; -2 0" dur="0.12s" repeatCount="indefinite"/>
+    <rect x="62" y="40" width="76" height="120" rx="14" fill="#27272A" stroke="#52525B" stroke-width="3"/>
+    <rect x="68" y="52" width="64" height="96" rx="6" fill="#09090B"/>
+    <!-- Message Notification -->
+    <rect x="74" y="80" width="52" height="26" rx="6" fill="#3B82F6">
+      <animate attributeName="opacity" values="0.4;1;0.4" dur="1.5s" repeatCount="indefinite"/>
+    </rect>
+    <circle cx="100" cy="46" r="3" fill="#71717A"/>
+  </g>
+</svg>

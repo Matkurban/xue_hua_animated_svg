@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#064E3B"/>
+  <!-- Expanding Background Badge -->
+  <circle cx="100" cy="100" r="55" fill="#10B981">
+    <animateTransform attributeName="transform" type="scale" values="0.9;1.05;0.9" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+  </circle>
+  <!-- Checkmark Path Drawing -->
+  <path d="M 72 102 L 92 122 L 132 82" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100">
+    <animate attributeName="stroke-dashoffset" values="100;0;0;100" keyTimes="0;0.4;0.8;1" dur="2.4s" repeatCount="indefinite"/>
+  </path>
+</svg>

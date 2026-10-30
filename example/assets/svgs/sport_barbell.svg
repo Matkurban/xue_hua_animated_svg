@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#18181B"/>
+  <!-- Energy shockwave -->
+  <ellipse cx="100" cy="80" rx="45" ry="15" fill="none" stroke="#38BDF8" stroke-width="2.5">
+    <animate attributeName="rx" values="20;75" dur="1.8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.9;0" dur="1.8s" repeatCount="indefinite"/>
+  </ellipse>
+  <!-- Barbell Lifting Up & Down -->
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="translate" values="0 25; 0 -25; 0 25" dur="2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+    <!-- Main Steel Bar -->
+    <line x1="25" y1="100" x2="175" y2="100" stroke="#CBD5E1" stroke-width="8" stroke-linecap="round"/>
+    <!-- Left Weight Plates -->
+    <rect x="42" y="65" width="14" height="70" rx="4" fill="#3B82F6"/>
+    <rect x="30" y="72" width="10" height="56" rx="3" fill="#1D4ED8"/>
+    <!-- Right Weight Plates -->
+    <rect x="144" y="65" width="14" height="70" rx="4" fill="#3B82F6"/>
+    <rect x="160" y="72" width="10" height="56" rx="3" fill="#1D4ED8"/>
+  </g>
+</svg>

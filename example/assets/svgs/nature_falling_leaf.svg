@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#2E1065"/>
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="translate" values="0 -40; 0 40; 0 -40" dur="4s" repeatCount="indefinite"/>
+    <animateTransform attributeName="transform" type="rotate" values="-25 100 100; 25 100 100; -25 100 100" dur="3s" additive="sum" repeatCount="indefinite"/>
+    <!-- Maple Leaf -->
+    <path d="M 100 65 L 105 85 L 125 75 L 118 95 L 138 98 L 118 112 L 128 132 L 108 122 L 100 145 L 92 122 L 72 132 L 82 112 L 62 98 L 82 95 L 75 75 L 95 85 Z" fill="#F97316"/>
+    <!-- Veins -->
+    <line x1="100" y1="80" x2="100" y2="135" stroke="#C2410C" stroke-width="2"/>
+  </g>
+</svg>

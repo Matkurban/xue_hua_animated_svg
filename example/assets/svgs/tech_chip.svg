@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Traces with dash animation -->
+  <g stroke="#38BDF8" stroke-width="3" stroke-linecap="round" fill="none" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100">
+    <path d="M 100 25 L 100 55">
+      <animate attributeName="stroke-dashoffset" values="100;0;100" dur="2s" repeatCount="indefinite"/>
+    </path>
+    <path d="M 100 175 L 100 145">
+      <animate attributeName="stroke-dashoffset" values="100;0;100" dur="2s" repeatCount="indefinite"/>
+    </path>
+    <path d="M 25 100 L 55 100">
+      <animate attributeName="stroke-dashoffset" values="100;0;100" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+    </path>
+    <path d="M 175 100 L 145 100">
+      <animate attributeName="stroke-dashoffset" values="100;0;100" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+    </path>
+  </g>
+  <!-- Silicon Chip body -->
+  <rect x="58" y="58" width="84" height="84" rx="10" fill="#1E293B" stroke="#64748B" stroke-width="3"/>
+  <!-- Core die pulsing -->
+  <rect x="75" y="75" width="50" height="50" rx="6" fill="#0284C7">
+    <animate attributeName="fill" values="#0284C7;#38BDF8;#0284C7" dur="1.5s" repeatCount="indefinite"/>
+  </rect>
+  <!-- Glowing icon on die -->
+  <circle cx="100" cy="100" r="10" fill="#FFFFFF"/>
+</svg>

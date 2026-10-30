@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#18181B"/>
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="scale" values="1 0.95; 1 1.05; 1 0.95" dur="1.8s" repeatCount="indefinite"/>
+    <!-- Bottom Bun -->
+    <path d="M 55 140 L 145 140 C 145 158, 55 158, 55 140 Z" fill="#D97706"/>
+    <!-- Beef Patty -->
+    <rect x="50" y="122" width="100" height="15" rx="7" fill="#78350F"/>
+    <!-- Melted Cheese -->
+    <polygon points="52,120 148,120 135,130 115,123 95,132 75,123" fill="#FACC15"/>
+    <!-- Lettuce Wave -->
+    <path d="M 48 112 Q 75 118, 100 112 T 152 112" fill="none" stroke="#22C55E" stroke-width="7" stroke-linecap="round"/>
+    <!-- Top Bun -->
+    <path d="M 50 105 C 50 60, 150 60, 150 105 Z" fill="#F59E0B"/>
+    <!-- Sesame Seeds -->
+    <circle cx="85" cy="78" r="2" fill="#FEF3C7"/>
+    <circle cx="105" cy="72" r="2" fill="#FEF3C7"/>
+    <circle cx="120" cy="82" r="2" fill="#FEF3C7"/>
+  </g>
+</svg>

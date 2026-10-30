@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0C4A6E"/>
+  <!-- Bubbles from mouth -->
+  <circle cx="55" cy="90" r="3.5" fill="#BAE6FD" opacity="0.8">
+    <animate attributeName="cy" values="90;40" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.8;0" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <!-- Swimming Fish Group -->
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="translate" values="-6 0; 6 0; -6 0" dur="3s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.4 0 0.2 1;0.4 0 0.2 1"/>
+    <!-- Tail Fin wagging -->
+    <g transform-origin="125 100">
+      <animateTransform attributeName="transform" type="rotate" values="-18 125 100; 18 125 100; -18 125 100" dur="0.8s" repeatCount="indefinite"/>
+      <polygon points="125,100 165,70 152,100 165,130" fill="#F97316"/>
+    </g>
+    <!-- Fish Body -->
+    <ellipse cx="95" cy="100" rx="38" ry="24" fill="#EA580C"/>
+    <!-- Belly tint -->
+    <path d="M 65 100 C 65 120, 125 120, 125 100 Z" fill="#FDBA74"/>
+    <!-- Eye -->
+    <circle cx="75" cy="95" r="5" fill="#FFFFFF"/>
+    <circle cx="73" cy="95" r="3" fill="#0F172A"/>
+  </g>
+</svg>

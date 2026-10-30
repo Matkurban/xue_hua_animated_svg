@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#042F2E"/>
+  <!-- Left stalk -->
+  <g>
+    <rect x="75" y="30" width="10" height="35" rx="2" fill="#10B981"/>
+    <rect x="74" y="68" width="12" height="35" rx="2" fill="#059669"/>
+    <rect x="73" y="106" width="14" height="35" rx="2" fill="#10B981"/>
+    <rect x="72" y="144" width="16" height="35" rx="2" fill="#047857"/>
+  </g>
+  <!-- Right stalk swaying -->
+  <g transform-origin="120 180">
+    <animateTransform attributeName="transform" type="rotate" values="-2 120 180; 2 120 180; -2 120 180" dur="3s" repeatCount="indefinite"/>
+    <rect x="120" y="40" width="8" height="32" rx="2" fill="#34D399"/>
+    <rect x="119" y="75" width="10" height="32" rx="2" fill="#10B981"/>
+    <rect x="118" y="110" width="12" height="32" rx="2" fill="#059669"/>
+    <rect x="117" y="145" width="14" height="32" rx="2" fill="#047857"/>
+    <!-- Leaves -->
+    <path d="M 120 75 Q 150 70, 165 60 Q 145 80, 120 75 Z" fill="#6EE7B7"/>
+    <path d="M 120 110 Q 95 105, 80 95 Q 100 115, 120 110 Z" fill="#6EE7B7"/>
+  </g>
+</svg>

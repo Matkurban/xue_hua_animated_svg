@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#1E1B4B"/>
+  <!-- Petals rotating -->
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="14s" repeatCount="indefinite"/>
+    <ellipse cx="100" cy="62" rx="16" ry="26" fill="#F43F5E" opacity="0.9"/>
+    <ellipse cx="100" cy="138" rx="16" ry="26" fill="#F43F5E" opacity="0.9"/>
+    <ellipse cx="62" cy="100" rx="26" ry="16" fill="#EC4899" opacity="0.9"/>
+    <ellipse cx="138" cy="100" rx="26" ry="16" fill="#EC4899" opacity="0.9"/>
+    <g transform="rotate(45, 100, 100)">
+      <ellipse cx="100" cy="62" rx="16" ry="26" fill="#FB7185" opacity="0.85"/>
+      <ellipse cx="100" cy="138" rx="16" ry="26" fill="#FB7185" opacity="0.85"/>
+      <ellipse cx="62" cy="100" rx="26" ry="16" fill="#F472B6" opacity="0.85"/>
+      <ellipse cx="138" cy="100" rx="26" ry="16" fill="#F472B6" opacity="0.85"/>
+    </g>
+  </g>
+  <!-- Center pistil pulsing -->
+  <circle cx="100" cy="100" r="18" fill="#FBBF24">
+    <animate attributeName="r" values="16;20;16" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="100" cy="100" r="10" fill="#F59E0B"/>
+</svg>

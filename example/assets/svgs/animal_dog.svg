@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Left Ear Wagging -->
+  <g transform-origin="60 70">
+    <animateTransform attributeName="transform" type="rotate" values="-8 60 70; 8 60 70; -8 60 70" dur="1s" repeatCount="indefinite"/>
+    <ellipse cx="55" cy="95" rx="14" ry="32" fill="#78350F"/>
+  </g>
+  <!-- Right Ear Wagging -->
+  <g transform-origin="140 70">
+    <animateTransform attributeName="transform" type="rotate" values="8 140 70; -8 140 70; 8 140 70" dur="1s" repeatCount="indefinite"/>
+    <ellipse cx="145" cy="95" rx="14" ry="32" fill="#78350F"/>
+  </g>
+  <!-- Dog Face -->
+  <circle cx="100" cy="105" r="44" fill="#D97706"/>
+  <!-- Eyes -->
+  <circle cx="82" cy="98" r="6" fill="#18181B"/>
+  <circle cx="80" cy="96" r="2" fill="#FFFFFF"/>
+  <circle cx="118" cy="98" r="6" fill="#18181B"/>
+  <circle cx="116" cy="96" r="2" fill="#FFFFFF"/>
+  <!-- Snout -->
+  <ellipse cx="100" cy="120" rx="18" ry="14" fill="#FDE68A"/>
+  <circle cx="100" cy="114" r="6" fill="#18181B"/>
+  <!-- Panting Tongue -->
+  <path d="M 96 128 C 96 142, 104 142, 104 128 Z" fill="#F43F5E">
+    <animateTransform attributeName="transform" type="translate" values="0 0; 0 3; 0 0" dur="0.5s" repeatCount="indefinite"/>
+  </path>
+</svg>

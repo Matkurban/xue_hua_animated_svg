@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Deep ocean wave -->
+  <path d="M -50 130 Q 0 110, 50 130 T 150 130 T 250 130 L 250 200 L -50 200 Z" fill="#1E3A8A">
+    <animateTransform attributeName="transform" type="translate" values="-30 0; 30 0; -30 0" dur="4s" repeatCount="indefinite"/>
+  </path>
+  <!-- Mid ocean wave -->
+  <path d="M -50 145 Q 0 125, 50 145 T 150 145 T 250 145 L 250 200 L -50 200 Z" fill="#0284C7" opacity="0.8">
+    <animateTransform attributeName="transform" type="translate" values="25 0; -25 0; 25 0" dur="3s" repeatCount="indefinite"/>
+  </path>
+  <!-- Foam crest wave -->
+  <path d="M -50 160 Q 0 145, 50 160 T 150 160 T 250 160 L 250 200 L -50 200 Z" fill="#38BDF8" opacity="0.9">
+    <animateTransform attributeName="transform" type="translate" values="-20 0; 20 0; -20 0" dur="2.4s" repeatCount="indefinite"/>
+  </path>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#1E293B"/>
+  <!-- Motion Blur Lines -->
+  <line x1="30" y1="85" x2="65" y2="85" stroke="#A3E635" stroke-width="3" stroke-linecap="round" opacity="0.4">
+    <animate attributeName="opacity" values="0.1;0.6;0.1" dur="0.6s" repeatCount="indefinite"/>
+  </line>
+  <line x1="20" y1="105" x2="60" y2="105" stroke="#A3E635" stroke-width="4" stroke-linecap="round" opacity="0.6">
+    <animate attributeName="opacity" values="0.2;0.8;0.2" dur="0.6s" repeatCount="indefinite"/>
+  </line>
+  <!-- Spinning Ball -->
+  <g transform-origin="110 100">
+    <animateTransform attributeName="transform" type="rotate" from="0 110 100" to="360 110 100" dur="1s" repeatCount="indefinite"/>
+    <circle cx="110" cy="100" r="45" fill="#A3E635"/>
+    <!-- Curved Seams -->
+    <path d="M 80 80 A 38 38 0 0 1 110 60 A 38 38 0 0 0 110 140 A 38 38 0 0 1 80 120" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 140 80 A 38 38 0 0 0 110 60 A 38 38 0 0 1 110 140 A 38 38 0 0 0 140 120" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>

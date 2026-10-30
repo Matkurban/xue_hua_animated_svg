@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Battery Outer Shell -->
+  <rect x="40" y="65" width="115" height="70" rx="12" fill="none" stroke="#64748B" stroke-width="6"/>
+  <!-- Terminal Tip -->
+  <path d="M 158 85 C 164 85, 168 89, 168 95 L 168 105 C 168 111, 164 115, 158 115 Z" fill="#64748B"/>
+  <!-- Battery Segment 1 -->
+  <rect x="48" y="73" width="22" height="54" rx="4" fill="#22C55E">
+    <animate attributeName="opacity" values="0.2;1;1;0.2" keyTimes="0;0.2;0.8;1" dur="2.4s" repeatCount="indefinite"/>
+  </rect>
+  <!-- Battery Segment 2 -->
+  <rect x="74" y="73" width="22" height="54" rx="4" fill="#22C55E">
+    <animate attributeName="opacity" values="0.2;0.2;1;0.2" keyTimes="0;0.35;0.8;1" dur="2.4s" repeatCount="indefinite"/>
+  </rect>
+  <!-- Battery Segment 3 -->
+  <rect x="100" y="73" width="22" height="54" rx="4" fill="#22C55E">
+    <animate attributeName="opacity" values="0.2;0.2;1;0.2" keyTimes="0;0.55;0.8;1" dur="2.4s" repeatCount="indefinite"/>
+  </rect>
+  <!-- Battery Segment 4 -->
+  <rect x="126" y="73" width="22" height="54" rx="4" fill="#22C55E">
+    <animate attributeName="opacity" values="0.2;0.2;1;0.2" keyTimes="0;0.75;0.8;1" dur="2.4s" repeatCount="indefinite"/>
+  </rect>
+</svg>

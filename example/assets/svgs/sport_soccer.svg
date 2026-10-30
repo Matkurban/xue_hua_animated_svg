@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#044E3B"/>
+  <!-- Spinning Soccer Ball -->
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="4s" repeatCount="indefinite"/>
+    <!-- Outer Sphere -->
+    <circle cx="100" cy="100" r="55" fill="#F8FAFC" stroke="#0F172A" stroke-width="4"/>
+    <!-- Center Black Pentagon -->
+    <polygon points="100,80 118,93 111,114 89,114 82,93" fill="#0F172A"/>
+    <!-- Outer Patches -->
+    <line x1="100" y1="80" x2="100" y2="55" stroke="#0F172A" stroke-width="3"/>
+    <line x1="118" y1="93" x2="142" y2="82" stroke="#0F172A" stroke-width="3"/>
+    <line x1="111" y1="114" x2="128" y2="138" stroke="#0F172A" stroke-width="3"/>
+    <line x1="89" y1="114" x2="72" y2="138" stroke="#0F172A" stroke-width="3"/>
+    <line x1="82" y1="93" x2="58" y2="82" stroke="#0F172A" stroke-width="3"/>
+  </g>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <rect width="200" height="200" rx="20" fill="#0F172A"/>
+  <!-- Outer Ring clockwise -->
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="1.4s" repeatCount="indefinite"/>
+    <circle cx="100" cy="100" r="60" fill="none" stroke="#334155" stroke-width="8"/>
+    <circle cx="100" cy="100" r="60" fill="none" stroke="#38BDF8" stroke-width="8" stroke-linecap="round" stroke-dasharray="100 280"/>
+  </g>
+  <!-- Inner Ring counter-clockwise -->
+  <g transform-origin="100 100">
+    <animateTransform attributeName="transform" type="rotate" from="360 100 100" to="0 100 100" dur="2s" repeatCount="indefinite"/>
+    <circle cx="100" cy="100" r="38" fill="none" stroke="#1E293B" stroke-width="6"/>
+    <circle cx="100" cy="100" r="38" fill="none" stroke="#F43F5E" stroke-width="6" stroke-linecap="round" stroke-dasharray="60 180"/>
+  </g>
+</svg>
