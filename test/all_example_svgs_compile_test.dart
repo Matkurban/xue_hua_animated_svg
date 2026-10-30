@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:xue_hua_animated_svg/xue_hua_animated_svg.dart';
 
@@ -14,7 +15,6 @@ void main() {
         .toList();
 
     expect(svgFiles.length, greaterThanOrEqualTo(112));
-
 
     int animatedCount = 0;
     for (final file in svgFiles) {
@@ -36,7 +36,6 @@ void main() {
         scene?.dispose();
       }
     }
-
 
     expect(animatedCount, greaterThanOrEqualTo(110));
   });

@@ -24,15 +24,9 @@ class _HomePageState extends State<HomePage> {
   Widget _buildThumbnail(SvgCatalogItem item) {
     switch (item.kind) {
       case SvgCatalogSourceKind.asset:
-        return AnimatedSvgPicture.asset(
-          item.assetPath!,
-          fit: BoxFit.contain,
-        );
+        return AnimatedSvgPicture.asset(item.assetPath!, fit: BoxFit.contain);
       case SvgCatalogSourceKind.string:
-        return AnimatedSvgPicture.string(
-          item.svgString!,
-          fit: BoxFit.contain,
-        );
+        return AnimatedSvgPicture.string(item.svgString!, fit: BoxFit.contain);
       case SvgCatalogSourceKind.network:
         return AnimatedSvgPicture.network(
           item.networkUrl!,
@@ -81,7 +75,9 @@ class _HomePageState extends State<HomePage> {
                     : null,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                 filled: true,
-                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                fillColor: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -109,9 +105,8 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 6),
                   Text(
                     '请尝试其他关键词或清空搜索',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -153,9 +148,7 @@ class _HomePageState extends State<HomePage> {
                             color: colorScheme.surfaceContainerHighest
                                 .withValues(alpha: 0.35),
                             padding: const EdgeInsets.all(8),
-                            child: Center(
-                              child: _buildThumbnail(item),
-                            ),
+                            child: Center(child: _buildThumbnail(item)),
                           ),
                         ),
                         // Metadata footer
@@ -169,9 +162,7 @@ class _HomePageState extends State<HomePage> {
                                 item.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
+                                style: Theme.of(context).textTheme.titleSmall
                                     ?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
@@ -182,9 +173,7 @@ class _HomePageState extends State<HomePage> {
                                 item.subtitle,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: colorScheme.onSurfaceVariant,
                                       fontSize: 11,
@@ -204,16 +193,14 @@ class _HomePageState extends State<HomePage> {
                                       decoration: BoxDecoration(
                                         color: colorScheme.primaryContainer
                                             .withValues(alpha: 0.6),
-                                        borderRadius:
-                                            BorderRadius.circular(6),
+                                        borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
                                         tag,
                                         style: TextStyle(
                                           fontSize: 9.5,
                                           fontWeight: FontWeight.w500,
-                                          color: colorScheme
-                                              .onPrimaryContainer,
+                                          color: colorScheme.onPrimaryContainer,
                                         ),
                                       ),
                                     ),

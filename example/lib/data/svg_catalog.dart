@@ -75,15 +75,6 @@ abstract final class SvgCatalog {
       iconName: 'radio_button_checked',
     ),
     const SvgCatalogItem(
-      id: 'network_elephant',
-      title: '网络大象',
-      subtitle: 'AnimatedSvgPicture.network：从 GitHub raw 拉取 elephant.svg',
-      tags: ['network', 'http'],
-      kind: SvgCatalogSourceKind.network,
-      networkUrl: 'https://raw.githubusercontent.com/Matkurban/xue_hua_animated_svg/main/example/assets/svgs/elephant.svg',
-      iconName: 'cloud_download',
-    ),
-    const SvgCatalogItem(
       id: 'alignment_badge',
       title: '九宫格对齐测试 (110×70)',
       subtitle: '小尺寸徽章 + scaleDown：同时支持靠上/居中/靠下与左/中/右全方向对齐',
@@ -1066,15 +1057,6 @@ abstract final class SvgCatalog {
       kind: SvgCatalogSourceKind.asset,
       assetPath: 'assets/svgs/art_spiral.svg',
       iconName: 'filter_tilt_shift',
-    ),
-    const SvgCatalogItem(
-      id: 'art_liquid_blob',
-      title: '流体有机液滴',
-      subtitle: '同构平滑曲线有机形变（Path d）',
-      tags: ['art', 'morph', 'liquid'],
-      kind: SvgCatalogSourceKind.asset,
-      assetPath: 'assets/svgs/art_liquid_blob.svg',
-      iconName: 'blur_on',
     ),
   ];
 
