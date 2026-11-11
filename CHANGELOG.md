@@ -1,3 +1,12 @@
+## 1.2.0
+
+* Refactored internal architecture into modular, single-responsibility Dart files following standard Dart and Flutter package conventions without any breaking changes to public APIs or runtime behavior:
+  * **Model (`lib/src/model/`)**: Split monolithic `svg_node.dart` into `svg_preserve_aspect_ratio.dart`, `svg_precompiled_path.dart`, `svg_element.dart`, `svg_container_nodes.dart`, `svg_geometry_node.dart`, `svg_shape_nodes.dart`, and `svg_document.dart`.
+  * **Animation (`lib/src/animation/`)**: Extracted `svg_animation_timing.dart`, `svg_property_tracks.dart`, and `svg_transform_tracks.dart` from `svg_timeline.dart`.
+  * **Parser (`lib/src/parser/`)**: Modularized `svg_xml_parser.dart` and `svg_css_parser.dart` into `svg_xml_tokenizer.dart`, `svg_smil_compiler.dart`, `svg_css_models.dart`, `svg_named_colors.dart`, `svg_css_value_parser.dart`, and `svg_css_keyframe_compiler.dart`.
+  * **Widget (`lib/src/widget/`)**: Separated `animated_svg_painter.dart` and `animated_svg_showcase_presets.dart` from `animated_svg_picture.dart`.
+  * **Example (`example/lib/data/`)**: Split `svg_catalog.dart` into categorized catalog modules (`svg_catalog_item.dart`, `catalog_core_items.dart`, `catalog_nature_space_items.dart`, `catalog_tech_ui_life_items.dart`, and `catalog_transport_animal_sport_art_items.dart`).
+
 ## 1.1.1
 
 * Fixed `SvgGroupNode.initializeGeometry`: When aggregating the `cachedBounds` of child nodes, 
