@@ -1,4 +1,4 @@
-import 'package:example/pages/home_page.dart';
+import 'package:example/pages/main_tab_page.dart';
 import 'package:example/theme/app_theme.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -6,7 +6,7 @@ void main() {
   runApp(const AnimatedSvgShowcaseApp());
 }
 
-/// Example app entry: list → preview, themed with [AppTheme].
+/// Example app entry: bottom tabs → showcase & fullscreen gallery, themed with [AppTheme].
 class AnimatedSvgShowcaseApp extends StatelessWidget {
   const AnimatedSvgShowcaseApp({super.key});
 
@@ -18,7 +18,7 @@ class AnimatedSvgShowcaseApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      home: const HomePage(),
+      home: const MainTabPage(),
     );
   }
 }
