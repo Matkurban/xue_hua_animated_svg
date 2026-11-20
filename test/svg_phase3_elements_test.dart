@@ -106,5 +106,46 @@ void main() {
       expect(grad.createShader(const ui.Rect.fromLTWH(10, 10, 80, 80)), isNotNull);
       scene.dispose();
     });
+
+    test('invalidates static ui.Picture cache when async <image> finishes decoding', () async {
+      // Static SVG (no animations) -> rootGroup records cachedPicture on first paint
+      const svg = '''
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="100" height="100" fill="#0F172A" />
+  <image x="10" y="10" width="80" height="80"
+    href="data:image/png;base64,$_red1x1PngBase64" preserveAspectRatio="none" />
+</svg>
+''';
+      final scene = SvgParser.compile(svg);
+      expect(scene.timeline.hasAnimations, isFalse);
+
+      // Paint frame 0 synchronously BEFORE async image decode completes
+      final rec0 = ui.PictureRecorder();
+      scene.document.paint(ui.Canvas(rec0), const ui.Size(100, 100));
+      rec0.endRecording().dispose();
+      expect(scene.document.rootGroup.cachedPicture, isNotNull);
+
+      // Wait for async decode -> notifyAsyncAssetLoaded() must invalidate cachedPicture
+      await scene.document.precacheImages();
+      expect(scene.document.rootGroup.cachedPicture, isNull);
+
+      // Repaint after decode -> center pixel must now be red from the PNG
+      final rec1 = ui.PictureRecorder();
+      scene.document.paint(ui.Canvas(rec1), const ui.Size(100, 100));
+      final pic1 = rec1.endRecording();
+      final img1 = await pic1.toImage(100, 100);
+      final bytes = (await img1.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      ))!.buffer.asUint8List();
+
+      final idx = (50 * 100 + 50) * 4;
+      expect(bytes[idx], greaterThan(200)); // R
+      expect(bytes[idx + 1], lessThan(30)); // G
+      expect(bytes[idx + 2], lessThan(30)); // B
+
+      img1.dispose();
+      pic1.dispose();
+      scene.dispose();
+    });
   });
 }

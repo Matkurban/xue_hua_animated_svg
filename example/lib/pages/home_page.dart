@@ -21,7 +21,6 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-
   List<SvgCatalogItem> get _filteredItems {
     final query = _searchQuery.trim().toLowerCase();
     if (query.isEmpty) return SvgCatalog.items;

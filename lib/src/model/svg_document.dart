@@ -83,7 +83,23 @@ class SvgDocument {
   }
 
   /// Notifies listeners (e.g. `AnimatedSvgPicture`) that an async `<image>` is ready.
+  ///
+  /// Also invalidates any cached static `ui.Picture` layers recorded prior to
+  /// image decode completion so non-animated SVGs repaint with the decoded image.
   void notifyAsyncAssetLoaded() {
+    rootGroup.invalidatePictureCache();
+    for (final def in defsById.values) {
+      def.invalidatePictureCache();
+    }
+    for (final mask in masksById.values) {
+      mask.invalidatePictureCache();
+    }
+    for (final pattern in patternsById.values) {
+      pattern.invalidatePictureCache();
+    }
+    for (final marker in markersById.values) {
+      marker.invalidatePictureCache();
+    }
     onAsyncAssetLoaded?.call();
   }
 

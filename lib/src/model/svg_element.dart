@@ -274,6 +274,16 @@ abstract class SvgElement {
     double effectiveOpacity,
   );
 
+  /// Disposes and clears any cached static [ui.Picture] on this node and its
+  /// descendants (e.g., when an asynchronous `<image>` finishes decoding).
+  void invalidatePictureCache() {
+    cachedPicture?.dispose();
+    cachedPicture = null;
+    for (final child in children) {
+      child.invalidatePictureCache();
+    }
+  }
+
   /// Releases native `ui.Picture` resources.
   void dispose() {
     cachedPicture?.dispose();

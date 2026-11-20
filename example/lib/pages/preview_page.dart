@@ -37,7 +37,6 @@ class _PreviewPageState extends State<PreviewPage> {
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
