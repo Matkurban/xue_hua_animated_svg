@@ -175,5 +175,8 @@ class SvgDocument {
     for (final marker in markersById.values) {
       marker.dispose();
     }
+    for (final filter in filtersById.values) {
+      filter.dispose();
+    }
   }
 }

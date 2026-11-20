@@ -71,9 +71,9 @@ class SvgTransformOrigin {
 }
 
 /// Paint server type for `fill` or `stroke`.
-enum SvgPaintType { none, color, gradient }
+enum SvgPaintType { none, color, gradient, currentColor }
 
-/// Precompiled paint server (solid color, gradient reference, or none).
+/// Precompiled paint server (solid color, gradient reference, currentColor, or none).
 class SvgPaintServer {
   final SvgPaintType type;
   final ui.Color color;
@@ -86,6 +86,9 @@ class SvgPaintServer {
   });
 
   static const SvgPaintServer none = SvgPaintServer._(type: SvgPaintType.none);
+  static const SvgPaintServer currentColor = SvgPaintServer._(
+    type: SvgPaintType.currentColor,
+  );
   static const SvgPaintServer defaultBlack = SvgPaintServer._(
     type: SvgPaintType.color,
     color: ui.Color(0xFF000000),
@@ -106,6 +109,7 @@ class SvgPaintServer {
 /// animations during `tick`) values ensure zero memory allocations in the render loop.
 class SvgStyle {
   // Base parsed paint & geometry properties
+  ui.Color? baseColor;
   SvgPaintServer? baseFill;
   SvgPaintServer? baseStroke;
   double? baseFillOpacity;
@@ -130,6 +134,9 @@ class SvgStyle {
   bool baseDisplayNone = false;
   bool? baseVisibilityHidden;
   bool? baseOverflowVisible;
+  bool? baseShapeRenderingCrisp;
+  ui.BlendMode? baseMixBlendMode;
+  bool? baseIsolationIsolate;
   bool displayNone = false;
   bool visibilityHidden = false;
   List<SvgTransformOp>? cssBaseTransformOps;
@@ -153,6 +160,7 @@ class SvgStyle {
   SvgPaintOrder? basePaintOrder;
 
   // Runtime mutated properties (written in-place during animation tick)
+  ui.Color currentColor = const ui.Color(0xFF000000);
   SvgPaintServer resolvedFill = SvgPaintServer.defaultBlack;
   SvgPaintServer resolvedStroke = SvgPaintServer.none;
   ui.Color currentFillColor = const ui.Color(0xFF000000);
@@ -173,6 +181,9 @@ class SvgStyle {
   String? currentMarkerStartId;
   String? currentMarkerMidId;
   String? currentMarkerEndId;
+  bool currentShapeRenderingCrisp = false;
+  ui.BlendMode currentMixBlendMode = ui.BlendMode.srcOver;
+  bool currentIsolationIsolate = false;
 
   // Runtime resolved SVG text properties
   String? currentFontFamily;
@@ -196,12 +207,18 @@ class SvgStyle {
 
   /// Resolves inherited style properties from [parentStyle] once during AST finalization.
   void resolveInheritance(SvgStyle? parentStyle) {
+    currentColor =
+        baseColor ?? parentStyle?.currentColor ?? const ui.Color(0xFF000000);
     resolvedFill =
         baseFill ?? parentStyle?.resolvedFill ?? SvgPaintServer.defaultBlack;
     resolvedStroke =
         baseStroke ?? parentStyle?.resolvedStroke ?? SvgPaintServer.none;
-    currentFillColor = resolvedFill.color;
-    currentStrokeColor = resolvedStroke.color;
+    currentFillColor = resolvedFill.type == SvgPaintType.currentColor
+        ? currentColor
+        : resolvedFill.color;
+    currentStrokeColor = resolvedStroke.type == SvgPaintType.currentColor
+        ? currentColor
+        : resolvedStroke.color;
 
     currentFillOpacity =
         baseFillOpacity ?? parentStyle?.currentFillOpacity ?? 1.0;
@@ -235,6 +252,12 @@ class SvgStyle {
     displayNone = baseDisplayNone;
     visibilityHidden =
         baseVisibilityHidden ?? parentStyle?.visibilityHidden ?? false;
+    currentShapeRenderingCrisp =
+        baseShapeRenderingCrisp ??
+        parentStyle?.currentShapeRenderingCrisp ??
+        false;
+    currentMixBlendMode = baseMixBlendMode ?? ui.BlendMode.srcOver;
+    currentIsolationIsolate = baseIsolationIsolate ?? false;
     currentMarkerStartId = baseMarkerStartId ?? parentStyle?.currentMarkerStartId;
     currentMarkerMidId = baseMarkerMidId ?? parentStyle?.currentMarkerMidId;
     currentMarkerEndId = baseMarkerEndId ?? parentStyle?.currentMarkerEndId;
@@ -315,12 +338,18 @@ class SvgStyle {
   /// Resets runtime values back to resolved initial values without allocating memory
   /// (except copying dasharray values into the pre-allocated list).
   void resetRuntimeToBase(SvgStyle? parentStyle) {
+    currentColor =
+        baseColor ?? parentStyle?.currentColor ?? const ui.Color(0xFF000000);
     resolvedFill =
         baseFill ?? parentStyle?.resolvedFill ?? SvgPaintServer.defaultBlack;
     resolvedStroke =
         baseStroke ?? parentStyle?.resolvedStroke ?? SvgPaintServer.none;
-    currentFillColor = resolvedFill.color;
-    currentStrokeColor = resolvedStroke.color;
+    currentFillColor = resolvedFill.type == SvgPaintType.currentColor
+        ? currentColor
+        : resolvedFill.color;
+    currentStrokeColor = resolvedStroke.type == SvgPaintType.currentColor
+        ? currentColor
+        : resolvedStroke.color;
     currentFillOpacity =
         baseFillOpacity ?? parentStyle?.currentFillOpacity ?? 1.0;
     currentStrokeOpacity =
@@ -334,6 +363,12 @@ class SvgStyle {
     displayNone = baseDisplayNone;
     visibilityHidden =
         baseVisibilityHidden ?? parentStyle?.visibilityHidden ?? false;
+    currentShapeRenderingCrisp =
+        baseShapeRenderingCrisp ??
+        parentStyle?.currentShapeRenderingCrisp ??
+        false;
+    currentMixBlendMode = baseMixBlendMode ?? ui.BlendMode.srcOver;
+    currentIsolationIsolate = baseIsolationIsolate ?? false;
     currentFontSize = baseFontSizeSpec != null
         ? resolvedBaseFontSize
         : (parentStyle?.currentFontSize ?? resolvedBaseFontSize);
@@ -358,13 +393,27 @@ class SvgStyle {
   /// at render time without allocating heap objects.
   void syncInheritedFromParent(SvgStyle? parentStyle) {
     if (parentStyle == null) return;
+    if (baseColor == null) {
+      currentColor = parentStyle.currentColor;
+    }
     if (baseFill == null) {
       resolvedFill = parentStyle.resolvedFill;
-      currentFillColor = parentStyle.currentFillColor;
+      currentFillColor = resolvedFill.type == SvgPaintType.currentColor
+          ? currentColor
+          : parentStyle.currentFillColor;
+    } else if (resolvedFill.type == SvgPaintType.currentColor) {
+      currentFillColor = currentColor;
     }
     if (baseStroke == null) {
       resolvedStroke = parentStyle.resolvedStroke;
-      currentStrokeColor = parentStyle.currentStrokeColor;
+      currentStrokeColor = resolvedStroke.type == SvgPaintType.currentColor
+          ? currentColor
+          : parentStyle.currentStrokeColor;
+    } else if (resolvedStroke.type == SvgPaintType.currentColor) {
+      currentStrokeColor = currentColor;
+    }
+    if (baseShapeRenderingCrisp == null) {
+      currentShapeRenderingCrisp = parentStyle.currentShapeRenderingCrisp;
     }
     if (baseFillOpacity == null) {
       currentFillOpacity = parentStyle.currentFillOpacity;
@@ -442,8 +491,18 @@ class SvgStyle {
   /// Merges incoming style rules (e.g., from CSS selector matching or inline style)
   /// into this [SvgStyle] during the build phase.
   void mergeFrom(SvgStyle other) {
+    if (other.baseColor != null) baseColor = other.baseColor;
     if (other.baseFill != null) baseFill = other.baseFill;
     if (other.baseStroke != null) baseStroke = other.baseStroke;
+    if (other.baseShapeRenderingCrisp != null) {
+      baseShapeRenderingCrisp = other.baseShapeRenderingCrisp;
+    }
+    if (other.baseMixBlendMode != null) {
+      baseMixBlendMode = other.baseMixBlendMode;
+    }
+    if (other.baseIsolationIsolate != null) {
+      baseIsolationIsolate = other.baseIsolationIsolate;
+    }
     if (other.baseFillOpacity != null) baseFillOpacity = other.baseFillOpacity;
     if (other.baseStrokeOpacity != null) {
       baseStrokeOpacity = other.baseStrokeOpacity;

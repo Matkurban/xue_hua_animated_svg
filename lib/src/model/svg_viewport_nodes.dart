@@ -297,6 +297,33 @@ class SvgSymbolNode extends SvgGroupNode {
     // Per W3C SVG spec, <symbol> is never rendered directly; only via <use>.
   }
 
+  /// Resolves the effective `(width, height)` for a `<use>` instantiation,
+  /// preserving `innerViewBox` aspect ratio when only one dimension is given.
+  ui.Size? resolveInstantiatedSize({double? useWidth, double? useHeight}) {
+    final explicitW = useWidth ?? baseWidth;
+    final explicitH = useHeight ?? baseHeight;
+    final vb = innerViewBox;
+    if (explicitW != null && explicitH != null) {
+      return ui.Size(explicitW, explicitH);
+    }
+    if (explicitW != null) {
+      if (vb != null && vb.width > 0.0 && vb.height > 0.0) {
+        return ui.Size(explicitW, explicitW * (vb.height / vb.width));
+      }
+      return ui.Size(explicitW, explicitW);
+    }
+    if (explicitH != null) {
+      if (vb != null && vb.width > 0.0 && vb.height > 0.0) {
+        return ui.Size(explicitH * (vb.width / vb.height), explicitH);
+      }
+      return ui.Size(explicitH, explicitH);
+    }
+    if (vb != null && vb.width > 0.0 && vb.height > 0.0) {
+      return ui.Size(vb.width, vb.height);
+    }
+    return null;
+  }
+
   /// Instantiates and paints this `<symbol>` from a `<use>` element.
   void paintInstantiated(
     ui.Canvas canvas,
@@ -306,8 +333,12 @@ class SvgSymbolNode extends SvgGroupNode {
   }) {
     if (style.displayNone) return;
 
-    final w = useWidth ?? baseWidth ?? innerViewBox?.width;
-    final h = useHeight ?? baseHeight ?? innerViewBox?.height;
+    final resolvedSize = resolveInstantiatedSize(
+      useWidth: useWidth,
+      useHeight: useHeight,
+    );
+    final w = resolvedSize?.width;
+    final h = resolvedSize?.height;
     final hasClip = _overflowHidden && w != null && h != null && w > 0 && h > 0;
     final hasViewBox =
         innerViewBox != null && w != null && h != null && w > 0 && h > 0;

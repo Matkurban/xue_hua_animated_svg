@@ -5,7 +5,8 @@ import 'svg_filter_node.dart';
 import 'svg_transform.dart';
 
 /// GPU-accelerated executor for [SvgFilterNode] filter graphs using Flutter's
-/// native `ui.ImageFilter`, `ui.ColorFilter`, `ui.BlendMode`, and `ui.Picture`.
+/// native `ui.ImageFilter`, `ui.ColorFilter`, `ui.BlendMode`, `ui.Vertices`,
+/// and `ui.Picture`.
 abstract final class SvgFilterExecutor {
   static const ui.ColorFilter _sourceAlphaFilter = ui.ColorFilter.matrix(
     <double>[
@@ -37,14 +38,17 @@ abstract final class SvgFilterExecutor {
     if (filter.primitives.length == 1) {
       final prim = filter.primitives.first;
       final src = prim.inSource;
-      final isDefaultSource = src == null || src.isEmpty || src == 'SourceGraphic';
-      if (isDefaultSource && _tryPaintSingleFastPath(canvas, prim, region, paintSource)) {
+      final isDefaultSource =
+          src == null || src.isEmpty || src == 'SourceGraphic';
+      if (isDefaultSource &&
+          _tryPaintSingleFastPath(canvas, prim, region, paintSource)) {
         return;
       }
     }
 
     // Full multi-step filter graph execution
     final buffers = <String, ui.Picture>{};
+    final fieldBuffers = <String, SvgFilterPixelField>{};
     final ownedPictures = <ui.Picture>[];
 
     ui.Picture recordPicture(void Function(ui.Canvas) draw) {
@@ -71,6 +75,7 @@ abstract final class SvgFilterExecutor {
       }
 
       ui.Picture lastResult = sourceGraphic;
+      SvgFilterPixelField? lastField;
 
       ui.Picture resolveInput(String? name) {
         if (name == null || name.isEmpty) return lastResult;
@@ -79,26 +84,38 @@ abstract final class SvgFilterExecutor {
         return buffers[name] ?? lastResult;
       }
 
+      SvgFilterPixelField? resolveField(String? name) {
+        if (name == null || name.isEmpty) return lastField;
+        return fieldBuffers[name];
+      }
+
       for (final prim in filter.primitives) {
+        SvgFilterPixelField? outField;
         final ui.Picture out = switch (prim) {
-          SvgFeGaussianBlur() => recordPicture((c) {
-            final inp = resolveInput(prim.inSource);
-            if (prim.sigmaX > 0.0 || prim.sigmaY > 0.0) {
-              c.saveLayer(
-                region,
-                ui.Paint()
-                  ..imageFilter = ui.ImageFilter.blur(
-                    sigmaX: prim.sigmaX,
-                    sigmaY: prim.sigmaY,
-                    tileMode: ui.TileMode.decal,
-                  ),
-              );
-              c.drawPicture(inp);
-              c.restore();
-            } else {
-              c.drawPicture(inp);
+          SvgFeGaussianBlur() => () {
+            final srcField = resolveField(prim.inSource);
+            if (srcField != null) {
+              outField = srcField.blurred(prim.sigmaX, prim.sigmaY);
             }
-          }),
+            return recordPicture((c) {
+              final inp = resolveInput(prim.inSource);
+              if (prim.sigmaX > 0.0 || prim.sigmaY > 0.0) {
+                c.saveLayer(
+                  region,
+                  ui.Paint()
+                    ..imageFilter = ui.ImageFilter.blur(
+                      sigmaX: prim.sigmaX,
+                      sigmaY: prim.sigmaY,
+                      tileMode: prim.tileMode,
+                    ),
+                );
+                c.drawPicture(inp);
+                c.restore();
+              } else {
+                c.drawPicture(inp);
+              }
+            });
+          }(),
           SvgFeOffset() => recordPicture((c) {
             final inp = resolveInput(prim.inSource);
             c.save();
@@ -131,17 +148,25 @@ abstract final class SvgFilterExecutor {
           SvgFeBlend() => recordPicture((c) {
             final in1 = resolveInput(prim.inSource);
             final in2 = resolveInput(prim.in2);
+            // Isolate blend inside its own layer so blendMode never leaks onto
+            // previously painted sibling elements on the main canvas.
+            c.saveLayer(region, ui.Paint());
             c.drawPicture(in2);
             c.saveLayer(region, ui.Paint()..blendMode = prim.mode);
             c.drawPicture(in1);
+            c.restore();
             c.restore();
           }),
           SvgFeComposite() => recordPicture((c) {
             final in1 = resolveInput(prim.inSource);
             final in2 = resolveInput(prim.in2);
+            // Isolate composite inside its own layer so Porter-Duff operators
+            // (e.g. srcIn) only clip against in2, never against main canvas siblings.
+            c.saveLayer(region, ui.Paint());
             c.drawPicture(in2);
             c.saveLayer(region, ui.Paint()..blendMode = prim.operatorMode);
             c.drawPicture(in1);
+            c.restore();
             c.restore();
           }),
           SvgFeMerge() => recordPicture((c) {
@@ -175,11 +200,59 @@ abstract final class SvgFilterExecutor {
             c.drawPicture(inp);
             c.restore();
           }),
+          SvgFeTurbulence() => () {
+            outField = prim.resolveField(region);
+            return prim.resolvePicture(region);
+          }(),
+          SvgFeDisplacementMap() => recordPicture((c) {
+            final in1 = resolveInput(prim.inSource);
+            final mapField = resolveField(prim.in2);
+            if (mapField == null ||
+                prim.scale.abs() < 1e-4 ||
+                region.width <= 0.0 ||
+                region.height <= 0.0) {
+              c.drawPicture(in1);
+              return;
+            }
+            // Rasterize in1 synchronously into an offscreen ui.Image capped at 512px
+            final maxDim = math.max(region.width, region.height);
+            final downscale = maxDim > 512.0 ? 512.0 / maxDim : 1.0;
+            final pxW = (region.width * downscale).ceil().clamp(1, 512);
+            final pxH = (region.height * downscale).ceil().clamp(1, 512);
+            final imgRec = ui.PictureRecorder();
+            final imgCanvas = ui.Canvas(
+              imgRec,
+              ui.Rect.fromLTWH(0.0, 0.0, pxW.toDouble(), pxH.toDouble()),
+            );
+            imgCanvas.scale(pxW / region.width, pxH / region.height);
+            imgCanvas.translate(-region.left, -region.top);
+            imgCanvas.drawPicture(in1);
+            final imgPic = imgRec.endRecording();
+            final srcImg = imgPic.toImageSync(pxW, pxH);
+            imgPic.dispose();
+            try {
+              SvgFilterNoiseEngine.paintDisplacedMesh(
+                canvas: c,
+                sourceImage: srcImg,
+                region: region,
+                mapField: mapField,
+                scale: prim.scale,
+                xChannel: prim.xChannel,
+                yChannel: prim.yChannel,
+              );
+            } finally {
+              srcImg.dispose();
+            }
+          }),
         };
 
         lastResult = out;
+        lastField = outField;
         if (prim.result != null && prim.result!.isNotEmpty) {
           buffers[prim.result!] = out;
+          if (outField != null) {
+            fieldBuffers[prim.result!] = outField!;
+          }
         }
       }
 
@@ -209,7 +282,7 @@ abstract final class SvgFilterExecutor {
             ..imageFilter = ui.ImageFilter.blur(
               sigmaX: prim.sigmaX,
               sigmaY: prim.sigmaY,
-              tileMode: ui.TileMode.decal,
+              tileMode: prim.tileMode,
             ),
         );
         paintSource(canvas);
@@ -263,6 +336,10 @@ abstract final class SvgFilterExecutor {
         canvas.saveLayer(region, ui.Paint()..colorFilter = cf);
         paintSource(canvas);
         canvas.restore();
+        return true;
+
+      case SvgFeTurbulence():
+        canvas.drawPicture(prim.resolvePicture(region));
         return true;
 
       default:

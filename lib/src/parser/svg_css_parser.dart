@@ -286,10 +286,19 @@ abstract final class SvgCssParser {
     if (val.isEmpty) return;
 
     switch (key) {
+      case 'color':
+        style.baseColor = parseColor(val);
       case 'fill':
         style.baseFill = parsePaintServer(val);
       case 'stroke':
         style.baseStroke = parsePaintServer(val);
+      case 'shape-rendering':
+        final sr = val.toLowerCase();
+        if (sr == 'crispedges' || sr == 'optimizespeed') {
+          style.baseShapeRenderingCrisp = true;
+        } else if (sr == 'auto' || sr == 'geometricprecision') {
+          style.baseShapeRenderingCrisp = false;
+        }
       case 'fill-opacity':
         style.baseFillOpacity = parseNumberOrPercent(val);
       case 'stroke-opacity':
@@ -385,6 +394,16 @@ abstract final class SvgCssParser {
           style.baseOverflowVisible = true;
         } else if (lower == 'hidden' || lower == 'scroll' || lower == 'auto') {
           style.baseOverflowVisible = false;
+        }
+      case 'mix-blend-mode':
+        final bm = SvgCssValueParser.parseBlendMode(val);
+        if (bm != null) style.baseMixBlendMode = bm;
+      case 'isolation':
+        final iso = val.toLowerCase();
+        if (iso == 'isolate') {
+          style.baseIsolationIsolate = true;
+        } else if (iso == 'auto') {
+          style.baseIsolationIsolate = false;
         }
       case 'font':
         SvgCssValueParser.applyFontShorthand(val, style);

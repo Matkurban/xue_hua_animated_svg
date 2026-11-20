@@ -1,7 +1,10 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'svg_filter_noise.dart';
 import 'svg_gradient.dart';
+
+export 'svg_filter_noise.dart';
 
 /// Base sealed class for precompiled SVG `<filter>` primitives (`fe*`).
 sealed class SvgFilterPrimitive {
@@ -11,16 +14,18 @@ sealed class SvgFilterPrimitive {
   const SvgFilterPrimitive({this.inSource, this.result});
 }
 
-/// `<feGaussianBlur stdDeviation="sx [sy]" />`
+/// `<feGaussianBlur stdDeviation="sx [sy]" edgeMode="none|duplicate|wrap" />`
 final class SvgFeGaussianBlur extends SvgFilterPrimitive {
   final double sigmaX;
   final double sigmaY;
+  final ui.TileMode tileMode;
 
   const SvgFeGaussianBlur({
     super.inSource,
     super.result,
     required this.sigmaX,
     required this.sigmaY,
+    this.tileMode = ui.TileMode.decal,
   });
 }
 
@@ -202,6 +207,86 @@ final class SvgFeComponentTransfer extends SvgFilterPrimitive {
   });
 }
 
+/// `<feTurbulence type="fractalNoise|turbulence" baseFrequency="..." numOctaves="..." seed="..." stitchTiles="..." />`
+final class SvgFeTurbulence extends SvgFilterPrimitive {
+  final bool isFractalNoise;
+  final double baseFreqX;
+  final double baseFreqY;
+  final int numOctaves;
+  final int seed;
+  final bool stitchTiles;
+
+  ui.Rect? _cachedRegion;
+  SvgFilterPixelField? _cachedField;
+  ui.Picture? _cachedPicture;
+
+  SvgFeTurbulence({
+    super.inSource,
+    super.result,
+    this.isFractalNoise = false,
+    this.baseFreqX = 0.0,
+    this.baseFreqY = 0.0,
+    this.numOctaves = 1,
+    this.seed = 0,
+    this.stitchTiles = false,
+  });
+
+  /// Returns or builds the cached [SvgFilterPixelField] for [region].
+  SvgFilterPixelField resolveField(ui.Rect region) {
+    if (_cachedField != null && _cachedRegion == region) {
+      return _cachedField!;
+    }
+    _cachedPicture?.dispose();
+    _cachedPicture = null;
+    _cachedRegion = region;
+    _cachedField = SvgFilterNoiseEngine.generateTurbulenceField(
+      region: region,
+      isFractalNoise: isFractalNoise,
+      baseFreqX: baseFreqX,
+      baseFreqY: baseFreqY,
+      numOctaves: numOctaves,
+      seed: seed,
+      stitchTiles: stitchTiles,
+    );
+    return _cachedField!;
+  }
+
+  /// Returns or records the cached [ui.Picture] mesh for [region].
+  ui.Picture resolvePicture(ui.Rect region) {
+    final field = resolveField(region);
+    if (_cachedPicture != null) return _cachedPicture!;
+    final rec = ui.PictureRecorder();
+    final c = ui.Canvas(rec, region);
+    SvgFilterNoiseEngine.paintFieldMesh(c, field);
+    _cachedPicture = rec.endRecording();
+    return _cachedPicture!;
+  }
+
+  void dispose() {
+    _cachedPicture?.dispose();
+    _cachedPicture = null;
+    _cachedField = null;
+    _cachedRegion = null;
+  }
+}
+
+/// `<feDisplacementMap in="..." in2="..." scale="..." xChannelSelector="..." yChannelSelector="..." />`
+final class SvgFeDisplacementMap extends SvgFilterPrimitive {
+  final String? in2;
+  final double scale;
+  final SvgChannelSelector xChannel;
+  final SvgChannelSelector yChannel;
+
+  const SvgFeDisplacementMap({
+    super.inSource,
+    super.result,
+    this.in2,
+    this.scale = 0.0,
+    this.xChannel = SvgChannelSelector.a,
+    this.yChannel = SvgChannelSelector.a,
+  });
+}
+
 /// Precompiled `<filter>` graph definition (W3C Filter Effects Level 1).
 class SvgFilterNode {
   final String id;
@@ -237,5 +322,14 @@ class SvgFilterNode {
       );
     }
     return ui.Rect.fromLTWH(x, y, width, height);
+  }
+
+  /// Releases any cached procedural noise `ui.Picture` resources.
+  void dispose() {
+    for (final prim in primitives) {
+      if (prim is SvgFeTurbulence) {
+        prim.dispose();
+      }
+    }
   }
 }

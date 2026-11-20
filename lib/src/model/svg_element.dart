@@ -165,12 +165,43 @@ abstract class SvgElement {
     return _cachedMaskFilter;
   }
 
+  /// Depth counter > 0 while painting inside a `<use>` instantiation so shared
+  /// `<symbol>` / `<defs>` subtrees bypass static `cachedPicture` and honor
+  /// per-instance inherited styles (e.g., different `fill`/`stroke` per `<use>`).
+  static int _dynamicUsePaintDepth = 0;
+
+  /// Begins a dynamic `<use>` paint pass that bypasses `cachedPicture`.
+  static void beginDynamicUsePaint() => _dynamicUsePaintDepth++;
+
+  /// Ends a dynamic `<use>` paint pass.
+  static void endDynamicUsePaint() {
+    if (_dynamicUsePaintDepth > 0) _dynamicUsePaintDepth--;
+  }
+
+  /// Recursively pushes inherited style properties from [parentStyle] through
+  /// this node and its descendants (used when `<use>` instantiates a template).
+  void syncInheritedStyleTree(SvgStyle? parentStyle) {
+    style.syncInheritedFromParent(parentStyle);
+    for (int i = 0; i < children.length; i++) {
+      children[i].syncInheritedStyleTree(style);
+    }
+  }
+
+  /// Recursively restores resolved runtime styles back to base values from
+  /// [parentStyle] after a `<use>` instantiation finishes.
+  void restoreBaseStyleTree(SvgStyle? parentStyle) {
+    style.resetRuntimeToBase(parentStyle);
+    for (int i = 0; i < children.length; i++) {
+      children[i].restoreBaseStyleTree(style);
+    }
+  }
+
   /// Renders this node onto [canvas]. Uses `cachedPicture` if `isAnimated == false`
   /// and this node is a group or complex static subtree.
   void paint(ui.Canvas canvas, SvgDocument document) {
     if (style.displayNone) return;
 
-    if (!isAnimated && shouldCacheStaticPicture) {
+    if (_dynamicUsePaintDepth == 0 && !isAnimated && shouldCacheStaticPicture) {
       if (cachedPicture == null) {
         final recorder = ui.PictureRecorder();
         final recCanvas = ui.Canvas(recorder);
@@ -198,7 +229,11 @@ abstract class SvgElement {
     final filterId = style.filterId;
     final filterNode = filterId != null ? document.filtersById[filterId] : null;
     final opacity = style.currentOpacity.clamp(0.0, 1.0);
-    final needsLayer = opacity < 1.0 && children.isNotEmpty;
+    final mixBlendMode = style.currentMixBlendMode;
+    final hasBlend = mixBlendMode != ui.BlendMode.srcOver;
+    final hasIsolation = style.currentIsolationIsolate;
+    final needsLayer =
+        hasBlend || hasIsolation || (opacity < 1.0 && children.isNotEmpty);
 
     final needsSave =
         hasTransform ||
@@ -221,12 +256,14 @@ abstract class SvgElement {
       canvas.clipPath(clipNode.resolveClipPath(document, cachedBounds));
     }
     if (needsLayer) {
-      cachedLayerPaint.color = ui.Color.fromARGB(
-        (opacity * 255.0).round().clamp(0, 255),
-        255,
-        255,
-        255,
-      );
+      cachedLayerPaint
+        ..blendMode = mixBlendMode
+        ..color = ui.Color.fromARGB(
+          (opacity * 255.0).round().clamp(0, 255),
+          255,
+          255,
+          255,
+        );
       canvas.saveLayer(null, cachedLayerPaint);
     }
 

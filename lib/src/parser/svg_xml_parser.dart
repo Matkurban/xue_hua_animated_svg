@@ -1178,11 +1178,22 @@ class _SvgSceneCompiler {
         final sd = SvgCssParser.parseNumberList(xml.attr('stdDeviation'));
         final sx = sd.isNotEmpty ? sd[0] : 0.0;
         final sy = sd.length > 1 ? sd[1] : sx;
+        final edgeModeRaw = xml.attr('edgeMode')?.trim().toLowerCase();
+        final ui.TileMode tileMode;
+        switch (edgeModeRaw) {
+          case 'duplicate':
+            tileMode = ui.TileMode.clamp;
+          case 'wrap':
+            tileMode = ui.TileMode.repeated;
+          default:
+            tileMode = ui.TileMode.decal;
+        }
         return SvgFeGaussianBlur(
           inSource: inSrc,
           result: res,
           sigmaX: sx,
           sigmaY: sy,
+          tileMode: tileMode,
         );
 
       case 'feDropShadow':
@@ -1305,8 +1316,53 @@ class _SvgSceneCompiler {
           funcA: aFunc,
         );
 
+      case 'feTurbulence':
+        final bf = SvgCssParser.parseNumberList(xml.attr('baseFrequency'));
+        final bfx = bf.isNotEmpty ? bf[0] : 0.0;
+        final bfy = bf.length > 1 ? bf[1] : bfx;
+        final oct = int.tryParse((xml.attr('numOctaves') ?? '1').trim()) ?? 1;
+        final seedVal =
+            double.tryParse((xml.attr('seed') ?? '0').trim())?.round() ?? 0;
+        final isFractal =
+            xml.attr('type')?.trim().toLowerCase() == 'fractalnoise';
+        final stitch =
+            xml.attr('stitchTiles')?.trim().toLowerCase() == 'stitch';
+        return SvgFeTurbulence(
+          inSource: inSrc,
+          result: res,
+          isFractalNoise: isFractal,
+          baseFreqX: bfx,
+          baseFreqY: bfy,
+          numOctaves: oct,
+          seed: seedVal,
+          stitchTiles: stitch,
+        );
+
+      case 'feDisplacementMap':
+        return SvgFeDisplacementMap(
+          inSource: inSrc,
+          result: res,
+          in2: xml.attr('in2'),
+          scale: SvgCssParser.parseLength(xml.attr('scale')) ?? 0.0,
+          xChannel: _parseChannelSelector(xml.attr('xChannelSelector')),
+          yChannel: _parseChannelSelector(xml.attr('yChannelSelector')),
+        );
+
       default:
         return null;
+    }
+  }
+
+  static SvgChannelSelector _parseChannelSelector(String? raw) {
+    switch (raw?.trim().toUpperCase()) {
+      case 'R':
+        return SvgChannelSelector.r;
+      case 'G':
+        return SvgChannelSelector.g;
+      case 'B':
+        return SvgChannelSelector.b;
+      default:
+        return SvgChannelSelector.a;
     }
   }
 

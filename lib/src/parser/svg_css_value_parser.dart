@@ -315,12 +315,16 @@ abstract final class SvgCssValueParser {
 
   /// Parses an SVG `fill` or `stroke` value into an [SvgPaintServer].
   ///
-  /// Solid colors (hex, `rgb()` / `rgba()`, named) are resolved before
-  /// `url(#id)` paint servers. Bare `#rrggbb` is never a gradient id.
-  /// `none` and `transparent` are handled after those two forms.
+  /// Solid colors (hex, `rgb()` / `rgba()`, `hsl()` / `hsla()`, `hwb()`, named)
+  /// are resolved before `url(#id)` paint servers. Bare `#rrggbb` is never a
+  /// gradient id. `currentColor`, `none`, and `transparent` are handled cleanly.
   static SvgPaintServer? parsePaintServer(String raw) {
     final s = raw.trim();
     if (s.isEmpty) return null;
+
+    if (s.toLowerCase() == 'currentcolor') {
+      return SvgPaintServer.currentColor;
+    }
 
     final color = parseColor(s);
     if (color != null) {
@@ -341,8 +345,8 @@ abstract final class SvgCssValueParser {
     return null;
   }
 
-  /// Parses hex (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`), `rgb()`, `rgba()`,
-  /// and standard SVG named colors into a [ui.Color] at parse time.
+  /// Parses hex (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`), `rgb()` / `rgba()`,
+  /// `hsl()` / `hsla()`, `hwb()`, and standard SVG named colors into a [ui.Color].
   static ui.Color? parseColor(String? raw) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
@@ -413,7 +417,156 @@ abstract final class SvgCssValueParser {
       return null;
     }
 
+    if (s.startsWith('hsl(') || s.startsWith('hsla(')) {
+      return _parseHslColor(s);
+    }
+
+    if (s.startsWith('hwb(')) {
+      return _parseHwbColor(s);
+    }
+
     return svgNamedColors[s];
+  }
+
+  /// Parses CSS Color 4 `hsl()` / `hsla()` (both comma and space/`/` syntax,
+  /// supporting `deg`, `rad`, `grad`, `turn` hue units).
+  static ui.Color? _parseHslColor(String s) {
+    final open = s.indexOf('(');
+    final close = s.lastIndexOf(')');
+    if (open == -1 || close <= open) return null;
+    final parts = s
+        .substring(open + 1, close)
+        .split(RegExp(r'[\s,/]+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (parts.length < 3) return null;
+
+    final rawHue = parseAngleOrLength(parts[0]);
+    final rawSat = _parseUnitPercentOrNumber(parts[1]);
+    final rawLight = _parseUnitPercentOrNumber(parts[2]);
+    if (rawHue == null || rawSat == null || rawLight == null) return null;
+
+    final h = ((rawHue % 360.0) + 360.0) % 360.0;
+    final sat = rawSat.clamp(0.0, 1.0);
+    final light = rawLight.clamp(0.0, 1.0);
+
+    // W3C CSS Color 4 §7.1 HSL to sRGB conversion
+    final c = (1.0 - (2.0 * light - 1.0).abs()) * sat;
+    final x = c * (1.0 - (((h / 60.0) % 2.0) - 1.0).abs());
+    final m = light - c * 0.5;
+
+    final double r1, g1, b1;
+    if (h < 60.0) {
+      r1 = c;
+      g1 = x;
+      b1 = 0.0;
+    } else if (h < 120.0) {
+      r1 = x;
+      g1 = c;
+      b1 = 0.0;
+    } else if (h < 180.0) {
+      r1 = 0.0;
+      g1 = c;
+      b1 = x;
+    } else if (h < 240.0) {
+      r1 = 0.0;
+      g1 = x;
+      b1 = c;
+    } else if (h < 300.0) {
+      r1 = x;
+      g1 = 0.0;
+      b1 = c;
+    } else {
+      r1 = c;
+      g1 = 0.0;
+      b1 = x;
+    }
+
+    final r = ((r1 + m) * 255.0).round().clamp(0, 255);
+    final g = ((g1 + m) * 255.0).round().clamp(0, 255);
+    final b = ((b1 + m) * 255.0).round().clamp(0, 255);
+    int a = 255;
+    if (parts.length >= 4) {
+      final aRatio = parseNumberOrPercent(parts[3]) ?? 1.0;
+      a = (aRatio.clamp(0.0, 1.0) * 255.0).round().clamp(0, 255);
+    }
+    return ui.Color.fromARGB(a, r, g, b);
+  }
+
+  /// Parses CSS Color 4 `hwb(H W% B% [/ A])` into sRGB.
+  static ui.Color? _parseHwbColor(String s) {
+    final open = s.indexOf('(');
+    final close = s.lastIndexOf(')');
+    if (open == -1 || close <= open) return null;
+    final parts = s
+        .substring(open + 1, close)
+        .split(RegExp(r'[\s,/]+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (parts.length < 3) return null;
+
+    final rawHue = parseAngleOrLength(parts[0]);
+    final rawWhite = _parseUnitPercentOrNumber(parts[1]);
+    final rawBlack = _parseUnitPercentOrNumber(parts[2]);
+    if (rawHue == null || rawWhite == null || rawBlack == null) return null;
+
+    final h = ((rawHue % 360.0) + 360.0) % 360.0;
+    final w = rawWhite.clamp(0.0, 1.0);
+    final bl = rawBlack.clamp(0.0, 1.0);
+    int a = 255;
+    if (parts.length >= 4) {
+      final aRatio = parseNumberOrPercent(parts[3]) ?? 1.0;
+      a = (aRatio.clamp(0.0, 1.0) * 255.0).round().clamp(0, 255);
+    }
+    if (w + bl >= 1.0) {
+      final gray = ((w / (w + bl)) * 255.0).round().clamp(0, 255);
+      return ui.Color.fromARGB(a, gray, gray, gray);
+    }
+
+    final x = 1.0 - (((h / 60.0) % 2.0) - 1.0).abs();
+    final double r0, g0, b0;
+    if (h < 60.0) {
+      r0 = 1.0;
+      g0 = x;
+      b0 = 0.0;
+    } else if (h < 120.0) {
+      r0 = x;
+      g0 = 1.0;
+      b0 = 0.0;
+    } else if (h < 180.0) {
+      r0 = 0.0;
+      g0 = 1.0;
+      b0 = x;
+    } else if (h < 240.0) {
+      r0 = 0.0;
+      g0 = x;
+      b0 = 1.0;
+    } else if (h < 300.0) {
+      r0 = x;
+      g0 = 0.0;
+      b0 = 1.0;
+    } else {
+      r0 = 1.0;
+      g0 = 0.0;
+      b0 = x;
+    }
+
+    final factor = 1.0 - w - bl;
+    final r = ((r0 * factor + w) * 255.0).round().clamp(0, 255);
+    final g = ((g0 * factor + w) * 255.0).round().clamp(0, 255);
+    final b = ((b0 * factor + w) * 255.0).round().clamp(0, 255);
+    return ui.Color.fromARGB(a, r, g, b);
+  }
+
+  /// Parses percentage (`75%` -> `0.75`) or CSS Color 4 0..100 number (`75` -> `0.75`).
+  static double? _parseUnitPercentOrNumber(String raw) {
+    final t = raw.trim();
+    if (t.endsWith('%')) {
+      final v = double.tryParse(t.substring(0, t.length - 1).trim());
+      return v != null ? v / 100.0 : null;
+    }
+    final v = double.tryParse(t);
+    return v != null ? v / 100.0 : null;
   }
 
   /// Parses a number or percentage (`50%` -> `0.5`).
@@ -824,5 +977,46 @@ abstract final class SvgCssValueParser {
       if (tok == 'stroke') return SvgPaintOrder.strokeFill;
     }
     return null;
+  }
+
+  /// Parses W3C CSS Compositing & Blending `mix-blend-mode` / `<feBlend mode>`.
+  static ui.BlendMode? parseBlendMode(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    switch (raw.trim().toLowerCase()) {
+      case 'normal':
+        return ui.BlendMode.srcOver;
+      case 'multiply':
+        return ui.BlendMode.multiply;
+      case 'screen':
+        return ui.BlendMode.screen;
+      case 'overlay':
+        return ui.BlendMode.overlay;
+      case 'darken':
+        return ui.BlendMode.darken;
+      case 'lighten':
+        return ui.BlendMode.lighten;
+      case 'color-dodge':
+        return ui.BlendMode.colorDodge;
+      case 'color-burn':
+        return ui.BlendMode.colorBurn;
+      case 'hard-light':
+        return ui.BlendMode.hardLight;
+      case 'soft-light':
+        return ui.BlendMode.softLight;
+      case 'difference':
+        return ui.BlendMode.difference;
+      case 'exclusion':
+        return ui.BlendMode.exclusion;
+      case 'hue':
+        return ui.BlendMode.hue;
+      case 'saturation':
+        return ui.BlendMode.saturation;
+      case 'color':
+        return ui.BlendMode.color;
+      case 'luminosity':
+        return ui.BlendMode.luminosity;
+      default:
+        return null;
+    }
   }
 }

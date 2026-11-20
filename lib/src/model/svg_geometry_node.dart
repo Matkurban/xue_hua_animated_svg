@@ -98,6 +98,7 @@ abstract class SvgGeometryNode extends SvgElement {
     refreshGeometryIfNeeded();
 
     final maskFilter = resolveMaskFilter();
+    final antiAlias = !style.currentShapeRenderingCrisp;
 
     // 1. Fill Pass
     final fillServer = style.resolvedFill;
@@ -107,7 +108,9 @@ abstract class SvgGeometryNode extends SvgElement {
     );
     if (fillServer.isVisible && fillAlpha > 0.0) {
       basePath.fillType = style.currentFillRule;
-      cachedFillPaint.maskFilter = maskFilter;
+      cachedFillPaint
+        ..isAntiAlias = antiAlias
+        ..maskFilter = maskFilter;
 
       if (fillServer.type == SvgPaintType.gradient &&
           fillServer.gradientId != null) {
@@ -141,6 +144,7 @@ abstract class SvgGeometryNode extends SvgElement {
     );
     if (strokeServer.isVisible && strokeWidth > 0.0 && strokeAlpha > 0.0) {
       cachedStrokePaint
+        ..isAntiAlias = antiAlias
         ..strokeWidth = strokeWidth
         ..strokeCap = style.currentStrokeCap
         ..strokeJoin = style.currentStrokeJoin

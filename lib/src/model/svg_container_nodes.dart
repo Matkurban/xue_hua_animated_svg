@@ -239,7 +239,17 @@ class SvgUseNode extends SvgElement {
       _activeUseDepth++;
       try {
         target.initializeGeometry(document);
-        if (baseWidth != null && baseHeight != null) {
+        if (target is SvgSymbolNode) {
+          final sz = target.resolveInstantiatedSize(
+            useWidth: baseWidth,
+            useHeight: baseHeight,
+          );
+          if (sz != null) {
+            cachedBounds = ui.Rect.fromLTWH(baseX, baseY, sz.width, sz.height);
+          } else {
+            cachedBounds = target.cachedBounds.shift(ui.Offset(baseX, baseY));
+          }
+        } else if (baseWidth != null && baseHeight != null) {
           cachedBounds = ui.Rect.fromLTWH(
             baseX,
             baseY,
@@ -297,35 +307,41 @@ class SvgUseNode extends SvgElement {
     if (target == null) return;
 
     _activeUseDepth++;
+    SvgElement.beginDynamicUsePaint();
     try {
       final hasOffset = currentX != 0.0 || currentY != 0.0;
       if (hasOffset) {
         canvas.save();
         canvas.translate(currentX, currentY);
       }
-      target.style.syncInheritedFromParent(style);
-      if (target is SvgSymbolNode) {
-        target.paintInstantiated(
-          canvas,
-          document,
-          useWidth: currentWidth,
-          useHeight: currentHeight,
-        );
-      } else if (target is SvgNestedSvgNode) {
-        target.paintWithViewport(
-          canvas,
-          document,
-          effectiveOpacity,
-          overrideWidth: currentWidth,
-          overrideHeight: currentHeight,
-        );
-      } else {
-        target.paint(canvas, document);
+      target.syncInheritedStyleTree(style);
+      try {
+        if (target is SvgSymbolNode) {
+          target.paintInstantiated(
+            canvas,
+            document,
+            useWidth: currentWidth,
+            useHeight: currentHeight,
+          );
+        } else if (target is SvgNestedSvgNode) {
+          target.paintWithViewport(
+            canvas,
+            document,
+            effectiveOpacity,
+            overrideWidth: currentWidth,
+            overrideHeight: currentHeight,
+          );
+        } else {
+          target.paint(canvas, document);
+        }
+      } finally {
+        target.restoreBaseStyleTree(target.parent?.style);
       }
       if (hasOffset) {
         canvas.restore();
       }
     } finally {
+      SvgElement.endDynamicUsePaint();
       _activeUseDepth--;
     }
   }
