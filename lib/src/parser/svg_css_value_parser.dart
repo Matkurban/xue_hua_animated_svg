@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/animation.dart' show Cubic;
 
 import '../model/svg_style.dart';
+import '../model/svg_text_style.dart';
 import '../model/svg_transform.dart';
 import 'svg_named_colors.dart';
 
@@ -478,5 +479,350 @@ abstract final class SvgCssValueParser {
       if (v != null) values.add(v);
     }
     return Float64List.fromList(values);
+  }
+
+  /// Parses an SVG text length (`px`, `pt`, `pc`, `mm`, `cm`, `in`, `em`, `rem`, `%`, or unitless).
+  static SvgTextLength? parseTextLength(String? raw) {
+    if (raw == null) return null;
+    final s = raw.trim().toLowerCase();
+    if (s.isEmpty || s == 'normal' || s == 'none' || s == 'auto') return null;
+    if (s.endsWith('rem')) {
+      final v = double.tryParse(s.substring(0, s.length - 3).trim());
+      return v != null ? SvgTextLength(v, SvgTextLengthUnit.rem) : null;
+    }
+    if (s.endsWith('em')) {
+      final v = double.tryParse(s.substring(0, s.length - 2).trim());
+      return v != null ? SvgTextLength(v, SvgTextLengthUnit.em) : null;
+    }
+    if (s.endsWith('%')) {
+      final v = double.tryParse(s.substring(0, s.length - 1).trim());
+      return v != null
+          ? SvgTextLength(v / 100.0, SvgTextLengthUnit.percent)
+          : null;
+    }
+    final px = parseLength(s);
+    return px != null ? SvgTextLength(px, SvgTextLengthUnit.pixels) : null;
+  }
+
+  /// Parses a whitespace- or comma-separated list of [SvgTextLength] values (`x`, `y`, `dx`, `dy`).
+  static List<SvgTextLength> parseTextLengthList(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return const [];
+    final tokens = raw
+        .trim()
+        .split(RegExp(r'[\s,]+'))
+        .where((e) => e.isNotEmpty);
+    final result = <SvgTextLength>[];
+    for (final tok in tokens) {
+      final parsed = parseTextLength(tok);
+      if (parsed != null) result.add(parsed);
+    }
+    return result;
+  }
+
+  /// Parses `font-size` supporting absolute/relative lengths, percentages, and CSS keywords.
+  static SvgTextLength? parseFontSize(String? raw) {
+    if (raw == null) return null;
+    final s = raw.trim().toLowerCase();
+    if (s.isEmpty) return null;
+    switch (s) {
+      case 'xx-small':
+        return const SvgTextLength(9.0);
+      case 'x-small':
+        return const SvgTextLength(10.0);
+      case 'small':
+        return const SvgTextLength(13.0);
+      case 'medium':
+        return const SvgTextLength(16.0);
+      case 'large':
+        return const SvgTextLength(18.0);
+      case 'x-large':
+        return const SvgTextLength(24.0);
+      case 'xx-large':
+        return const SvgTextLength(32.0);
+      case 'xxx-large':
+        return const SvgTextLength(48.0);
+      case 'smaller':
+        return const SvgTextLength(0.8333, SvgTextLengthUnit.em);
+      case 'larger':
+        return const SvgTextLength(1.2, SvgTextLengthUnit.em);
+      default:
+        return parseTextLength(s);
+    }
+  }
+
+  /// Parses `font-family` into a primary family name and cross-platform fallback list.
+  static (String?, List<String>?) parseFontFamily(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return (null, null);
+    final parts = raw.split(',');
+    final families = <String>[];
+    for (final part in parts) {
+      var name = part.trim();
+      if (name.length >= 2 &&
+          ((name.startsWith('"') && name.endsWith('"')) ||
+              (name.startsWith("'") && name.endsWith("'")))) {
+        name = name.substring(1, name.length - 1).trim();
+      }
+      if (name.isEmpty) continue;
+      final lower = name.toLowerCase();
+      switch (lower) {
+        case 'monospace':
+          families.addAll(const [
+            'monospace',
+            'Menlo',
+            'Courier New',
+            'Courier',
+          ]);
+        case 'serif':
+          families.addAll(const ['serif', 'Georgia', 'Times New Roman']);
+        case 'sans-serif':
+          families.addAll(const [
+            'sans-serif',
+            'Helvetica Neue',
+            'Arial',
+            'Roboto',
+          ]);
+        case 'cursive':
+          families.addAll(const ['cursive', 'Apple Chancery', 'Comic Sans MS']);
+        case 'fantasy':
+          families.addAll(const ['fantasy', 'Impact', 'Papyrus']);
+        case 'system-ui':
+          families.addAll(const [
+            '.SF Pro Text',
+            'Segoe UI',
+            'Roboto',
+            'sans-serif',
+          ]);
+        default:
+          families.add(name);
+      }
+    }
+    if (families.isEmpty) return (null, null);
+    final seen = <String>{};
+    final deduped = <String>[];
+    for (final f in families) {
+      if (seen.add(f)) deduped.add(f);
+    }
+    return (
+      deduped.first,
+      deduped.length > 1 ? List<String>.unmodifiable(deduped.sublist(1)) : null,
+    );
+  }
+
+  /// Parses `font-weight` (`normal`, `bold`, `bolder`, `lighter`, `100`..`900`).
+  static ui.FontWeight? parseFontWeight(String? raw) {
+    if (raw == null) return null;
+    final s = raw.trim().toLowerCase();
+    switch (s) {
+      case 'normal':
+        return ui.FontWeight.w400;
+      case 'bold':
+        return ui.FontWeight.w700;
+      case 'bolder':
+        return ui.FontWeight.w700;
+      case 'lighter':
+        return ui.FontWeight.w300;
+      default:
+        final n = double.tryParse(s);
+        if (n == null) return null;
+        if (n < 150) return ui.FontWeight.w100;
+        if (n < 250) return ui.FontWeight.w200;
+        if (n < 350) return ui.FontWeight.w300;
+        if (n < 450) return ui.FontWeight.w400;
+        if (n < 550) return ui.FontWeight.w500;
+        if (n < 650) return ui.FontWeight.w600;
+        if (n < 750) return ui.FontWeight.w700;
+        if (n < 850) return ui.FontWeight.w800;
+        return ui.FontWeight.w900;
+    }
+  }
+
+  /// Parses `font-style` (`normal`, `italic`, `oblique`).
+  static ui.FontStyle? parseFontStyle(String? raw) {
+    if (raw == null) return null;
+    final s = raw.trim().toLowerCase();
+    if (s == 'italic' || s.startsWith('oblique')) {
+      return ui.FontStyle.italic;
+    }
+    if (s == 'normal') return ui.FontStyle.normal;
+    return null;
+  }
+
+  /// Parses CSS `font` shorthand (e.g., `italic bold 30px/1.2 'Helvetica', sans-serif`).
+  static void applyFontShorthand(String raw, SvgStyle style) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return;
+
+    final tokens = <String>[];
+    final buf = StringBuffer();
+    bool inSingle = false;
+    bool inDouble = false;
+    for (int i = 0; i < trimmed.length; i++) {
+      final c = trimmed.codeUnitAt(i);
+      if (c == 0x27 && !inDouble) {
+        inSingle = !inSingle;
+        buf.writeCharCode(c);
+      } else if (c == 0x22 && !inSingle) {
+        inDouble = !inDouble;
+        buf.writeCharCode(c);
+      } else if ((c == 0x20 || c == 0x09) && !inSingle && !inDouble) {
+        if (buf.isNotEmpty) {
+          tokens.add(buf.toString());
+          buf.clear();
+        }
+      } else {
+        buf.writeCharCode(c);
+      }
+    }
+    if (buf.isNotEmpty) tokens.add(buf.toString());
+
+    int sizeIdx = -1;
+    for (int i = 0; i < tokens.length; i++) {
+      final tok = tokens[i];
+      final slashIdx = tok.indexOf('/');
+      final sizePart = slashIdx != -1 ? tok.substring(0, slashIdx) : tok;
+      final lower = sizePart.toLowerCase();
+      final isWeightNumber =
+          RegExp(r'^[1-9]00$').hasMatch(lower) && i + 1 < tokens.length;
+      if (isWeightNumber) continue;
+      final parsedSize = parseFontSize(sizePart);
+      if (parsedSize != null) {
+        style.baseFontSizeSpec = parsedSize;
+        sizeIdx = i;
+        break;
+      }
+    }
+
+    if (sizeIdx == -1) return;
+
+    for (int i = 0; i < sizeIdx; i++) {
+      final lower = tokens[i].toLowerCase();
+      final fStyle = parseFontStyle(lower);
+      if (fStyle != null) {
+        style.baseFontStyle = fStyle;
+        continue;
+      }
+      if (lower == 'small-caps') {
+        style.baseFontVariantSmallCaps = true;
+        continue;
+      }
+      final fWeight = parseFontWeight(lower);
+      if (fWeight != null) {
+        style.baseFontWeight = fWeight;
+      }
+    }
+
+    if (sizeIdx + 1 < tokens.length) {
+      final familyStr = tokens.sublist(sizeIdx + 1).join(' ');
+      final (fam, fb) = parseFontFamily(familyStr);
+      if (fam != null) {
+        style.baseFontFamily = fam;
+        style.baseFontFamilyFallback = fb;
+      }
+    }
+  }
+
+  /// Parses `text-anchor` (`start`, `middle`, `end`).
+  static SvgTextAnchor? parseTextAnchor(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'start':
+        return SvgTextAnchor.start;
+      case 'middle':
+        return SvgTextAnchor.middle;
+      case 'end':
+        return SvgTextAnchor.end;
+      default:
+        return null;
+    }
+  }
+
+  /// Parses `dominant-baseline` or `alignment-baseline`.
+  static SvgDominantBaseline? parseDominantBaseline(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'auto':
+      case 'use-script':
+      case 'no-change':
+      case 'reset-size':
+      case 'baseline':
+        return SvgDominantBaseline.auto;
+      case 'alphabetic':
+        return SvgDominantBaseline.alphabetic;
+      case 'ideographic':
+        return SvgDominantBaseline.ideographic;
+      case 'hanging':
+        return SvgDominantBaseline.hanging;
+      case 'mathematical':
+        return SvgDominantBaseline.mathematical;
+      case 'central':
+        return SvgDominantBaseline.central;
+      case 'middle':
+        return SvgDominantBaseline.middle;
+      case 'text-before-edge':
+      case 'before-edge':
+      case 'text-top':
+        return SvgDominantBaseline.textBeforeEdge;
+      case 'text-after-edge':
+      case 'after-edge':
+      case 'text-bottom':
+        return SvgDominantBaseline.textAfterEdge;
+      default:
+        return null;
+    }
+  }
+
+  /// Parses `baseline-shift` (`baseline`, `sub`, `super`, `<length>`, `<percentage>`).
+  static SvgBaselineShift? parseBaselineShift(String? raw) {
+    if (raw == null) return null;
+    final s = raw.trim().toLowerCase();
+    switch (s) {
+      case 'baseline':
+      case '0':
+        return SvgBaselineShift.baseline;
+      case 'sub':
+        return SvgBaselineShift.sub;
+      case 'super':
+        return SvgBaselineShift.superScript;
+      default:
+        if (s.endsWith('%')) {
+          final v = double.tryParse(s.substring(0, s.length - 1).trim());
+          return v != null
+              ? SvgBaselineShift(SvgBaselineShiftKind.percentage, v / 100.0)
+              : null;
+        }
+        final len = parseLength(s);
+        return len != null
+            ? SvgBaselineShift(SvgBaselineShiftKind.length, len)
+            : null;
+    }
+  }
+
+  /// Parses `text-decoration` (`none`, `underline`, `overline`, `line-through`).
+  static ui.TextDecoration? parseTextDecoration(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final tokens = raw.trim().toLowerCase().split(RegExp(r'\s+'));
+    if (tokens.contains('none')) return ui.TextDecoration.none;
+    final decos = <ui.TextDecoration>[];
+    for (final tok in tokens) {
+      switch (tok) {
+        case 'underline':
+          decos.add(ui.TextDecoration.underline);
+        case 'overline':
+          decos.add(ui.TextDecoration.overline);
+        case 'line-through':
+          decos.add(ui.TextDecoration.lineThrough);
+      }
+    }
+    if (decos.isEmpty) return null;
+    return ui.TextDecoration.combine(decos);
+  }
+
+  /// Parses `paint-order` (SVG 2: `normal`, `stroke`, `stroke fill`, `fill stroke`, etc.).
+  static SvgPaintOrder? parsePaintOrder(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final tokens = raw.trim().toLowerCase().split(RegExp(r'\s+'));
+    for (final tok in tokens) {
+      if (tok == 'normal' || tok == 'fill') return SvgPaintOrder.fillStroke;
+      if (tok == 'stroke') return SvgPaintOrder.strokeFill;
+    }
+    return null;
   }
 }

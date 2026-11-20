@@ -125,12 +125,12 @@ final List<SvgCatalogItem> coreCatalogItems = [
     iconName: 'equalizer',
   ),
   const SvgCatalogItem(
-    id: ' text',
+    id: 'text_svg',
     title: '文本显示',
-    subtitle: '文本',
-    tags: ['text'],
+    subtitle: 'SVG <text>：描边文字、旋转变换与基线居中',
+    tags: ['text', 'stroke', 'transform'],
     kind: SvgCatalogSourceKind.asset,
     assetPath: 'assets/svgs/text_svg.svg',
-    iconName: 'equalizer',
+    iconName: 'text_fields',
   ),
 ];

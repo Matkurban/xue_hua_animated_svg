@@ -133,6 +133,8 @@ abstract final class SvgCssKeyframeCompiler {
       case 'stroke-opacity':
       case 'stroke-width':
       case 'stroke-dashoffset':
+      case 'font-size':
+      case 'letter-spacing':
       case 'rx':
       case 'ry':
       case 'r':
@@ -140,6 +142,8 @@ abstract final class SvgCssKeyframeCompiler {
       case 'cy':
       case 'x':
       case 'y':
+      case 'dx':
+      case 'dy':
       case 'width':
       case 'height':
         final scalarTarget = _mapScalarProperty(property);
@@ -254,6 +258,10 @@ abstract final class SvgCssKeyframeCompiler {
         return '${s.baseStrokeWidth ?? 1.0}';
       case 'stroke-dashoffset':
         return '${s.baseStrokeDashoffset ?? 0.0}';
+      case 'font-size':
+        return '${s.currentFontSize}';
+      case 'letter-spacing':
+        return '${s.currentLetterSpacing ?? 0.0}';
       case 'filter':
         return 'blur(${s.baseBlurSigma ?? 0.0}px)';
       case 'fill':
@@ -279,10 +287,18 @@ abstract final class SvgCssKeyframeCompiler {
         return SvgScalarTarget.strokeWidth;
       case 'stroke-dashoffset':
         return SvgScalarTarget.strokeDashoffset;
+      case 'font-size':
+        return SvgScalarTarget.fontSize;
+      case 'letter-spacing':
+        return SvgScalarTarget.letterSpacing;
       case 'x':
         return SvgScalarTarget.x;
       case 'y':
         return SvgScalarTarget.y;
+      case 'dx':
+        return SvgScalarTarget.dx;
+      case 'dy':
+        return SvgScalarTarget.dy;
       case 'width':
         return SvgScalarTarget.width;
       case 'height':

@@ -15,8 +15,12 @@ enum SvgScalarTarget {
   strokeWidth,
   strokeDashoffset,
   blurSigma,
+  fontSize,
+  letterSpacing,
   x,
   y,
+  dx,
+  dy,
   width,
   height,
   rx,
@@ -101,12 +105,25 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
             0.0,
             isSum ? t.style.currentBlurSigma + value : value,
           );
+        case SvgScalarTarget.fontSize:
+          t.style.currentFontSize = math.max(
+            0.0,
+            isSum ? t.style.currentFontSize + value : value,
+          );
+        case SvgScalarTarget.letterSpacing:
+          t.style.currentLetterSpacing = isSum
+              ? (t.style.currentLetterSpacing ?? 0.0) + value
+              : value;
         case SvgScalarTarget.x:
           if (t is SvgRectNode) {
             t.currentX = isSum ? t.currentX + value : value;
             t.markGeometryDirty();
           } else if (t is SvgUseNode) {
             t.currentX = isSum ? t.currentX + value : value;
+          } else if (t is SvgTextNode) {
+            t.animatedX = isSum ? (t.animatedX ?? 0.0) + value : value;
+          } else if (t is SvgTextSpanNode) {
+            t.animatedX = isSum ? (t.animatedX ?? 0.0) + value : value;
           }
         case SvgScalarTarget.y:
           if (t is SvgRectNode) {
@@ -114,6 +131,22 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
             t.markGeometryDirty();
           } else if (t is SvgUseNode) {
             t.currentY = isSum ? t.currentY + value : value;
+          } else if (t is SvgTextNode) {
+            t.animatedY = isSum ? (t.animatedY ?? 0.0) + value : value;
+          } else if (t is SvgTextSpanNode) {
+            t.animatedY = isSum ? (t.animatedY ?? 0.0) + value : value;
+          }
+        case SvgScalarTarget.dx:
+          if (t is SvgTextNode) {
+            t.animatedDx = isSum ? (t.animatedDx ?? 0.0) + value : value;
+          } else if (t is SvgTextSpanNode) {
+            t.animatedDx = isSum ? (t.animatedDx ?? 0.0) + value : value;
+          }
+        case SvgScalarTarget.dy:
+          if (t is SvgTextNode) {
+            t.animatedDy = isSum ? (t.animatedDy ?? 0.0) + value : value;
+          } else if (t is SvgTextSpanNode) {
+            t.animatedDy = isSum ? (t.animatedDy ?? 0.0) + value : value;
           }
         case SvgScalarTarget.width:
           if (t is SvgRectNode) {

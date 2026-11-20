@@ -1,7 +1,7 @@
 import 'package:example/data/svg_catalog.dart';
 import 'package:example/pages/preview_page.dart';
+import 'package:example/widgets/catalog_svg_picture.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:xue_hua_animated_svg/xue_hua_animated_svg.dart';
 
 /// Home screen: interactive GridView catalog of animated SVG demos.
 class HomePage extends StatefulWidget {
@@ -21,19 +21,6 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  Widget _buildThumbnail(SvgCatalogItem item) {
-    switch (item.kind) {
-      case SvgCatalogSourceKind.asset:
-        return AnimatedSvgPicture.asset(item.assetPath!, fit: BoxFit.contain);
-      case SvgCatalogSourceKind.string:
-        return AnimatedSvgPicture.string(item.svgString!, fit: BoxFit.contain);
-      case SvgCatalogSourceKind.network:
-        return AnimatedSvgPicture.network(
-          item.networkUrl!,
-          fit: BoxFit.contain,
-        );
-    }
-  }
 
   List<SvgCatalogItem> get _filteredItems {
     final query = _searchQuery.trim().toLowerCase();
@@ -148,7 +135,12 @@ class _HomePageState extends State<HomePage> {
                             color: colorScheme.surfaceContainerHighest
                                 .withValues(alpha: 0.35),
                             padding: const EdgeInsets.all(8),
-                            child: Center(child: _buildThumbnail(item)),
+                            child: Center(
+                              child: CatalogSvgPicture(
+                                item: item,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
                           ),
                         ),
                         // Metadata footer

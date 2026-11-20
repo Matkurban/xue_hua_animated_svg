@@ -1,4 +1,5 @@
 import 'package:example/data/svg_catalog.dart';
+import 'package:example/widgets/catalog_svg_picture.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:xue_hua_animated_svg/xue_hua_animated_svg.dart';
 
@@ -36,42 +37,6 @@ class _PreviewPageState extends State<PreviewPage> {
     super.dispose();
   }
 
-  Widget _buildPicture() {
-    final item = widget.item;
-    final filter = _tintEnabled ? _tintFilter : null;
-    switch (item.kind) {
-      case SvgCatalogSourceKind.asset:
-        return AnimatedSvgPicture.asset(
-          item.assetPath!,
-          controller: _controller,
-          width: 320,
-          height: 200,
-          fit: _fit,
-          alignment: _alignment,
-          colorFilter: filter,
-        );
-      case SvgCatalogSourceKind.string:
-        return AnimatedSvgPicture.string(
-          item.svgString!,
-          controller: _controller,
-          width: 320,
-          height: 200,
-          fit: _fit,
-          alignment: _alignment,
-          colorFilter: filter,
-        );
-      case SvgCatalogSourceKind.network:
-        return AnimatedSvgPicture.network(
-          item.networkUrl!,
-          controller: _controller,
-          width: 320,
-          height: 200,
-          fit: _fit,
-          alignment: _alignment,
-          colorFilter: filter,
-        );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +125,15 @@ class _PreviewPageState extends State<PreviewPage> {
                     height: 200,
                     child: ColoredBox(
                       color: colorScheme.surfaceContainerHighest,
-                      child: _buildPicture(),
+                      child: CatalogSvgPicture(
+                        item: widget.item,
+                        controller: _controller,
+                        width: 320,
+                        height: 200,
+                        fit: _fit,
+                        alignment: _alignment,
+                        colorFilter: _tintEnabled ? _tintFilter : null,
+                      ),
                     ),
                   ),
                 ),

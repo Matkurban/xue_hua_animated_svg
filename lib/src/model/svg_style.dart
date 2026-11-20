@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'svg_text_style.dart';
 import 'svg_transform.dart';
 
 /// How `transform-origin` X/Y coordinates are specified.
@@ -104,7 +105,7 @@ class SvgPaintServer {
 /// Separate base (immutable after AST build) and current (mutated in-place by
 /// animations during `tick`) values ensure zero memory allocations in the render loop.
 class SvgStyle {
-  // Base parsed properties
+  // Base parsed paint & geometry properties
   SvgPaintServer? baseFill;
   SvgPaintServer? baseStroke;
   double? baseFillOpacity;
@@ -125,6 +126,24 @@ class SvgStyle {
   bool visibilityHidden = false;
   List<SvgTransformOp>? cssBaseTransformOps;
 
+  // Base parsed SVG text presentation properties (W3C SVG 1.1 / SVG 2)
+  String? baseFontFamily;
+  List<String>? baseFontFamilyFallback;
+  SvgTextLength? baseFontSizeSpec;
+  ui.FontWeight? baseFontWeight;
+  ui.FontStyle? baseFontStyle;
+  bool? baseFontVariantSmallCaps;
+  SvgTextAnchor? baseTextAnchor;
+  SvgDominantBaseline? baseDominantBaseline;
+  SvgDominantBaseline? baseAlignmentBaseline;
+  SvgBaselineShift? baseBaselineShift;
+  SvgTextLength? baseLetterSpacingSpec;
+  SvgTextLength? baseWordSpacingSpec;
+  ui.TextDecoration? baseTextDecoration;
+  ui.TextDirection? baseTextDirection;
+  SvgWhiteSpace? baseWhiteSpace;
+  SvgPaintOrder? basePaintOrder;
+
   // Runtime mutated properties (written in-place during animation tick)
   SvgPaintServer resolvedFill = SvgPaintServer.defaultBlack;
   SvgPaintServer resolvedStroke = SvgPaintServer.none;
@@ -143,6 +162,26 @@ class SvgStyle {
   double? currentPathLength;
   double currentBlurSigma = 0.0;
   SvgTransformOrigin currentTransformOrigin = SvgTransformOrigin.zero;
+
+  // Runtime resolved SVG text properties
+  String? currentFontFamily;
+  List<String>? currentFontFamilyFallback;
+  double resolvedBaseFontSize = 16.0;
+  double currentFontSize = 16.0;
+  ui.FontWeight currentFontWeight = ui.FontWeight.w400;
+  ui.FontStyle currentFontStyle = ui.FontStyle.normal;
+  bool currentFontVariantSmallCaps = false;
+  SvgTextAnchor currentTextAnchor = SvgTextAnchor.start;
+  SvgDominantBaseline currentDominantBaseline = SvgDominantBaseline.auto;
+  SvgDominantBaseline? currentAlignmentBaseline;
+  SvgBaselineShift currentBaselineShift = SvgBaselineShift.baseline;
+  double? resolvedBaseLetterSpacing;
+  double? currentLetterSpacing;
+  double? currentWordSpacing;
+  ui.TextDecoration currentTextDecoration = ui.TextDecoration.none;
+  ui.TextDirection currentTextDirection = ui.TextDirection.ltr;
+  SvgWhiteSpace currentWhiteSpace = SvgWhiteSpace.normal;
+  SvgPaintOrder currentPaintOrder = SvgPaintOrder.fillStroke;
 
   /// Resolves inherited style properties from [parentStyle] once during AST finalization.
   void resolveInheritance(SvgStyle? parentStyle) {
@@ -182,6 +221,78 @@ class SvgStyle {
     currentPathLength = basePathLength;
     currentBlurSigma = baseBlurSigma ?? 0.0;
     currentTransformOrigin = baseTransformOrigin ?? SvgTransformOrigin.zero;
+
+    // Text presentation properties
+    final parentFontSize = parentStyle?.currentFontSize ?? 16.0;
+    if (baseFontSizeSpec != null) {
+      resolvedBaseFontSize = baseFontSizeSpec!
+          .resolve(
+            fontSize: parentFontSize,
+            rootFontSize: 16.0,
+            referenceExtent: parentFontSize,
+          )
+          .clamp(0.0, double.infinity);
+    } else {
+      resolvedBaseFontSize = parentFontSize;
+    }
+    currentFontSize = resolvedBaseFontSize;
+
+    currentFontFamily = baseFontFamily ?? parentStyle?.currentFontFamily;
+    currentFontFamilyFallback =
+        baseFontFamilyFallback ?? parentStyle?.currentFontFamilyFallback;
+    currentFontWeight =
+        baseFontWeight ?? parentStyle?.currentFontWeight ?? ui.FontWeight.w400;
+    currentFontStyle =
+        baseFontStyle ?? parentStyle?.currentFontStyle ?? ui.FontStyle.normal;
+    currentFontVariantSmallCaps =
+        baseFontVariantSmallCaps ??
+        parentStyle?.currentFontVariantSmallCaps ??
+        false;
+    currentTextAnchor =
+        baseTextAnchor ?? parentStyle?.currentTextAnchor ?? SvgTextAnchor.start;
+    currentDominantBaseline =
+        baseDominantBaseline ??
+        parentStyle?.currentDominantBaseline ??
+        SvgDominantBaseline.auto;
+    // alignment-baseline and baseline-shift are non-inherited per W3C SVG spec
+    currentAlignmentBaseline = baseAlignmentBaseline;
+    currentBaselineShift = baseBaselineShift ?? SvgBaselineShift.baseline;
+
+    if (baseLetterSpacingSpec != null) {
+      resolvedBaseLetterSpacing = baseLetterSpacingSpec!.resolve(
+        fontSize: currentFontSize,
+        rootFontSize: 16.0,
+        referenceExtent: currentFontSize,
+      );
+    } else {
+      resolvedBaseLetterSpacing = parentStyle?.currentLetterSpacing;
+    }
+    currentLetterSpacing = resolvedBaseLetterSpacing;
+
+    if (baseWordSpacingSpec != null) {
+      currentWordSpacing = baseWordSpacingSpec!.resolve(
+        fontSize: currentFontSize,
+        rootFontSize: 16.0,
+        referenceExtent: currentFontSize,
+      );
+    } else {
+      currentWordSpacing = parentStyle?.currentWordSpacing;
+    }
+
+    currentTextDecoration =
+        baseTextDecoration ??
+        parentStyle?.currentTextDecoration ??
+        ui.TextDecoration.none;
+    currentTextDirection =
+        baseTextDirection ??
+        parentStyle?.currentTextDirection ??
+        ui.TextDirection.ltr;
+    currentWhiteSpace =
+        baseWhiteSpace ?? parentStyle?.currentWhiteSpace ?? SvgWhiteSpace.normal;
+    currentPaintOrder =
+        basePaintOrder ??
+        parentStyle?.currentPaintOrder ??
+        SvgPaintOrder.fillStroke;
   }
 
   /// Resets runtime values back to resolved initial values without allocating memory
@@ -203,6 +314,12 @@ class SvgStyle {
     currentStrokeDashoffset =
         baseStrokeDashoffset ?? parentStyle?.currentStrokeDashoffset ?? 0.0;
     currentBlurSigma = baseBlurSigma ?? 0.0;
+    currentFontSize = baseFontSizeSpec != null
+        ? resolvedBaseFontSize
+        : (parentStyle?.currentFontSize ?? resolvedBaseFontSize);
+    currentLetterSpacing = baseLetterSpacingSpec != null
+        ? resolvedBaseLetterSpacing
+        : (parentStyle?.currentLetterSpacing ?? resolvedBaseLetterSpacing);
 
     final inheritedDash =
         baseStrokeDasharray ?? parentStyle?.currentStrokeDasharray;
@@ -257,6 +374,46 @@ class SvgStyle {
         parentStyle.currentStrokeDasharray != null) {
       currentStrokeDasharray = parentStyle.currentStrokeDasharray;
     }
+    if (baseFontFamily == null) {
+      currentFontFamily = parentStyle.currentFontFamily;
+      currentFontFamilyFallback = parentStyle.currentFontFamilyFallback;
+    }
+    if (baseFontSizeSpec == null) {
+      currentFontSize = parentStyle.currentFontSize;
+    }
+    if (baseFontWeight == null) {
+      currentFontWeight = parentStyle.currentFontWeight;
+    }
+    if (baseFontStyle == null) {
+      currentFontStyle = parentStyle.currentFontStyle;
+    }
+    if (baseFontVariantSmallCaps == null) {
+      currentFontVariantSmallCaps = parentStyle.currentFontVariantSmallCaps;
+    }
+    if (baseTextAnchor == null) {
+      currentTextAnchor = parentStyle.currentTextAnchor;
+    }
+    if (baseDominantBaseline == null) {
+      currentDominantBaseline = parentStyle.currentDominantBaseline;
+    }
+    if (baseLetterSpacingSpec == null) {
+      currentLetterSpacing = parentStyle.currentLetterSpacing;
+    }
+    if (baseWordSpacingSpec == null) {
+      currentWordSpacing = parentStyle.currentWordSpacing;
+    }
+    if (baseTextDecoration == null) {
+      currentTextDecoration = parentStyle.currentTextDecoration;
+    }
+    if (baseTextDirection == null) {
+      currentTextDirection = parentStyle.currentTextDirection;
+    }
+    if (baseWhiteSpace == null) {
+      currentWhiteSpace = parentStyle.currentWhiteSpace;
+    }
+    if (basePaintOrder == null) {
+      currentPaintOrder = parentStyle.currentPaintOrder;
+    }
   }
 
   /// Merges incoming style rules (e.g., from CSS selector matching or inline style)
@@ -293,5 +450,41 @@ class SvgStyle {
     if (other.cssBaseTransformOps != null) {
       cssBaseTransformOps = other.cssBaseTransformOps;
     }
+    if (other.baseFontFamily != null) baseFontFamily = other.baseFontFamily;
+    if (other.baseFontFamilyFallback != null) {
+      baseFontFamilyFallback = other.baseFontFamilyFallback;
+    }
+    if (other.baseFontSizeSpec != null) {
+      baseFontSizeSpec = other.baseFontSizeSpec;
+    }
+    if (other.baseFontWeight != null) baseFontWeight = other.baseFontWeight;
+    if (other.baseFontStyle != null) baseFontStyle = other.baseFontStyle;
+    if (other.baseFontVariantSmallCaps != null) {
+      baseFontVariantSmallCaps = other.baseFontVariantSmallCaps;
+    }
+    if (other.baseTextAnchor != null) baseTextAnchor = other.baseTextAnchor;
+    if (other.baseDominantBaseline != null) {
+      baseDominantBaseline = other.baseDominantBaseline;
+    }
+    if (other.baseAlignmentBaseline != null) {
+      baseAlignmentBaseline = other.baseAlignmentBaseline;
+    }
+    if (other.baseBaselineShift != null) {
+      baseBaselineShift = other.baseBaselineShift;
+    }
+    if (other.baseLetterSpacingSpec != null) {
+      baseLetterSpacingSpec = other.baseLetterSpacingSpec;
+    }
+    if (other.baseWordSpacingSpec != null) {
+      baseWordSpacingSpec = other.baseWordSpacingSpec;
+    }
+    if (other.baseTextDecoration != null) {
+      baseTextDecoration = other.baseTextDecoration;
+    }
+    if (other.baseTextDirection != null) {
+      baseTextDirection = other.baseTextDirection;
+    }
+    if (other.baseWhiteSpace != null) baseWhiteSpace = other.baseWhiteSpace;
+    if (other.basePaintOrder != null) basePaintOrder = other.basePaintOrder;
   }
 }

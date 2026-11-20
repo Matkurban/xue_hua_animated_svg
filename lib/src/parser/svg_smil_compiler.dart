@@ -310,10 +310,18 @@ class SvgSmilCompiler {
         return SvgScalarTarget.strokeWidth;
       case 'stroke-dashoffset':
         return SvgScalarTarget.strokeDashoffset;
+      case 'font-size':
+        return SvgScalarTarget.fontSize;
+      case 'letter-spacing':
+        return SvgScalarTarget.letterSpacing;
       case 'x':
         return SvgScalarTarget.x;
       case 'y':
         return SvgScalarTarget.y;
+      case 'dx':
+        return SvgScalarTarget.dx;
+      case 'dy':
+        return SvgScalarTarget.dy;
       case 'width':
         return SvgScalarTarget.width;
       case 'height':
@@ -353,13 +361,22 @@ class SvgSmilCompiler {
         return '${element.style.currentStrokeWidth}';
       case 'stroke-dashoffset':
         return '${element.style.currentStrokeDashoffset}';
+      case 'font-size':
+        return '${element.style.currentFontSize}';
+      case 'letter-spacing':
+        return '${element.style.currentLetterSpacing ?? 0.0}';
       case 'x':
         if (element is SvgRectNode) return '${element.baseX}';
         if (element is SvgUseNode) return '${element.baseX}';
+        if (element is SvgTextNode) return '${element.resolveBaseX(viewBox)}';
         return '0';
       case 'y':
         if (element is SvgRectNode) return '${element.baseY}';
         if (element is SvgUseNode) return '${element.baseY}';
+        if (element is SvgTextNode) return '${element.resolveBaseY(viewBox)}';
+        return '0';
+      case 'dx':
+      case 'dy':
         return '0';
       case 'width':
         if (element is SvgRectNode) return '${element.baseWidth}';

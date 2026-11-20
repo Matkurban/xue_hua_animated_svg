@@ -517,6 +517,33 @@ class _SvgSceneCompiler {
           closePath: tag == 'polygon',
         );
 
+      case 'text':
+        final contentItems = _buildTextContentItems(
+          parentXml: xml,
+          parentStyle: style,
+          insideDefs: insideDefs,
+        );
+        final textNode = SvgTextNode(
+          id: id,
+          classes: classes,
+          style: style,
+          baseTransformOps: baseTransformOps,
+          xList: SvgCssValueParser.parseTextLengthList(xml.attr('x')),
+          yList: SvgCssValueParser.parseTextLengthList(xml.attr('y')),
+          dxList: SvgCssValueParser.parseTextLengthList(xml.attr('dx')),
+          dyList: SvgCssValueParser.parseTextLengthList(xml.attr('dy')),
+          rotateList: SvgCssParser.parseNumberList(xml.attr('rotate')),
+          textLength: SvgCssValueParser.parseTextLength(xml.attr('textLength')),
+          lengthAdjust: _parseLengthAdjust(xml.attr('lengthAdjust')),
+          contentItems: contentItems,
+        );
+        for (final item in contentItems) {
+          if (item case final SvgElement elem) {
+            elem.parent = textNode;
+          }
+        }
+        node = textNode;
+
       default:
         return null;
     }
@@ -784,6 +811,166 @@ class _SvgSceneCompiler {
       default:
         return ui.TileMode.clamp;
     }
+  }
+
+  List<SvgTextContentItem> _buildTextContentItems({
+    required SvgXmlElement parentXml,
+    required SvgStyle parentStyle,
+    required bool insideDefs,
+  }) {
+    final items = <SvgTextContentItem>[];
+    for (final content in parentXml.contentNodes) {
+      switch (content) {
+        case SvgXmlTextContent(:final text):
+          if (text.isNotEmpty) {
+            items.add(SvgTextLiteral(text));
+          }
+        case SvgXmlElement():
+          final tag = content.name;
+          if (tag == 'tspan' || tag == 'a') {
+            final id = content.attr('id');
+            final classes = _parseClasses(content.attr('class'));
+            final spanStyle = SvgStyle();
+            final cssAnims = <SvgCssAnimationConfig>[];
+            _applyElementAttributesAndCss(
+              xml: content,
+              tagName: tag,
+              id: id,
+              classes: classes,
+              style: spanStyle,
+              outCssAnimations: cssAnims,
+            );
+            spanStyle.resolveInheritance(parentStyle);
+
+            final nestedItems = _buildTextContentItems(
+              parentXml: content,
+              parentStyle: spanStyle,
+              insideDefs: insideDefs,
+            );
+            final spanNode = SvgTextSpanNode(
+              tagName: tag,
+              id: id,
+              classes: classes,
+              style: spanStyle,
+              baseTransformOps: SvgCssParser.parseTransformOps(
+                content.attr('transform') ?? '',
+              ),
+              xList: SvgCssValueParser.parseTextLengthList(content.attr('x')),
+              yList: SvgCssValueParser.parseTextLengthList(content.attr('y')),
+              dxList: SvgCssValueParser.parseTextLengthList(content.attr('dx')),
+              dyList: SvgCssValueParser.parseTextLengthList(content.attr('dy')),
+              rotateList: SvgCssParser.parseNumberList(content.attr('rotate')),
+              textLength: SvgCssValueParser.parseTextLength(
+                content.attr('textLength'),
+              ),
+              lengthAdjust: _parseLengthAdjust(content.attr('lengthAdjust')),
+              contentItems: nestedItems,
+            );
+            for (final child in nestedItems) {
+              if (child case final SvgElement elem) {
+                elem.parent = spanNode;
+              }
+            }
+            if (id != null && id.isNotEmpty) {
+              elementsById[id] = spanNode;
+              if (insideDefs) defsById[id] = spanNode;
+            }
+            _compileChildTextAnimations(spanNode, content, cssAnims);
+            items.add(spanNode);
+          } else if (tag == 'textPath') {
+            final id = content.attr('id');
+            final classes = _parseClasses(content.attr('class'));
+            final tpStyle = SvgStyle();
+            final cssAnims = <SvgCssAnimationConfig>[];
+            _applyElementAttributesAndCss(
+              xml: content,
+              tagName: tag,
+              id: id,
+              classes: classes,
+              style: tpStyle,
+              outCssAnimations: cssAnims,
+            );
+            tpStyle.resolveInheritance(parentStyle);
+
+            final nestedItems = _buildTextContentItems(
+              parentXml: content,
+              parentStyle: tpStyle,
+              insideDefs: insideDefs,
+            );
+            final tpNode = SvgTextPathNode(
+              id: id,
+              classes: classes,
+              style: tpStyle,
+              baseTransformOps: SvgCssParser.parseTransformOps(
+                content.attr('transform') ?? '',
+              ),
+              hrefId: content.hrefId,
+              inlinePathData: content.attr('path'),
+              startOffset: SvgCssValueParser.parseTextLength(
+                content.attr('startOffset'),
+              ),
+              sideRight: content.attr('side')?.trim().toLowerCase() == 'right',
+              textLength: SvgCssValueParser.parseTextLength(
+                content.attr('textLength'),
+              ),
+              lengthAdjust: _parseLengthAdjust(content.attr('lengthAdjust')),
+              contentItems: nestedItems,
+            );
+            for (final child in nestedItems) {
+              if (child case final SvgElement elem) {
+                elem.parent = tpNode;
+              }
+            }
+            if (id != null && id.isNotEmpty) {
+              elementsById[id] = tpNode;
+              if (insideDefs) defsById[id] = tpNode;
+            }
+            _compileChildTextAnimations(tpNode, content, cssAnims);
+            items.add(tpNode);
+          }
+      }
+    }
+    return items;
+  }
+
+  void _compileChildTextAnimations(
+    SvgElement element,
+    SvgXmlElement xml,
+    List<SvgCssAnimationConfig> cssAnims,
+  ) {
+    for (final child in xml.children) {
+      switch (child.name) {
+        case 'animate':
+          _smilCompiler.compileSmilAnimateOnElement(element, child);
+        case 'animateTransform':
+          _smilCompiler.compileSmilAnimateTransformOnElement(element, child);
+        case 'animateMotion':
+          _smilCompiler.deferSmilAnimateMotionOnElement(element, child);
+      }
+    }
+    for (final cssAnim in cssAnims) {
+      final stops = styleSheet.keyframesByName[cssAnim.name];
+      if (stops != null && stops.isNotEmpty) {
+        final compiledTracks = SvgCssParser.compileKeyframesForElement(
+          target: element,
+          config: cssAnim,
+          stops: stops,
+          documentViewBox: viewBox,
+        );
+        if (compiledTracks.isNotEmpty) {
+          tracks.addAll(compiledTracks);
+          element.hasSelfAnimation = true;
+          animatedElementsSet.add(element);
+        }
+      }
+    }
+  }
+
+  static SvgLengthAdjust _parseLengthAdjust(String? raw) {
+    if (raw?.trim() == 'spacingAndGlyphs') {
+      return SvgLengthAdjust.spacingAndGlyphs;
+    }
+    return SvgLengthAdjust.spacing;
   }
 
   static List<String> _parseClasses(String? raw) {

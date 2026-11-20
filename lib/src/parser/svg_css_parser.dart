@@ -355,6 +355,85 @@ abstract final class SvgCssParser {
         style.displayNone = val == 'none';
       case 'visibility':
         style.visibilityHidden = val == 'hidden' || val == 'collapse';
+      case 'font':
+        SvgCssValueParser.applyFontShorthand(val, style);
+      case 'font-family':
+        final (fam, fb) = SvgCssValueParser.parseFontFamily(val);
+        if (fam != null) {
+          style.baseFontFamily = fam;
+          style.baseFontFamilyFallback = fb;
+        }
+      case 'font-size':
+        final fs = SvgCssValueParser.parseFontSize(val);
+        if (fs != null) style.baseFontSizeSpec = fs;
+      case 'font-weight':
+        final fw = SvgCssValueParser.parseFontWeight(val);
+        if (fw != null) style.baseFontWeight = fw;
+      case 'font-style':
+        final fst = SvgCssValueParser.parseFontStyle(val);
+        if (fst != null) style.baseFontStyle = fst;
+      case 'font-variant':
+        final lower = val.toLowerCase();
+        if (lower == 'small-caps') {
+          style.baseFontVariantSmallCaps = true;
+        } else if (lower == 'normal') {
+          style.baseFontVariantSmallCaps = false;
+        }
+      case 'text-anchor':
+        final anchor = SvgCssValueParser.parseTextAnchor(val);
+        if (anchor != null) style.baseTextAnchor = anchor;
+      case 'dominant-baseline':
+        final db = SvgCssValueParser.parseDominantBaseline(val);
+        if (db != null) style.baseDominantBaseline = db;
+      case 'alignment-baseline':
+        final ab = SvgCssValueParser.parseDominantBaseline(val);
+        if (ab != null) style.baseAlignmentBaseline = ab;
+      case 'baseline-shift':
+        final bs = SvgCssValueParser.parseBaselineShift(val);
+        if (bs != null) style.baseBaselineShift = bs;
+      case 'letter-spacing':
+        if (val.toLowerCase() == 'normal') {
+          style.baseLetterSpacingSpec = const SvgTextLength(0.0);
+        } else {
+          final ls = SvgCssValueParser.parseTextLength(val);
+          if (ls != null) style.baseLetterSpacingSpec = ls;
+        }
+      case 'word-spacing':
+        if (val.toLowerCase() == 'normal') {
+          style.baseWordSpacingSpec = const SvgTextLength(0.0);
+        } else {
+          final ws = SvgCssValueParser.parseTextLength(val);
+          if (ws != null) style.baseWordSpacingSpec = ws;
+        }
+      case 'text-decoration':
+        final td = SvgCssValueParser.parseTextDecoration(val);
+        if (td != null) style.baseTextDecoration = td;
+      case 'direction':
+        final lower = val.toLowerCase();
+        if (lower == 'rtl') {
+          style.baseTextDirection = ui.TextDirection.rtl;
+        } else if (lower == 'ltr') {
+          style.baseTextDirection = ui.TextDirection.ltr;
+        }
+      case 'xml:space':
+      case 'space':
+        if (val == 'preserve') {
+          style.baseWhiteSpace = SvgWhiteSpace.preserve;
+        } else if (val == 'default') {
+          style.baseWhiteSpace = SvgWhiteSpace.normal;
+        }
+      case 'white-space':
+        final lower = val.toLowerCase();
+        if (lower == 'pre' || lower == 'pre-wrap' || lower == 'break-spaces') {
+          style.baseWhiteSpace = SvgWhiteSpace.preserve;
+        } else if (lower == 'normal' ||
+            lower == 'nowrap' ||
+            lower == 'pre-line') {
+          style.baseWhiteSpace = SvgWhiteSpace.normal;
+        }
+      case 'paint-order':
+        final po = SvgCssValueParser.parsePaintOrder(val);
+        if (po != null) style.basePaintOrder = po;
     }
   }
 

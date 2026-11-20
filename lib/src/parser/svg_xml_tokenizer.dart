@@ -1,14 +1,32 @@
+/// Ordered mixed-content node inside an [SvgXmlElement].
+///
+/// Either a character data segment ([SvgXmlTextContent]) or a child element
+/// ([SvgXmlElement]). Preserving document order is required by W3C SVG `<text>`
+/// mixed content such as `<text>Hello <tspan>World</tspan>!</text>`.
+sealed class SvgXmlNode {
+  const SvgXmlNode();
+}
+
+/// Character data segment inside an [SvgXmlElement].
+final class SvgXmlTextContent extends SvgXmlNode {
+  final String text;
+
+  const SvgXmlTextContent(this.text);
+}
+
 /// Lightweight, zero-dependency XML element node built specifically for SVG AST construction.
-class SvgXmlElement {
+final class SvgXmlElement extends SvgXmlNode {
   final String name;
   final Map<String, String> attributes;
   final List<SvgXmlElement> children;
+  final List<SvgXmlNode> contentNodes;
   final String textContent;
 
   const SvgXmlElement({
     required this.name,
     required this.attributes,
     required this.children,
+    this.contentNodes = const [],
     this.textContent = '',
   });
 
@@ -127,10 +145,12 @@ class _XmlScanner {
         name: tagName,
         attributes: attrs,
         children: const [],
+        contentNodes: const [],
       );
     }
 
     final children = <SvgXmlElement>[];
+    final contentNodes = <SvgXmlNode>[];
     final textBuf = StringBuffer();
 
     while (_pos < _len) {
@@ -140,7 +160,11 @@ class _XmlScanner {
       } else if (_src.startsWith('<![CDATA[', _pos)) {
         final end = _src.indexOf(']]>', _pos + 9);
         if (end != -1) {
-          textBuf.write(_src.substring(_pos + 9, end));
+          final cdata = _src.substring(_pos + 9, end);
+          textBuf.write(cdata);
+          if (cdata.isNotEmpty) {
+            contentNodes.add(SvgXmlTextContent(cdata));
+          }
           _pos = end + 3;
         } else {
           _pos = _len;
@@ -153,17 +177,20 @@ class _XmlScanner {
         final child = _parseElement();
         if (child != null) {
           children.add(child);
+          contentNodes.add(child);
         } else {
           _pos++;
         }
       } else {
         final nextTag = _src.indexOf('<', _pos);
-        if (nextTag == -1) {
-          textBuf.write(_decodeEntities(_src.substring(_pos)));
-          _pos = _len;
-        } else {
-          textBuf.write(_decodeEntities(_src.substring(_pos, nextTag)));
-          _pos = nextTag;
+        final rawSegment = nextTag == -1
+            ? _src.substring(_pos)
+            : _src.substring(_pos, nextTag);
+        _pos = nextTag == -1 ? _len : nextTag;
+        final decoded = _decodeEntities(rawSegment);
+        textBuf.write(decoded);
+        if (decoded.isNotEmpty) {
+          contentNodes.add(SvgXmlTextContent(decoded));
         }
       }
     }
@@ -172,6 +199,7 @@ class _XmlScanner {
       name: tagName,
       attributes: attrs,
       children: children,
+      contentNodes: contentNodes,
       textContent: textBuf.toString(),
     );
   }
@@ -241,13 +269,31 @@ class _XmlScanner {
     }
   }
 
+  static final RegExp _numericEntityRegExp = RegExp(
+    r'&#(?:x([0-9a-fA-F]+)|([0-9]+));',
+  );
+
   static String _decodeEntities(String input) {
     if (!input.contains('&')) return input;
-    return input
+    var out = input
         .replaceAll('&quot;', '"')
         .replaceAll('&apos;', "'")
         .replaceAll('&lt;', '<')
         .replaceAll('&gt;', '>')
-        .replaceAll('&amp;', '&');
+        .replaceAll('&nbsp;', '\u00A0');
+    if (out.contains('&#')) {
+      out = out.replaceAllMapped(_numericEntityRegExp, (m) {
+        final hex = m.group(1);
+        final dec = m.group(2);
+        final codePoint = hex != null
+            ? int.tryParse(hex, radix: 16)
+            : int.tryParse(dec ?? '');
+        if (codePoint == null || codePoint < 0 || codePoint > 0x10FFFF) {
+          return m.group(0)!;
+        }
+        return String.fromCharCode(codePoint);
+      });
+    }
+    return out.replaceAll('&amp;', '&');
   }
 }
