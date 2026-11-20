@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'svg_document.dart';
 import 'svg_element.dart';
 import 'svg_geometry_node.dart';
+import 'svg_gradient.dart';
 import 'svg_transform.dart';
 import 'svg_viewport_nodes.dart';
 
@@ -105,30 +106,84 @@ class SvgDefsNode extends SvgGroupNode {
   }
 }
 
-/// `<clipPath>` node that precomputes and caches the union `ui.Path` of its children.
+/// `<clipPath>` node supporting `userSpaceOnUse`, `objectBoundingBox`, `<use>`
+/// children, and dynamically animated clipping geometry.
 class SvgClipPathNode extends SvgGroupNode {
+  final SvgGradientUnits clipPathUnits;
   final ui.Path clipPath = ui.Path();
+  final Float64List _bboxMatrix = SvgMatrixMath.createIdentity();
 
-  SvgClipPathNode({super.id, required super.style, super.children})
-    : super(tagName: 'clipPath');
+  SvgClipPathNode({
+    super.id,
+    required super.style,
+    super.children,
+    this.clipPathUnits = SvgGradientUnits.userSpaceOnUse,
+  }) : super(tagName: 'clipPath');
+
+  @override
+  bool get shouldCacheStaticPicture => false;
+
+  void _rebuildClipPath(SvgDocument document) {
+    clipPath.reset();
+    for (final child in children) {
+      _appendChildToClip(child, document, ui.Offset.zero);
+    }
+  }
+
+  void _appendChildToClip(
+    SvgElement child,
+    SvgDocument document,
+    ui.Offset extraOffset,
+  ) {
+    if (child.style.displayNone) return;
+    if (child is SvgGeometryNode) {
+      child.refreshGeometryIfNeeded();
+      final matrix = child.transformMatrix;
+      if (!SvgMatrixMath.isIdentity(matrix)) {
+        clipPath.addPath(child.basePath, extraOffset, matrix4: matrix);
+      } else {
+        clipPath.addPath(child.basePath, extraOffset);
+      }
+    } else if (child is SvgUseNode && child.hrefId != null) {
+      final target =
+          document.defsById[child.hrefId!] ??
+          document.elementsById[child.hrefId!];
+      if (target != null && !identical(target, child)) {
+        _appendChildToClip(
+          target,
+          document,
+          extraOffset.translate(child.currentX, child.currentY),
+        );
+      }
+    }
+  }
+
+  /// Resolves the active clipping [ui.Path] in target user space.
+  ui.Path resolveClipPath(SvgDocument document, ui.Rect targetBounds) {
+    if (isAnimated) {
+      _rebuildClipPath(document);
+    }
+    if (clipPathUnits == SvgGradientUnits.objectBoundingBox) {
+      SvgMatrixMath.resetToIdentity(_bboxMatrix);
+      SvgMatrixMath.translateInPlace(
+        _bboxMatrix,
+        targetBounds.left,
+        targetBounds.top,
+      );
+      SvgMatrixMath.scaleInPlace(
+        _bboxMatrix,
+        targetBounds.width,
+        targetBounds.height,
+      );
+      return clipPath.transform(_bboxMatrix);
+    }
+    return clipPath;
+  }
 
   @override
   void initializeGeometry(SvgDocument document) {
     super.initializeGeometry(document);
-    clipPath.reset();
-    for (final child in children) {
-      if (child is SvgGeometryNode) {
-        if (!SvgMatrixMath.isIdentity(child.baseTransformMatrix)) {
-          clipPath.addPath(
-            child.basePath,
-            ui.Offset.zero,
-            matrix4: child.baseTransformMatrix,
-          );
-        } else {
-          clipPath.addPath(child.basePath, ui.Offset.zero);
-        }
-      }
-    }
+    _rebuildClipPath(document);
     cachedBounds = clipPath.getBounds();
   }
 

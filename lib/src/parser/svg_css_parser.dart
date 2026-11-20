@@ -351,6 +351,19 @@ abstract final class SvgCssParser {
         }
       case 'clip-path':
         style.clipPathId = extractUrlId(val);
+      case 'mask':
+        style.maskId = val == 'none' ? null : extractUrlId(val);
+      case 'marker':
+        final markerId = val == 'none' ? null : extractUrlId(val);
+        style.baseMarkerStartId = markerId;
+        style.baseMarkerMidId = markerId;
+        style.baseMarkerEndId = markerId;
+      case 'marker-start':
+        style.baseMarkerStartId = val == 'none' ? null : extractUrlId(val);
+      case 'marker-mid':
+        style.baseMarkerMidId = val == 'none' ? null : extractUrlId(val);
+      case 'marker-end':
+        style.baseMarkerEndId = val == 'none' ? null : extractUrlId(val);
       case 'display':
         style.baseDisplayNone = val == 'none';
         style.displayNone = style.baseDisplayNone;

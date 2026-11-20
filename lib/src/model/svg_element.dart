@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'svg_document.dart';
+import 'svg_mask_node.dart';
 import 'svg_style.dart';
 import 'svg_transform.dart';
 
@@ -107,20 +108,35 @@ abstract class SvgElement {
   bool propagateAnimationFlags(SvgDocument document) {
     bool animated = hasSelfAnimation || hasMotionAnimation;
 
-    // Check if fill or stroke references an animated gradient
-    final fillGradId = style.resolvedFill.gradientId;
-    if (fillGradId != null) {
-      final grad = document.gradientsById[fillGradId];
-      if (grad != null && grad.isAnimated) {
+    // Check if fill or stroke references an animated gradient or pattern
+    final fillServerId = style.resolvedFill.gradientId;
+    if (fillServerId != null) {
+      final grad = document.gradientsById[fillServerId];
+      final pat = document.patternsById[fillServerId];
+      if ((grad != null && grad.isAnimated) ||
+          (pat != null && pat.isAnimated)) {
         animated = true;
       }
     }
-    final strokeGradId = style.resolvedStroke.gradientId;
-    if (strokeGradId != null) {
-      final grad = document.gradientsById[strokeGradId];
-      if (grad != null && grad.isAnimated) {
+    final strokeServerId = style.resolvedStroke.gradientId;
+    if (strokeServerId != null) {
+      final grad = document.gradientsById[strokeServerId];
+      final pat = document.patternsById[strokeServerId];
+      if ((grad != null && grad.isAnimated) ||
+          (pat != null && pat.isAnimated)) {
         animated = true;
       }
+    }
+    // Check if referenced clipPath or mask is animated
+    final clipId = style.clipPathId;
+    if (clipId != null) {
+      final clip = document.clipPathsById[clipId];
+      if (clip != null && clip.isAnimated) animated = true;
+    }
+    final maskId = style.maskId;
+    if (maskId != null) {
+      final mask = document.masksById[maskId];
+      if (mask != null && mask.isAnimated) animated = true;
     }
 
     for (final child in children) {
@@ -176,11 +192,17 @@ abstract class SvgElement {
         hasMotionAnimation && !SvgMatrixMath.isIdentity(motionMatrix);
     final clipId = style.clipPathId;
     final clipNode = clipId != null ? document.clipPathsById[clipId] : null;
+    final maskId = style.maskId;
+    final maskNode = maskId != null ? document.masksById[maskId] : null;
     final opacity = style.currentOpacity.clamp(0.0, 1.0);
     final needsLayer = opacity < 1.0 && children.isNotEmpty;
 
     final needsSave =
-        hasTransform || hasMotion || clipNode != null || needsLayer;
+        hasTransform ||
+        hasMotion ||
+        clipNode != null ||
+        maskNode != null ||
+        needsLayer;
     if (needsSave) {
       canvas.save();
     }
@@ -192,7 +214,7 @@ abstract class SvgElement {
       canvas.transform(transformMatrix);
     }
     if (clipNode != null) {
-      canvas.clipPath(clipNode.clipPath);
+      canvas.clipPath(clipNode.resolveClipPath(document, cachedBounds));
     }
     if (needsLayer) {
       cachedLayerPaint.color = ui.Color.fromARGB(
@@ -204,7 +226,21 @@ abstract class SvgElement {
       canvas.saveLayer(null, cachedLayerPaint);
     }
 
-    paintContent(canvas, document, needsLayer ? 1.0 : opacity);
+    if (maskNode != null) {
+      final maskBounds = maskNode.resolveMaskRegion(cachedBounds);
+      canvas.saveLayer(maskBounds, ui.Paint());
+      paintContent(canvas, document, needsLayer ? 1.0 : opacity);
+      final dstInPaint = ui.Paint()..blendMode = ui.BlendMode.dstIn;
+      if (maskNode.maskType == SvgMaskType.luminance) {
+        dstInPaint.colorFilter = SvgMaskNode.luminanceToAlphaFilter;
+      }
+      canvas.saveLayer(maskBounds, dstInPaint);
+      maskNode.paintMaskContent(canvas, document, cachedBounds);
+      canvas.restore();
+      canvas.restore();
+    } else {
+      paintContent(canvas, document, needsLayer ? 1.0 : opacity);
+    }
 
     if (needsLayer) {
       canvas.restore();

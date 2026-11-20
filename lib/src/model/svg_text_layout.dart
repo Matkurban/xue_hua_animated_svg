@@ -795,8 +795,12 @@ abstract final class SvgTextLayoutEngine {
       fillPaint = owner.cachedFillPaint..maskFilter = maskFilter;
       if (fillServer.type == SvgPaintType.gradient &&
           fillServer.gradientId != null) {
-        final grad = document.gradientsById[fillServer.gradientId!];
-        fillPaint.shader = grad?.createShader(shaderBounds);
+        final serverId = fillServer.gradientId!;
+        final grad = document.gradientsById[serverId];
+        final pat = document.patternsById[serverId];
+        fillPaint.shader =
+            grad?.createShader(shaderBounds) ??
+            pat?.createShader(shaderBounds, document);
         fillPaint.color = ui.Color.fromARGB(
           (fillAlpha * 255.0).round().clamp(0, 255),
           255,
@@ -827,8 +831,12 @@ abstract final class SvgTextLayoutEngine {
         ..maskFilter = maskFilter;
       if (strokeServer.type == SvgPaintType.gradient &&
           strokeServer.gradientId != null) {
-        final grad = document.gradientsById[strokeServer.gradientId!];
-        strokePaint.shader = grad?.createShader(shaderBounds);
+        final serverId = strokeServer.gradientId!;
+        final grad = document.gradientsById[serverId];
+        final pat = document.patternsById[serverId];
+        strokePaint.shader =
+            grad?.createShader(shaderBounds) ??
+            pat?.createShader(shaderBounds, document);
         strokePaint.color = ui.Color.fromARGB(
           (strokeAlpha * 255.0).round().clamp(0, 255),
           255,

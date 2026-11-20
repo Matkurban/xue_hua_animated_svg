@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'svg_document.dart';
 import 'svg_element.dart';
+import 'svg_marker_node.dart';
 import 'svg_style.dart';
 
 /// Abstract base class for all geometric shape nodes (`<path>`, `<rect>`,
@@ -110,8 +111,12 @@ abstract class SvgGeometryNode extends SvgElement {
 
       if (fillServer.type == SvgPaintType.gradient &&
           fillServer.gradientId != null) {
-        final grad = document.gradientsById[fillServer.gradientId!];
-        cachedFillPaint.shader = grad?.createShader(cachedBounds);
+        final serverId = fillServer.gradientId!;
+        final grad = document.gradientsById[serverId];
+        final pat = document.patternsById[serverId];
+        cachedFillPaint.shader =
+            grad?.createShader(cachedBounds) ??
+            pat?.createShader(cachedBounds, document);
         cachedFillPaint.color = ui.Color.fromARGB(
           (fillAlpha * 255.0).round().clamp(0, 255),
           255,
@@ -144,8 +149,12 @@ abstract class SvgGeometryNode extends SvgElement {
 
       if (strokeServer.type == SvgPaintType.gradient &&
           strokeServer.gradientId != null) {
-        final grad = document.gradientsById[strokeServer.gradientId!];
-        cachedStrokePaint.shader = grad?.createShader(cachedBounds);
+        final serverId = strokeServer.gradientId!;
+        final grad = document.gradientsById[serverId];
+        final pat = document.patternsById[serverId];
+        cachedStrokePaint.shader =
+            grad?.createShader(cachedBounds) ??
+            pat?.createShader(cachedBounds, document);
         cachedStrokePaint.color = ui.Color.fromARGB(
           (strokeAlpha * 255.0).round().clamp(0, 255),
           255,
@@ -165,6 +174,64 @@ abstract class SvgGeometryNode extends SvgElement {
         canvas.drawPath(dashedStrokePath, cachedStrokePaint);
       } else {
         canvas.drawPath(basePath, cachedStrokePaint);
+      }
+    }
+
+    // 3. Marker Pass (`marker-start`, `marker-mid`, `marker-end`)
+    _paintMarkers(canvas, document, effectiveOpacity);
+  }
+
+  /// Subclasses (`<path>`, `<line>`, `<polyline>`, `<polygon>`) override this
+  /// to supply vertex positions and tangent angles for `<marker>` placement.
+  List<SvgMarkerVertex> extractMarkerVertices() => const [];
+
+  void _paintMarkers(
+    ui.Canvas canvas,
+    SvgDocument document,
+    double effectiveOpacity,
+  ) {
+    final startId = style.currentMarkerStartId;
+    final midId = style.currentMarkerMidId;
+    final endId = style.currentMarkerEndId;
+    if (startId == null && midId == null && endId == null) return;
+
+    final startMarker = startId != null ? document.markersById[startId] : null;
+    final midMarker = midId != null ? document.markersById[midId] : null;
+    final endMarker = endId != null ? document.markersById[endId] : null;
+    if (startMarker == null && midMarker == null && endMarker == null) return;
+
+    final vertices = extractMarkerVertices();
+    if (vertices.isEmpty) return;
+    final sw = style.currentStrokeWidth;
+
+    for (int i = 0; i < vertices.length; i++) {
+      final v = vertices[i];
+      if (v.isStart && startMarker != null) {
+        startMarker.paintAtVertex(
+          canvas: canvas,
+          document: document,
+          vertex: v,
+          strokeWidth: sw,
+          effectiveOpacity: effectiveOpacity,
+        );
+      }
+      if (!v.isStart && !v.isEnd && midMarker != null) {
+        midMarker.paintAtVertex(
+          canvas: canvas,
+          document: document,
+          vertex: v,
+          strokeWidth: sw,
+          effectiveOpacity: effectiveOpacity,
+        );
+      }
+      if (v.isEnd && endMarker != null) {
+        endMarker.paintAtVertex(
+          canvas: canvas,
+          document: document,
+          vertex: v,
+          strokeWidth: sw,
+          effectiveOpacity: effectiveOpacity,
+        );
       }
     }
   }

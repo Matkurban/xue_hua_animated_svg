@@ -23,10 +23,10 @@
 | 3 | `<set>` | SMIL 动画 | ✅ 已在 Phase 1 完成 | 离散状态切换轨道（`visibility`、`display`、`fill`、`stroke`、数值等），复用现有时间轴 | P0 |
 | 4 | `<animateColor>` | SMIL 动画 | ✅ 已在 Phase 1 完成 | SVG 1.1 颜色动画标签，直接复用 `SvgColorAnimationTrack` | P0 |
 | 5 | 嵌套 `<svg>` / `<symbol>` / `<use>` 完整规范 | 结构完善 | ✅ 已在 Phase 1 完成 | 复用 `SvgPreserveAspectRatio` 计算子视口矩阵、裁剪、`<use>` 宽高缩放与防循环引用 | P0 |
-| 6 | `<clipPath>` 完整规范 | 裁剪完善 | 仅支持 `userSpaceOnUse` 静态几何 | 支持 `objectBoundingBox`、动态子路径、`<use>`/`<text>` 子节点 | P1 |
-| 7 | `<mask>` | 遮罩 | 未支持（被丢弃） | `canvas.saveLayer` + `BlendMode.dstIn` + 亮度转透明度 `ColorFilter.matrix` | P1 |
-| 8 | `<pattern>` | 图案画刷 | 未支持（被丢弃） | 离屏 `PictureRecorder` → `ui.Image` 缓存 + `ui.ImageShader(TileMode.repeated)` | P1 |
-| 9 | `<marker>` | 路径端点标记 | 未支持（被丢弃） | 提取 `<path>`/`<line>`/`<polyline>`/`<polygon>` 顶点与切线，自动旋转绘制 | P1 |
+| 6 | `<clipPath>` 完整规范 | 裁剪完善 | ✅ 已在 Phase 2 完成 | 支持 `objectBoundingBox`、`<use>` 子节点与动态动画裁剪路径 | P1 |
+| 7 | `<mask>` | 遮罩 | ✅ 已在 Phase 2 完成 | `canvas.saveLayer` + `BlendMode.dstIn` + Rec.709 亮度转 Alpha 矩阵与 `alpha` 模式 | P1 |
+| 8 | `<pattern>` | 图案画刷 | ✅ 已在 Phase 2 完成 | 离屏 `PictureRecorder` → 缓存 `ui.Image` + `ui.ImageShader(TileMode.repeated)` | P1 |
+| 9 | `<marker>` | 路径端点标记 | ✅ 已在 Phase 2 完成 | 提取 `<path>`/`<line>`/`<polyline>`/`<polygon>` 顶点与切线，支持 `auto`/`auto-start-reverse` | P1 |
 | 10 | `<image>` | 位图/嵌入图 | 未支持（被丢弃） | `ui.instantiateImageCodec` 解码 `data:` URI / 资源 / 字节流 + `canvas.drawImageRect` | P2 |
 | 11 | `<view>` | 命名视图 | 未支持（被丢弃） | 解析 `id` / `viewBox` / `preserveAspectRatio`，支持按视图 ID 切换视口 | P2 |
 | 12 | `<radialGradient fr>` | 渐变完善 | `focalRadius` 硬编码为 `0.0` | `ui.Gradient.radial` 原生支持 `focalRadius` 参数 | P2 |

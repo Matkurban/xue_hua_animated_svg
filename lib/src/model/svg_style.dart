@@ -122,6 +122,10 @@ class SvgStyle {
   double? baseBlurSigma;
   SvgTransformOrigin? baseTransformOrigin;
   String? clipPathId;
+  String? maskId;
+  String? baseMarkerStartId;
+  String? baseMarkerMidId;
+  String? baseMarkerEndId;
   bool baseDisplayNone = false;
   bool? baseVisibilityHidden;
   bool? baseOverflowVisible;
@@ -165,6 +169,9 @@ class SvgStyle {
   double? currentPathLength;
   double currentBlurSigma = 0.0;
   SvgTransformOrigin currentTransformOrigin = SvgTransformOrigin.zero;
+  String? currentMarkerStartId;
+  String? currentMarkerMidId;
+  String? currentMarkerEndId;
 
   // Runtime resolved SVG text properties
   String? currentFontFamily;
@@ -227,6 +234,9 @@ class SvgStyle {
     displayNone = baseDisplayNone;
     visibilityHidden =
         baseVisibilityHidden ?? parentStyle?.visibilityHidden ?? false;
+    currentMarkerStartId = baseMarkerStartId ?? parentStyle?.currentMarkerStartId;
+    currentMarkerMidId = baseMarkerMidId ?? parentStyle?.currentMarkerMidId;
+    currentMarkerEndId = baseMarkerEndId ?? parentStyle?.currentMarkerEndId;
 
     // Text presentation properties
     final parentFontSize = parentStyle?.currentFontSize ?? 16.0;
@@ -457,6 +467,16 @@ class SvgStyle {
       baseTransformOrigin = other.baseTransformOrigin;
     }
     if (other.clipPathId != null) clipPathId = other.clipPathId;
+    if (other.maskId != null) maskId = other.maskId;
+    if (other.baseMarkerStartId != null) {
+      baseMarkerStartId = other.baseMarkerStartId;
+    }
+    if (other.baseMarkerMidId != null) {
+      baseMarkerMidId = other.baseMarkerMidId;
+    }
+    if (other.baseMarkerEndId != null) {
+      baseMarkerEndId = other.baseMarkerEndId;
+    }
     if (other.baseDisplayNone) {
       baseDisplayNone = true;
       displayNone = true;

@@ -48,6 +48,9 @@ class _SvgSceneCompiler {
   final Map<String, SvgClipPathNode> clipPathsById =
       <String, SvgClipPathNode>{};
   final Map<String, SvgGeometryNode> geometryById = <String, SvgGeometryNode>{};
+  final Map<String, SvgMaskNode> masksById = <String, SvgMaskNode>{};
+  final Map<String, SvgPatternNode> patternsById = <String, SvgPatternNode>{};
+  final Map<String, SvgMarkerNode> markersById = <String, SvgMarkerNode>{};
 
   final List<SvgAnimationTrack> tracks = <SvgAnimationTrack>[];
   final Set<SvgElement> animatedElementsSet = <SvgElement>{};
@@ -139,6 +142,9 @@ class _SvgSceneCompiler {
       gradientsById: gradientsById,
       clipPathsById: clipPathsById,
       geometryById: geometryById,
+      masksById: masksById,
+      patternsById: patternsById,
+      markersById: markersById,
     );
 
     // Resolve deferred <animateMotion> tracks now that all <path> nodes and <defs> exist
@@ -251,6 +257,24 @@ class _SvgSceneCompiler {
           final clip = _buildClipPath(childXml, parentGroup.style);
           if (clip.id != null) {
             clipPathsById[clip.id!] = clip;
+          }
+
+        case 'mask':
+          final mask = _buildMask(childXml, parentGroup.style);
+          if (mask.id != null && mask.id!.isNotEmpty) {
+            masksById[mask.id!] = mask;
+          }
+
+        case 'pattern':
+          final pattern = _buildPattern(childXml, parentGroup.style);
+          if (pattern.id != null && pattern.id!.isNotEmpty) {
+            patternsById[pattern.id!] = pattern;
+          }
+
+        case 'marker':
+          final marker = _buildMarker(childXml, parentGroup.style);
+          if (marker.id != null && marker.id!.isNotEmpty) {
+            markersById[marker.id!] = marker;
           }
 
         case 'animate':
@@ -824,9 +848,203 @@ class _SvgSceneCompiler {
 
   SvgClipPathNode _buildClipPath(SvgXmlElement xml, SvgStyle parentStyle) {
     final style = SvgStyle()..resolveInheritance(parentStyle);
-    final clipNode = SvgClipPathNode(id: xml.attr('id'), style: style);
+    final units = xml.attr('clipPathUnits') == 'objectBoundingBox'
+        ? SvgGradientUnits.objectBoundingBox
+        : SvgGradientUnits.userSpaceOnUse;
+    final clipNode = SvgClipPathNode(
+      id: xml.attr('id'),
+      style: style,
+      clipPathUnits: units,
+    );
     _buildChildren(parentXml: xml, parentGroup: clipNode, insideDefs: true);
     return clipNode;
+  }
+
+  SvgMaskNode _buildMask(SvgXmlElement xml, SvgStyle parentStyle) {
+    final id = xml.attr('id');
+    final classes = _parseClasses(xml.attr('class'));
+    final style = SvgStyle();
+    _applyElementAttributesAndCss(
+      xml: xml,
+      tagName: 'mask',
+      id: id,
+      classes: classes,
+      style: style,
+      outCssAnimations: <SvgCssAnimationConfig>[],
+    );
+    style.resolveInheritance(parentStyle);
+
+    final maskUnits = xml.attr('maskUnits') == 'userSpaceOnUse'
+        ? SvgGradientUnits.userSpaceOnUse
+        : SvgGradientUnits.objectBoundingBox;
+    final maskContentUnits = xml.attr('maskContentUnits') == 'objectBoundingBox'
+        ? SvgGradientUnits.objectBoundingBox
+        : SvgGradientUnits.userSpaceOnUse;
+    final inlineDecls = xml.attr('style') != null
+        ? SvgCssParser.parseDeclarationsMap(xml.attr('style')!)
+        : const <String, String>{};
+    final maskTypeRaw =
+        (inlineDecls['mask-type'] ?? xml.attr('mask-type') ?? 'luminance')
+            .trim()
+            .toLowerCase();
+    final maskType = maskTypeRaw == 'alpha'
+        ? SvgMaskType.alpha
+        : SvgMaskType.luminance;
+
+    final isUserSpace = maskUnits == SvgGradientUnits.userSpaceOnUse;
+    final x =
+        SvgCssParser.parseNumberOrPercent(
+          xml.attr('x'),
+          referenceExtent: isUserSpace ? viewBox.width : null,
+        ) ??
+        (isUserSpace ? viewBox.left : -0.1);
+    final y =
+        SvgCssParser.parseNumberOrPercent(
+          xml.attr('y'),
+          referenceExtent: isUserSpace ? viewBox.height : null,
+        ) ??
+        (isUserSpace ? viewBox.top : -0.1);
+    final w =
+        SvgCssParser.parseNumberOrPercent(
+          xml.attr('width'),
+          referenceExtent: isUserSpace ? viewBox.width : null,
+        ) ??
+        (isUserSpace ? viewBox.width : 1.2);
+    final h =
+        SvgCssParser.parseNumberOrPercent(
+          xml.attr('height'),
+          referenceExtent: isUserSpace ? viewBox.height : null,
+        ) ??
+        (isUserSpace ? viewBox.height : 1.2);
+
+    final maskNode = SvgMaskNode(
+      id: id,
+      classes: classes,
+      style: style,
+      maskUnits: maskUnits,
+      maskContentUnits: maskContentUnits,
+      maskType: maskType,
+      x: x,
+      y: y,
+      width: w,
+      height: h,
+    );
+    _buildChildren(parentXml: xml, parentGroup: maskNode, insideDefs: true);
+    return maskNode;
+  }
+
+  SvgPatternNode _buildPattern(SvgXmlElement xml, SvgStyle parentStyle) {
+    final id = xml.attr('id');
+    final classes = _parseClasses(xml.attr('class'));
+    final style = SvgStyle();
+    _applyElementAttributesAndCss(
+      xml: xml,
+      tagName: 'pattern',
+      id: id,
+      classes: classes,
+      style: style,
+      outCssAnimations: <SvgCssAnimationConfig>[],
+    );
+    style.resolveInheritance(parentStyle);
+
+    final patternUnits = xml.attr('patternUnits') == 'userSpaceOnUse'
+        ? SvgGradientUnits.userSpaceOnUse
+        : SvgGradientUnits.objectBoundingBox;
+    final patternContentUnits =
+        xml.attr('patternContentUnits') == 'objectBoundingBox'
+        ? SvgGradientUnits.objectBoundingBox
+        : SvgGradientUnits.userSpaceOnUse;
+    final isUserSpace = patternUnits == SvgGradientUnits.userSpaceOnUse;
+
+    final patternNode = SvgPatternNode(
+      id: id,
+      classes: classes,
+      style: style,
+      hrefId: xml.hrefId,
+      patternUnits: patternUnits,
+      patternContentUnits: patternContentUnits,
+      x:
+          SvgCssParser.parseNumberOrPercent(
+            xml.attr('x'),
+            referenceExtent: isUserSpace ? viewBox.width : null,
+          ) ??
+          0.0,
+      y:
+          SvgCssParser.parseNumberOrPercent(
+            xml.attr('y'),
+            referenceExtent: isUserSpace ? viewBox.height : null,
+          ) ??
+          0.0,
+      width:
+          SvgCssParser.parseNumberOrPercent(
+            xml.attr('width'),
+            referenceExtent: isUserSpace ? viewBox.width : null,
+          ) ??
+          0.0,
+      height:
+          SvgCssParser.parseNumberOrPercent(
+            xml.attr('height'),
+            referenceExtent: isUserSpace ? viewBox.height : null,
+          ) ??
+          0.0,
+      innerViewBox: _parseOptionalViewBox(xml.attr('viewBox')),
+      preserveAspectRatio: _parsePreserveAspectRatio(
+        xml.attr('preserveAspectRatio'),
+      ),
+      basePatternTransformOps: SvgCssParser.parseTransformOps(
+        xml.attr('patternTransform') ?? '',
+      ),
+    );
+    _buildChildren(parentXml: xml, parentGroup: patternNode, insideDefs: true);
+    return patternNode;
+  }
+
+  SvgMarkerNode _buildMarker(SvgXmlElement xml, SvgStyle parentStyle) {
+    final id = xml.attr('id');
+    final classes = _parseClasses(xml.attr('class'));
+    final style = SvgStyle();
+    _applyElementAttributesAndCss(
+      xml: xml,
+      tagName: 'marker',
+      id: id,
+      classes: classes,
+      style: style,
+      outCssAnimations: <SvgCssAnimationConfig>[],
+    );
+    style.resolveInheritance(parentStyle);
+
+    final markerUnits = xml.attr('markerUnits') == 'userSpaceOnUse'
+        ? SvgMarkerUnits.userSpaceOnUse
+        : SvgMarkerUnits.strokeWidth;
+    final orientRaw = (xml.attr('orient') ?? '0').trim().toLowerCase();
+    SvgMarkerOrientMode orientMode = SvgMarkerOrientMode.fixedAngle;
+    double fixedDeg = 0.0;
+    if (orientRaw == 'auto') {
+      orientMode = SvgMarkerOrientMode.auto;
+    } else if (orientRaw == 'auto-start-reverse') {
+      orientMode = SvgMarkerOrientMode.autoStartReverse;
+    } else {
+      fixedDeg = SvgCssParser.parseAngleOrLength(orientRaw) ?? 0.0;
+    }
+
+    final markerNode = SvgMarkerNode(
+      id: id,
+      classes: classes,
+      style: style,
+      refX: SvgCssParser.parseLength(xml.attr('refX')) ?? 0.0,
+      refY: SvgCssParser.parseLength(xml.attr('refY')) ?? 0.0,
+      markerWidth: SvgCssParser.parseLength(xml.attr('markerWidth')) ?? 3.0,
+      markerHeight: SvgCssParser.parseLength(xml.attr('markerHeight')) ?? 3.0,
+      markerUnits: markerUnits,
+      orientMode: orientMode,
+      fixedOrientDeg: fixedDeg,
+      innerViewBox: _parseOptionalViewBox(xml.attr('viewBox')),
+      preserveAspectRatio: _parsePreserveAspectRatio(
+        xml.attr('preserveAspectRatio'),
+      ),
+    );
+    _buildChildren(parentXml: xml, parentGroup: markerNode, insideDefs: true);
+    return markerNode;
   }
 
   SvgLinearGradientNode _buildLinearGradient(SvgXmlElement xml) {
