@@ -144,6 +144,10 @@ class SvgDocument {
   }
 
   /// Paints the document at its current timeline state into [canvas] scaled to [canvasSize].
+  ///
+  /// Per W3C SVG 1.1 §14.3.3 / SVG 2, the root `<svg>` viewport clips to
+  /// `[0, 0, canvasSize.width, canvasSize.height]` unless `overflow="visible"`
+  /// is explicitly specified.
   void paint(ui.Canvas canvas, ui.Size canvasSize, {String? viewId}) {
     if (canvasSize.isEmpty) return;
     final activeViewBox = resolveViewBox(viewId);
@@ -154,6 +158,11 @@ class SvgDocument {
       viewBoxMatrix,
     );
     canvas.save();
+    if (rootGroup.style.baseOverflowVisible != true) {
+      canvas.clipRect(
+        ui.Rect.fromLTWH(0.0, 0.0, canvasSize.width, canvasSize.height),
+      );
+    }
     canvas.transform(viewBoxMatrix);
     rootGroup.paint(canvas, this);
     canvas.restore();

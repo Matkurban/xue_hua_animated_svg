@@ -106,5 +106,37 @@ void main() {
         scene.dispose();
       }
     });
+
+    test('clips root <svg> viewport by default (overflow: hidden) unless overflow="visible"', () async {
+      // Root <svg> with content extending past viewBox bottom (like sssurf.svg)
+      const clippedSvg = '''
+<svg viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="100" height="100" fill="#0088FF" />
+</svg>
+''';
+      final scene = SvgParser.compile(clippedSvg);
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
+      // Paint the 100x50 intrinsic SVG at top of a taller 100x100 canvas
+      scene.document.paint(canvas, const ui.Size(100, 50));
+      final pic = recorder.endRecording();
+      final img = await pic.toImage(100, 100);
+      final bytes = (await img.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      ))!.buffer.asUint8List();
+
+      // Inside viewport (y=25): blue
+      final insideIdx = (25 * 100 + 50) * 4;
+      expect(bytes[insideIdx + 2], greaterThan(240));
+      expect(bytes[insideIdx + 3], greaterThan(240));
+
+      // Below viewport bottom (y=75): must be clipped transparent
+      final outsideIdx = (75 * 100 + 50) * 4;
+      expect(bytes[outsideIdx + 3], equals(0));
+
+      img.dispose();
+      pic.dispose();
+      scene.dispose();
+    });
   });
 }
