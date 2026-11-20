@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -68,13 +69,17 @@ abstract class SvgElement {
   /// Computes and caches the node's local geometry and bounding box.
   void initializeGeometry(SvgDocument document);
 
-  /// Recomputes [baseTransformMatrix] incorporating `transform-origin` once
+  /// Recomputes [baseTransformMatrix] incorporating `transform-origin`,
+  /// `transform-box`, and CSS Transforms Level 2 standalone properties once
   /// [cachedBounds] is known.
   void finalizeBaseTransforms(ui.Rect viewBox) {
     SvgMatrixMath.resetToIdentity(baseTransformMatrix);
     final origin = style.currentTransformOrigin;
-    final ox = origin.resolveX(cachedBounds, viewBox);
-    final oy = origin.resolveY(cachedBounds, viewBox);
+    final refBounds = style.currentTransformBox == SvgTransformBox.viewBox
+        ? viewBox
+        : cachedBounds;
+    final ox = origin.resolveX(refBounds, viewBox);
+    final oy = origin.resolveY(refBounds, viewBox);
 
     if (baseTransformOps.isNotEmpty) {
       SvgMatrixMath.applyOpsWithOriginInPlace(
@@ -84,11 +89,18 @@ abstract class SvgElement {
         originY: oy,
       );
     }
-    if (style.cssBaseTransformOps != null &&
-        style.cssBaseTransformOps!.isNotEmpty) {
+
+    // CSS Transforms Level 2 order: translate -> rotate -> scale -> transform
+    final cssOps = <SvgTransformOp>[
+      if (style.baseCssTranslateOp != null) style.baseCssTranslateOp!,
+      if (style.baseCssRotateOp != null) style.baseCssRotateOp!,
+      if (style.baseCssScaleOp != null) style.baseCssScaleOp!,
+      if (style.cssBaseTransformOps != null) ...style.cssBaseTransformOps!,
+    ];
+    if (cssOps.isNotEmpty) {
       SvgMatrixMath.applyOpsWithOriginInPlace(
         baseTransformMatrix,
-        style.cssBaseTransformOps!,
+        cssOps,
         originX: ox,
         originY: oy,
       );
@@ -225,6 +237,7 @@ abstract class SvgElement {
         hasMotionAnimation && !SvgMatrixMath.isIdentity(motionMatrix);
     final clipId = style.clipPathId;
     final clipNode = clipId != null ? document.clipPathsById[clipId] : null;
+    final cssClip = style.cssClipShape;
     final maskId = style.maskId;
     final maskNode = maskId != null ? document.masksById[maskId] : null;
     final filterId = style.filterId;
@@ -240,6 +253,7 @@ abstract class SvgElement {
         hasTransform ||
         hasMotion ||
         clipNode != null ||
+        cssClip != null ||
         maskNode != null ||
         filterNode != null ||
         needsLayer;
@@ -255,6 +269,9 @@ abstract class SvgElement {
     }
     if (clipNode != null) {
       canvas.clipPath(clipNode.resolveClipPath(document, cachedBounds));
+    }
+    if (cssClip != null) {
+      canvas.clipPath(cssClip.resolvePath(cachedBounds));
     }
     if (needsLayer) {
       cachedLayerPaint
@@ -303,6 +320,7 @@ abstract class SvgElement {
         filter: combined,
         targetBounds: cachedBounds,
         paintSource: drawBody,
+        document: document,
       );
     } else if (filterNode != null) {
       SvgFilterExecutor.paintWithFilter(
@@ -310,6 +328,7 @@ abstract class SvgElement {
         filter: filterNode,
         targetBounds: cachedBounds,
         paintSource: drawBody,
+        document: document,
       );
     } else if (cssFilters != null && cssFilters.isNotEmpty) {
       final inlineFilter = SvgFilterNode(
@@ -325,6 +344,7 @@ abstract class SvgElement {
         filter: inlineFilter,
         targetBounds: cachedBounds,
         paintSource: drawBody,
+        document: document,
       );
     } else {
       drawBody(canvas);
@@ -336,6 +356,30 @@ abstract class SvgElement {
     if (needsSave) {
       canvas.restore();
     }
+  }
+
+  /// Computes the effective 2D isotropic scale factor from this element up to
+  /// the root viewport (used by `vector-effect="non-scaling-stroke"`).
+  double computeAccumulatedScale(SvgDocument document) {
+    double scale = _matrix2dScale(document.viewBoxMatrix);
+    SvgElement? cur = this;
+    while (cur != null) {
+      if (!SvgMatrixMath.isIdentity(cur.transformMatrix)) {
+        scale *= _matrix2dScale(cur.transformMatrix);
+      }
+      if (cur.hasMotionAnimation && !SvgMatrixMath.isIdentity(cur.motionMatrix)) {
+        scale *= _matrix2dScale(cur.motionMatrix);
+      }
+      cur = cur.parent;
+    }
+    return scale > 1e-6 ? scale : 1.0;
+  }
+
+  static double _matrix2dScale(Float64List m) {
+    final sx = math.sqrt(m[0] * m[0] + m[1] * m[1]);
+    final sy = math.sqrt(m[4] * m[4] + m[5] * m[5]);
+    final prod = sx * sy;
+    return prod > 1e-12 ? math.sqrt(prod) : 1.0;
   }
 
   /// Subclass hook to draw geometry or child elements.

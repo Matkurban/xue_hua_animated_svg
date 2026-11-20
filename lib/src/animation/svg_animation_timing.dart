@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/animation.dart' show Cubic;
 import 'package:flutter/foundation.dart' show protected;
 
+import 'svg_step_easing.dart';
+
 /// SMIL / CSS `fill` behavior when an animation is outside its active duration.
 enum SvgAnimationFillMode {
   /// Resets the target attribute to its base value after the active duration ends.
@@ -29,12 +31,14 @@ enum SvgAnimationDirection { normal, reverse, alternate, alternateReverse }
 
 /// Precompiled timing and easing evaluator for a single SMIL or CSS animation track.
 ///
-/// Uses Flutter's built-in [Cubic] solver for `keySplines` cubic-bezier curves.
+/// Uses Flutter's built-in [Cubic] solver for `keySplines` cubic-bezier curves
+/// and [SvgStepEasing] for W3C CSS `steps(N, <position>)` curves.
 class SvgAnimationTiming {
   /// Start offsets in microseconds (supports multiple semicolon-separated `begin` times).
   ///
-  /// Stored as [List<int>] rather than [Int64List] because dart2js / Flutter Web
-  /// does not support `Int64List`.
+  /// Mutable so SMIL syncbase timing resolution can append resolved offsets
+  /// during compilation. Stored as [List<int>] rather than [Int64List] because
+  /// dart2js / Flutter Web does not support `Int64List`.
   final List<int> beginOffsetsUs;
 
   /// Simple duration of one cycle in microseconds.
@@ -51,11 +55,23 @@ class SvgAnimationTiming {
   final SvgAdditiveMode additiveMode;
   final SvgAnimationDirection direction;
 
+  /// SMIL `accumulate="sum"` flag: adds `cycleIndex * lastKeyframe` across repeats.
+  final bool accumulateSum;
+
+  /// CSS `animation-play-state: paused` flag: freezes evaluation at `t = 0`.
+  final bool isPaused;
+
   /// Normalized keyframe timestamps `[0.0 .. 1.0]` of length `keyframeCount`.
   final Float64List keyTimes;
 
   /// Precompiled [Cubic] easing curves of length `keyframeCount - 1` when `calcMode == spline`.
   final List<Cubic>? keySplines;
+
+  /// Optional per-segment CSS `steps(...)` easing curves.
+  final List<SvgStepEasing?>? keyStepEasings;
+
+  /// Optional uniform CSS `steps(...)` easing curve applied to each segment.
+  final SvgStepEasing? stepEasing;
 
   const SvgAnimationTiming({
     required this.beginOffsetsUs,
@@ -66,16 +82,21 @@ class SvgAnimationTiming {
     this.calcMode = SvgCalcMode.linear,
     this.additiveMode = SvgAdditiveMode.replace,
     this.direction = SvgAnimationDirection.normal,
+    this.accumulateSum = false,
+    this.isPaused = false,
     required this.keyTimes,
     this.keySplines,
+    this.keyStepEasings,
+    this.stepEasing,
   });
 
   /// Evaluates the normalized progress `t` in `[0.0, 1.0]` for [elapsedUs], or
   /// returns `-1.0` if this animation is currently inactive.
   double evaluateSimpleProgress(int elapsedUs) {
-    if (durationUs <= 0) return -1.0;
+    if (durationUs <= 0 || beginOffsetsUs.isEmpty) return -1.0;
+    final effectiveElapsedUs = isPaused ? 0 : elapsedUs;
 
-    // Find the most recent active begin offset <= elapsedUs (or earliest future offset for backwards fill)
+    // Find the most recent active begin offset <= effectiveElapsedUs
     int? activeBeginUs;
     int? earliestBeginUs;
     for (int i = 0; i < beginOffsetsUs.length; i++) {
@@ -83,7 +104,7 @@ class SvgAnimationTiming {
       if (earliestBeginUs == null || b < earliestBeginUs) {
         earliestBeginUs = b;
       }
-      if (b <= elapsedUs) {
+      if (b <= effectiveElapsedUs) {
         if (activeBeginUs == null || b > activeBeginUs) {
           activeBeginUs = b;
         }
@@ -99,7 +120,7 @@ class SvgAnimationTiming {
       return -1.0;
     }
 
-    int localElapsedUs = elapsedUs - activeBeginUs;
+    final localElapsedUs = effectiveElapsedUs - activeBeginUs;
     final maxActiveUs = repeatCount.isInfinite
         ? null
         : (durationUs * repeatCount).round();
@@ -133,6 +154,56 @@ class SvgAnimationTiming {
     final cycleRemUs = localElapsedUs % durationUs;
     final rawProgress = (cycleRemUs / durationUs).clamp(0.0, 1.0);
     return _applyDirection(rawProgress, cycleIndex);
+  }
+
+  /// Evaluates the completed repeat iteration index (`>= 0`) at [elapsedUs]
+  /// for SMIL `accumulate="sum"`, or returns `-1` if inactive.
+  int evaluateCycleIndex(int elapsedUs) {
+    if (durationUs <= 0 || beginOffsetsUs.isEmpty) return -1;
+    final effectiveElapsedUs = isPaused ? 0 : elapsedUs;
+
+    int? activeBeginUs;
+    for (int i = 0; i < beginOffsetsUs.length; i++) {
+      final b = beginOffsetsUs[i];
+      if (b <= effectiveElapsedUs) {
+        if (activeBeginUs == null || b > activeBeginUs) {
+          activeBeginUs = b;
+        }
+      }
+    }
+    if (activeBeginUs == null) return 0;
+
+    final localElapsedUs = effectiveElapsedUs - activeBeginUs;
+    final maxActiveUs = repeatCount.isInfinite
+        ? null
+        : (durationUs * repeatCount).round();
+
+    int? effectiveActiveLimitUs = maxActiveUs;
+    if (endUs != null) {
+      final endRelativeUs = endUs! - activeBeginUs;
+      if (endRelativeUs <= 0) return -1;
+      if (effectiveActiveLimitUs == null ||
+          endRelativeUs < effectiveActiveLimitUs) {
+        effectiveActiveLimitUs = endRelativeUs;
+      }
+    }
+
+    if (effectiveActiveLimitUs != null &&
+        localElapsedUs >= effectiveActiveLimitUs) {
+      if (fillMode == SvgAnimationFillMode.freeze ||
+          fillMode == SvgAnimationFillMode.both) {
+        final totalCycles = effectiveActiveLimitUs / durationUs;
+        final exactFloor = totalCycles.floor();
+        final remainder = totalCycles - exactFloor;
+        if (remainder <= 1e-6 && exactFloor > 0) {
+          return exactFloor - 1;
+        }
+        return exactFloor;
+      }
+      return -1;
+    }
+
+    return localElapsedUs ~/ durationUs;
   }
 
   double _applyDirection(double rawProgress, int cycleIndex) {
@@ -178,7 +249,10 @@ class SvgAnimationTiming {
 
     if (t <= keyTimes[0]) {
       outSegment[0] = 0;
-      return 0.0;
+      final segStep = (keyStepEasings != null && keyStepEasings!.isNotEmpty)
+          ? keyStepEasings![0]
+          : stepEasing;
+      return segStep != null ? segStep.transform(0.0) : 0.0;
     }
     if (t >= keyTimes[count - 1]) {
       outSegment[0] = count - 2;
@@ -200,10 +274,23 @@ class SvgAnimationTiming {
     if (span <= 1e-9) return 1.0;
 
     final linearLocalT = ((t - t0) / span).clamp(0.0, 1.0);
+    final segStep = (keyStepEasings != null && seg < keyStepEasings!.length)
+        ? keyStepEasings![seg]
+        : stepEasing;
+    if (segStep != null) {
+      return segStep.transform(linearLocalT);
+    }
     if (calcMode == SvgCalcMode.spline &&
         keySplines != null &&
         seg < keySplines!.length) {
-      return keySplines![seg].transform(linearLocalT).clamp(0.0, 1.0);
+      final cubic = keySplines![seg];
+      if (cubic.a == 0.0 &&
+          cubic.b == 0.0 &&
+          cubic.c == 1.0 &&
+          cubic.d == 1.0) {
+        return linearLocalT;
+      }
+      return cubic.transform(linearLocalT).clamp(0.0, 1.0);
     }
     return linearLocalT;
   }

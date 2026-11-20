@@ -8,6 +8,8 @@ import '../model/svg_filter_node.dart';
 import '../model/svg_style.dart';
 import '../model/svg_text_style.dart';
 import '../model/svg_transform.dart';
+import 'svg_css_color4.dart';
+import 'svg_css_math.dart';
 import 'svg_named_colors.dart';
 
 /// Stateless value parsers for CSS / SVG lengths, angles, colors, paint servers,
@@ -333,9 +335,17 @@ abstract final class SvgCssValueParser {
     }
 
     if (s.startsWith('url(')) {
-      final urlId = extractUrlId(s);
-      if (urlId != null && urlId.isNotEmpty) {
-        return SvgPaintServer.fromGradient(urlId);
+      final close = s.indexOf(')');
+      if (close > 4) {
+        final urlPart = s.substring(0, close + 1);
+        final rest = s.substring(close + 1).trim();
+        final urlId = extractUrlId(urlPart);
+        if (urlId != null && urlId.isNotEmpty) {
+          final fallback = rest.isNotEmpty && rest.toLowerCase() != 'none'
+              ? parseColor(rest)
+              : null;
+          return SvgPaintServer.fromGradient(urlId, fallbackColor: fallback);
+        }
       }
     }
 
@@ -425,6 +435,9 @@ abstract final class SvgCssValueParser {
     if (s.startsWith('hwb(')) {
       return _parseHwbColor(s);
     }
+
+    final modern = SvgCssColor4.parse(s, parseBaseColor: parseColor);
+    if (modern != null) return modern;
 
     return svgNamedColors[s];
   }
@@ -570,11 +583,14 @@ abstract final class SvgCssValueParser {
     return v != null ? v / 100.0 : null;
   }
 
-  /// Parses a number or percentage (`50%` -> `0.5`).
+  /// Parses a number, percentage (`50%` -> `0.5`), or CSS math expression.
   static double? parseNumberOrPercent(String? raw, {double? referenceExtent}) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
     if (s.isEmpty) return null;
+    if (SvgCssMath.isMathFunction(s)) {
+      return SvgCssMath.evaluate(s, referenceExtent: referenceExtent);
+    }
     if (s.endsWith('%')) {
       final v = double.tryParse(s.substring(0, s.length - 1).trim());
       if (v == null) return null;
@@ -584,11 +600,14 @@ abstract final class SvgCssValueParser {
     return parseLength(s);
   }
 
-  /// Parses an SVG length (`px`, `pt`, `pc`, `mm`, `cm`, `in`, or unitless number).
+  /// Parses an SVG length (`px`, `pt`, `pc`, `mm`, `cm`, `in`, `calc()`, or unitless).
   static double? parseLength(String? raw) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
     if (s.isEmpty) return null;
+    if (SvgCssMath.isMathFunction(s)) {
+      return SvgCssMath.evaluate(s);
+    }
     if (s.endsWith('px')) {
       return double.tryParse(s.substring(0, s.length - 2).trim());
     }
@@ -969,6 +988,43 @@ abstract final class SvgCssValueParser {
     return ui.TextDecoration.combine(decos);
   }
 
+  /// Parses `text-transform` (`none`, `uppercase`, `lowercase`, `capitalize`).
+  static SvgTextTransform? parseTextTransform(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'none':
+        return SvgTextTransform.none;
+      case 'uppercase':
+        return SvgTextTransform.uppercase;
+      case 'lowercase':
+        return SvgTextTransform.lowercase;
+      case 'capitalize':
+        return SvgTextTransform.capitalize;
+      default:
+        return null;
+    }
+  }
+
+  /// Parses `writing-mode` (`horizontal-tb`, `vertical-rl`, `vertical-lr`,
+  /// and SVG 1.1 legacy `lr`/`lr-tb`/`rl`/`rl-tb`/`tb`/`tb-rl`).
+  static SvgWritingMode? parseWritingMode(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'horizontal-tb':
+      case 'lr':
+      case 'lr-tb':
+      case 'rl':
+      case 'rl-tb':
+        return SvgWritingMode.horizontalTb;
+      case 'vertical-rl':
+      case 'tb':
+      case 'tb-rl':
+        return SvgWritingMode.verticalRl;
+      case 'vertical-lr':
+        return SvgWritingMode.verticalLr;
+      default:
+        return null;
+    }
+  }
+
   /// Parses `paint-order` (SVG 2: `normal`, `stroke`, `stroke fill`, `fill stroke`, etc.).
   static SvgPaintOrder? parsePaintOrder(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
@@ -978,6 +1034,36 @@ abstract final class SvgCssValueParser {
       if (tok == 'stroke') return SvgPaintOrder.strokeFill;
     }
     return null;
+  }
+
+  /// Parses full 3-layer W3C SVG 2 `paint-order` permutation (`fill`, `stroke`, `markers`).
+  static List<SvgPaintLayer>? parsePaintOrderLayers(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final tokens = raw.trim().toLowerCase().split(RegExp(r'\s+'));
+    if (tokens.contains('normal')) {
+      return const [SvgPaintLayer.fill, SvgPaintLayer.stroke, SvgPaintLayer.markers];
+    }
+    final layers = <SvgPaintLayer>[];
+    for (final tok in tokens) {
+      final SvgPaintLayer? layer = switch (tok) {
+        'fill' => SvgPaintLayer.fill,
+        'stroke' => SvgPaintLayer.stroke,
+        'markers' => SvgPaintLayer.markers,
+        _ => null,
+      };
+      if (layer != null && !layers.contains(layer)) {
+        layers.add(layer);
+      }
+    }
+    if (layers.isEmpty) return null;
+    for (final def in const [
+      SvgPaintLayer.fill,
+      SvgPaintLayer.stroke,
+      SvgPaintLayer.markers,
+    ]) {
+      if (!layers.contains(def)) layers.add(def);
+    }
+    return List<SvgPaintLayer>.unmodifiable(layers);
   }
 
   /// Parses W3C CSS Compositing & Blending `mix-blend-mode` / `<feBlend mode>`.

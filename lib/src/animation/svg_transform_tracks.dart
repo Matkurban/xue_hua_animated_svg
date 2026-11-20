@@ -65,6 +65,31 @@ class SvgTransformAnimationTrack extends SvgAnimationTrack {
           (keyframeValues[i1 + 2] - keyframeValues[i0 + 2]) * localT;
     }
 
+    if (timing.accumulateSum && keyframeCount >= 2) {
+      final cycle = timing.evaluateCycleIndex(elapsedUs);
+      if (cycle > 0) {
+        final lastIdx = (keyframeCount - 1) * 3;
+        switch (transformType) {
+          case SvgTransformType.scale:
+            v0 *= math.pow(keyframeValues[lastIdx], cycle).toDouble();
+            v1 *= math.pow(keyframeValues[lastIdx + 1], cycle).toDouble();
+          case SvgTransformType.translate:
+            v0 += keyframeValues[lastIdx] * cycle;
+            v1 += keyframeValues[lastIdx + 1] * cycle;
+          case SvgTransformType.rotate:
+          case SvgTransformType.skewX:
+          case SvgTransformType.skewY:
+          case SvgTransformType.rotateX:
+          case SvgTransformType.rotateY:
+          case SvgTransformType.rotateZ:
+            v0 += keyframeValues[lastIdx] * cycle;
+          case SvgTransformType.perspective:
+          case SvgTransformType.matrix:
+            break;
+        }
+      }
+    }
+
     final Float64List matrix;
     double originX = 0.0;
     double originY = 0.0;

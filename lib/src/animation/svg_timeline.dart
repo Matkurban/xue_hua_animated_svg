@@ -4,6 +4,7 @@ import 'svg_animation_timing.dart';
 
 export 'svg_animation_timing.dart';
 export 'svg_property_tracks.dart';
+export 'svg_step_easing.dart';
 export 'svg_transform_tracks.dart';
 
 /// High-performance precompiled Timeline Engine driving all SMIL and CSS animations

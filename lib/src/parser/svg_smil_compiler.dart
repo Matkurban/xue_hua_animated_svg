@@ -12,6 +12,7 @@ import '../model/svg_style.dart';
 import '../model/svg_transform.dart';
 import 'svg_css_parser.dart';
 import 'svg_path_parser.dart';
+import 'svg_smil_syncbase.dart';
 import 'svg_xml_tokenizer.dart';
 
 /// Deferred `<animateMotion>` descriptor resolved after all `<path>` elements
@@ -36,6 +37,7 @@ class SvgSmilCompiler {
   final Set<SvgElement> animatedElementsSet;
   final Set<SvgGradientNode> animatedGradientsSet;
   final List<SvgPendingMotionTrack> pendingMotions = <SvgPendingMotionTrack>[];
+  final SvgSmilSyncbaseResolver _syncbaseResolver = SvgSmilSyncbaseResolver();
 
   SvgSmilCompiler({
     required this.viewBox,
@@ -526,15 +528,7 @@ class SvgSmilCompiler {
         : SvgCssParser.parseClockMicroseconds(rawDur);
     if (durUs == null || durUs <= 0) return null;
 
-    final beginRaw = setXml.attr('begin');
-    final beginList = <int>[];
-    if (beginRaw != null && beginRaw.trim().isNotEmpty) {
-      for (final p in beginRaw.split(';')) {
-        final us = SvgCssParser.parseClockMicroseconds(p);
-        if (us != null) beginList.add(us);
-      }
-    }
-    if (beginList.isEmpty) beginList.add(0);
+    final (beginList, syncRefs) = _parseBeginAttribute(setXml.attr('begin'));
 
     final endUs = SvgCssParser.parseClockMicroseconds(setXml.attr('end'));
     final fillRaw = (setXml.attr('fill') ?? 'remove').trim().toLowerCase();
@@ -542,8 +536,8 @@ class SvgSmilCompiler {
         ? SvgAnimationFillMode.freeze
         : SvgAnimationFillMode.remove;
 
-    return SvgAnimationTiming(
-      beginOffsetsUs: List<int>.unmodifiable(beginList),
+    final timing = SvgAnimationTiming(
+      beginOffsetsUs: beginList,
       durationUs: durUs,
       endUs: endUs,
       repeatCount: isIndefiniteDur ? double.infinity : 1.0,
@@ -552,6 +546,9 @@ class SvgSmilCompiler {
       additiveMode: SvgAdditiveMode.replace,
       keyTimes: Float64List.fromList([0.0]),
     );
+    _syncbaseResolver.registerTiming(setXml.attr('id'), timing);
+    _syncbaseResolver.addPendingRefs(timing, syncRefs);
+    return timing;
   }
 
   void compileSmilAnimateTransformOnElement(
@@ -713,6 +710,11 @@ class SvgSmilCompiler {
     }
   }
 
+  /// Resolves all SMIL syncbase `begin` references (e.g. `anim1.end+0.5s`).
+  void resolveSyncbaseTimings() {
+    _syncbaseResolver.resolveAll();
+  }
+
   SvgMotionAnimationTrack? _compilePendingMotionTrack(
     SvgPendingMotionTrack pending, {
     required Map<String, SvgElement> elementsById,
@@ -857,17 +859,8 @@ class SvgSmilCompiler {
     final durUs = SvgCssParser.parseClockMicroseconds(animXml.attr('dur'));
     if (durUs == null || durUs <= 0) return null;
 
-    // Parse semicolon-separated `begin` offsets (default `[0]`)
-    final beginRaw = animXml.attr('begin');
-    final beginList = <int>[];
-    if (beginRaw != null && beginRaw.trim().isNotEmpty) {
-      final parts = beginRaw.split(';');
-      for (final p in parts) {
-        final us = SvgCssParser.parseClockMicroseconds(p);
-        if (us != null) beginList.add(us);
-      }
-    }
-    if (beginList.isEmpty) beginList.add(0);
+    // Parse semicolon-separated `begin` offsets & SMIL syncbase references
+    final (beginList, syncRefs) = _parseBeginAttribute(animXml.attr('begin'));
 
     final endUs = SvgCssParser.parseClockMicroseconds(animXml.attr('end'));
 
@@ -887,6 +880,11 @@ class SvgSmilCompiler {
     final additiveMode = additiveRaw == 'sum'
         ? SvgAdditiveMode.sum
         : SvgAdditiveMode.replace;
+
+    final accumulateRaw = (animXml.attr('accumulate') ?? 'none')
+        .trim()
+        .toLowerCase();
+    final accumulateSum = accumulateRaw == 'sum';
 
     final calcRaw = (animXml.attr('calcMode') ?? 'linear').trim().toLowerCase();
     SvgCalcMode calcMode;
@@ -958,17 +956,45 @@ class SvgSmilCompiler {
       }
     }
 
-    return SvgAnimationTiming(
-      beginOffsetsUs: List<int>.unmodifiable(beginList),
+    final timing = SvgAnimationTiming(
+      beginOffsetsUs: beginList,
       durationUs: durUs,
       endUs: endUs,
       repeatCount: repeatCount,
       fillMode: fillMode,
       calcMode: calcMode,
       additiveMode: additiveMode,
+      accumulateSum: accumulateSum,
       keyTimes: keyTimes,
       keySplines: keySplines,
     );
+    _syncbaseResolver.registerTiming(animXml.attr('id'), timing);
+    _syncbaseResolver.addPendingRefs(timing, syncRefs);
+    return timing;
+  }
+
+  static (List<int>, List<SvgSmilSyncbaseRef>) _parseBeginAttribute(
+    String? beginRaw,
+  ) {
+    final beginList = <int>[];
+    final syncRefs = <SvgSmilSyncbaseRef>[];
+    if (beginRaw != null && beginRaw.trim().isNotEmpty) {
+      for (final p in beginRaw.split(';')) {
+        final token = p.trim();
+        if (token.isEmpty) continue;
+        final syncRef = SvgSmilSyncbaseRef.parse(token);
+        if (syncRef != null) {
+          syncRefs.add(syncRef);
+        } else {
+          final us = SvgCssParser.parseClockMicroseconds(token);
+          if (us != null) beginList.add(us);
+        }
+      }
+    }
+    if (beginList.isEmpty && syncRefs.isEmpty) {
+      beginList.add(0);
+    }
+    return (beginList, syncRefs);
   }
 
   static Float64List _uniformKeyTimes(int count) {

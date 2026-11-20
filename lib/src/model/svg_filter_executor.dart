@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'svg_document.dart';
 import 'svg_filter_node.dart';
 import 'svg_transform.dart';
 
@@ -26,6 +27,7 @@ abstract final class SvgFilterExecutor {
     required SvgFilterNode filter,
     required ui.Rect targetBounds,
     required void Function(ui.Canvas) paintSource,
+    SvgDocument? document,
   }) {
     if (filter.primitives.isEmpty) {
       paintSource(canvas);
@@ -90,6 +92,11 @@ abstract final class SvgFilterExecutor {
       }
 
       for (final prim in filter.primitives) {
+        final primRegion = prim.resolveSubregion(
+          region,
+          targetBounds,
+          filter.primitiveUnits,
+        );
         SvgFilterPixelField? outField;
         final ui.Picture out = switch (prim) {
           SvgFeGaussianBlur() => () {
@@ -157,18 +164,40 @@ abstract final class SvgFilterExecutor {
             c.restore();
             c.restore();
           }),
-          SvgFeComposite() => recordPicture((c) {
-            final in1 = resolveInput(prim.inSource);
-            final in2 = resolveInput(prim.in2);
-            // Isolate composite inside its own layer so Porter-Duff operators
-            // (e.g. srcIn) only clip against in2, never against main canvas siblings.
-            c.saveLayer(region, ui.Paint());
-            c.drawPicture(in2);
-            c.saveLayer(region, ui.Paint()..blendMode = prim.operatorMode);
-            c.drawPicture(in1);
-            c.restore();
-            c.restore();
-          }),
+          SvgFeComposite() => () {
+            if (prim.isArithmetic) {
+              final f1 = resolveField(prim.inSource);
+              final f2 = resolveField(prim.in2);
+              if (f1 != null && f2 != null) {
+                outField = SvgFilterAdvancedEngine.computeArithmeticField(
+                  f1: f1,
+                  f2: f2,
+                  k1: prim.k1,
+                  k2: prim.k2,
+                  k3: prim.k3,
+                  k4: prim.k4,
+                );
+                return recordPicture((c) {
+                  c.save();
+                  c.clipRect(primRegion);
+                  SvgFilterNoiseEngine.paintFieldMesh(c, outField!);
+                  c.restore();
+                });
+              }
+            }
+            return recordPicture((c) {
+              final in1 = resolveInput(prim.inSource);
+              final in2 = resolveInput(prim.in2);
+              // Isolate composite inside its own layer so Porter-Duff operators
+              // (e.g. srcIn) only clip against in2, never against main canvas siblings.
+              c.saveLayer(primRegion, ui.Paint());
+              c.drawPicture(in2);
+              c.saveLayer(primRegion, ui.Paint()..blendMode = prim.operatorMode);
+              c.drawPicture(in1);
+              c.restore();
+              c.restore();
+            });
+          }(),
           SvgFeMerge() => recordPicture((c) {
             for (final nodeIn in prim.inputs) {
               c.drawPicture(resolveInput(nodeIn));
@@ -244,6 +273,81 @@ abstract final class SvgFilterExecutor {
               srcImg.dispose();
             }
           }),
+          SvgFeImage() => recordPicture((c) {
+            final ref = prim.href?.trim();
+            if (ref == null || ref.isEmpty || document == null) return;
+            if (ref.startsWith('#')) {
+              final targetId = ref.substring(1);
+              final target =
+                  document.defsById[targetId] ?? document.elementsById[targetId];
+              if (target != null) {
+                c.save();
+                c.clipRect(primRegion);
+                target.paint(c, document);
+                c.restore();
+              }
+            }
+          }),
+          SvgFeTile() => recordPicture((c) {
+            final inp = resolveInput(prim.inSource);
+            SvgFilterAdvancedEngine.paintTile(
+              canvas: c,
+              inputPicture: inp,
+              tileBounds: primRegion,
+              targetRegion: region,
+            );
+          }),
+          SvgFeConvolveMatrix() => () {
+            final srcField = resolveField(prim.inSource);
+            if (srcField != null) {
+              outField = SvgFilterAdvancedEngine.convolveField(srcField, prim);
+              return recordPicture((c) {
+                c.save();
+                c.clipRect(primRegion);
+                SvgFilterNoiseEngine.paintFieldMesh(c, outField!);
+                c.restore();
+              });
+            }
+            return recordPicture((c) => c.drawPicture(resolveInput(prim.inSource)));
+          }(),
+          SvgFeDiffuseLighting() => () {
+            final heightField = resolveField(prim.inSource);
+            outField = SvgFilterAdvancedEngine.computeLightingField(
+              region: primRegion,
+              heightField: heightField,
+              isSpecular: false,
+              surfaceScale: prim.surfaceScale,
+              constant: prim.diffuseConstant,
+              specularExponent: 1.0,
+              lightingColor: prim.lightingColor,
+              lightSource: prim.lightSource,
+            );
+            return recordPicture((c) {
+              c.save();
+              c.clipRect(primRegion);
+              SvgFilterNoiseEngine.paintFieldMesh(c, outField!);
+              c.restore();
+            });
+          }(),
+          SvgFeSpecularLighting() => () {
+            final heightField = resolveField(prim.inSource);
+            outField = SvgFilterAdvancedEngine.computeLightingField(
+              region: primRegion,
+              heightField: heightField,
+              isSpecular: true,
+              surfaceScale: prim.surfaceScale,
+              constant: prim.specularConstant,
+              specularExponent: prim.specularExponent,
+              lightingColor: prim.lightingColor,
+              lightSource: prim.lightSource,
+            );
+            return recordPicture((c) {
+              c.save();
+              c.clipRect(primRegion);
+              SvgFilterNoiseEngine.paintFieldMesh(c, outField!);
+              c.restore();
+            });
+          }(),
         };
 
         lastResult = out;

@@ -105,22 +105,30 @@ class _SvgSceneCompiler {
     styleSheet = SvgCssParser.parseStyleSheet(styleBuffer.toString());
 
     // 3. Build root <g> scene graph and parse elements / SMIL animations
+    final rootClasses = _parseClasses(rootXml.attr('class'));
+    final rootMatchCtx = SvgCssMatchContext(
+      xml: rootXml,
+      tagName: 'svg',
+      id: rootXml.attr('id'),
+      classes: rootClasses,
+    );
     final rootStyle = SvgStyle();
     final rootInlineCssAnims = <SvgCssAnimationConfig>[];
     _applyElementAttributesAndCss(
       xml: rootXml,
       tagName: 'svg',
       id: rootXml.attr('id'),
-      classes: _parseClasses(rootXml.attr('class')),
+      classes: rootClasses,
       style: rootStyle,
       outCssAnimations: rootInlineCssAnims,
+      matchCtx: rootMatchCtx,
     );
     rootStyle.resolveInheritance(null);
 
     final rootGroup = SvgGroupNode(
       tagName: 'svg',
       id: rootXml.attr('id'),
-      classes: _parseClasses(rootXml.attr('class')),
+      classes: rootClasses,
       style: rootStyle,
       baseTransformOps: SvgCssParser.parseTransformOps(
         rootXml.attr('transform') ?? '',
@@ -131,6 +139,7 @@ class _SvgSceneCompiler {
       parentXml: rootXml,
       parentGroup: rootGroup,
       insideDefs: false,
+      parentMatchCtx: rootMatchCtx,
     );
 
     // 4. Create and initialize SvgDocument (computing bounds, PathMetrics, and base transforms)
@@ -153,7 +162,7 @@ class _SvgSceneCompiler {
       imageNodes: imageNodes,
     );
 
-    // Resolve deferred <animateMotion> tracks now that all <path> nodes and <defs> exist
+    // Resolve deferred <animateMotion> tracks and SMIL syncbase chains
     _smilCompiler.resolvePendingMotions(
       elementsById: elementsById,
       defsById: defsById,
@@ -161,6 +170,7 @@ class _SvgSceneCompiler {
       clipPathsById: clipPathsById,
       geometryById: geometryById,
     );
+    _smilCompiler.resolveSyncbaseTimings();
 
     document.initialize();
 
@@ -229,9 +239,24 @@ class _SvgSceneCompiler {
     required SvgXmlElement parentXml,
     required SvgGroupNode parentGroup,
     required bool insideDefs,
+    SvgCssMatchContext? parentMatchCtx,
   }) {
-    for (final childXml in parentXml.children) {
+    final totalSiblings = parentXml.children.length;
+    SvgCssMatchContext? prevSiblingCtx;
+    for (int i = 0; i < totalSiblings; i++) {
+      final childXml = parentXml.children[i];
       final tag = childXml.name;
+      final childCtx = SvgCssMatchContext(
+        xml: childXml,
+        tagName: tag,
+        id: childXml.attr('id'),
+        classes: _parseClasses(childXml.attr('class')),
+        parent: parentMatchCtx,
+        previousSibling: prevSiblingCtx,
+        siblingIndex: i,
+        siblingCount: totalSiblings,
+      );
+      prevSiblingCtx = childCtx;
       switch (tag) {
         case 'style':
         case 'title':
@@ -248,6 +273,7 @@ class _SvgSceneCompiler {
             parentXml: childXml,
             parentGroup: defsNode,
             insideDefs: true,
+            parentMatchCtx: childCtx,
           );
           parentGroup.children.add(defsNode);
 
@@ -324,6 +350,7 @@ class _SvgSceneCompiler {
             xml: childXml,
             parentElement: parentGroup,
             insideDefs: insideDefs,
+            matchCtx: childCtx,
           );
           if (elem != null) {
             elem.parent = parentGroup;
@@ -346,10 +373,14 @@ class _SvgSceneCompiler {
     required SvgXmlElement xml,
     required SvgElement parentElement,
     required bool insideDefs,
+    SvgCssMatchContext? matchCtx,
   }) {
     final tag = xml.name;
     final id = xml.attr('id');
     final classes = _parseClasses(xml.attr('class'));
+    final effectiveCtx =
+        matchCtx ??
+        SvgCssMatchContext(xml: xml, tagName: tag, id: id, classes: classes);
     final style = SvgStyle();
     final cssAnims = <SvgCssAnimationConfig>[];
 
@@ -360,6 +391,8 @@ class _SvgSceneCompiler {
       classes: classes,
       style: style,
       outCssAnimations: cssAnims,
+      parentStyle: parentElement.style,
+      matchCtx: effectiveCtx,
     );
     style.resolveInheritance(parentElement.style);
 
@@ -382,6 +415,7 @@ class _SvgSceneCompiler {
           parentXml: xml,
           parentGroup: group,
           insideDefs: insideDefs,
+          parentMatchCtx: effectiveCtx,
         );
         node = group;
 
@@ -398,6 +432,7 @@ class _SvgSceneCompiler {
           parentXml: xml,
           parentGroup: anchor,
           insideDefs: insideDefs,
+          parentMatchCtx: effectiveCtx,
         );
         node = anchor;
 
@@ -623,7 +658,8 @@ class _SvgSceneCompiler {
         node = imageNode;
 
       case 'path':
-        final d = xml.attr('d') ?? '';
+        final cssD = style.cssGeometryProps?['d'];
+        final d = _unwrapCssPathFunction(cssD) ?? xml.attr('d') ?? '';
         final precompiled = SvgPathParser.parse(d);
         node = SvgPathNode(
           id: id,
@@ -642,37 +678,37 @@ class _SvgSceneCompiler {
           baseTransformOps: baseTransformOps,
           baseX:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('x'),
+                style.cssGeometryProps?['x'] ?? xml.attr('x'),
                 referenceExtent: viewBox.width,
               ) ??
               0.0,
           baseY:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('y'),
+                style.cssGeometryProps?['y'] ?? xml.attr('y'),
                 referenceExtent: viewBox.height,
               ) ??
               0.0,
           baseWidth:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('width'),
+                style.cssGeometryProps?['width'] ?? xml.attr('width'),
                 referenceExtent: viewBox.width,
               ) ??
               0.0,
           baseHeight:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('height'),
+                style.cssGeometryProps?['height'] ?? xml.attr('height'),
                 referenceExtent: viewBox.height,
               ) ??
               0.0,
           baseRx:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('rx'),
+                style.cssGeometryProps?['rx'] ?? xml.attr('rx'),
                 referenceExtent: viewBox.width,
               ) ??
               0.0,
           baseRy:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('ry'),
+                style.cssGeometryProps?['ry'] ?? xml.attr('ry'),
                 referenceExtent: viewBox.height,
               ) ??
               0.0,
@@ -690,19 +726,19 @@ class _SvgSceneCompiler {
           baseTransformOps: baseTransformOps,
           baseCx:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('cx'),
+                style.cssGeometryProps?['cx'] ?? xml.attr('cx'),
                 referenceExtent: viewBox.width,
               ) ??
               0.0,
           baseCy:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('cy'),
+                style.cssGeometryProps?['cy'] ?? xml.attr('cy'),
                 referenceExtent: viewBox.height,
               ) ??
               0.0,
           baseR:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('r'),
+                style.cssGeometryProps?['r'] ?? xml.attr('r'),
                 referenceExtent: diag,
               ) ??
               0.0,
@@ -716,25 +752,25 @@ class _SvgSceneCompiler {
           baseTransformOps: baseTransformOps,
           baseCx:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('cx'),
+                style.cssGeometryProps?['cx'] ?? xml.attr('cx'),
                 referenceExtent: viewBox.width,
               ) ??
               0.0,
           baseCy:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('cy'),
+                style.cssGeometryProps?['cy'] ?? xml.attr('cy'),
                 referenceExtent: viewBox.height,
               ) ??
               0.0,
           baseRx:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('rx'),
+                style.cssGeometryProps?['rx'] ?? xml.attr('rx'),
                 referenceExtent: viewBox.width,
               ) ??
               0.0,
           baseRy:
               SvgCssParser.parseNumberOrPercent(
-                xml.attr('ry'),
+                style.cssGeometryProps?['ry'] ?? xml.attr('ry'),
                 referenceExtent: viewBox.height,
               ) ??
               0.0,
@@ -854,6 +890,17 @@ class _SvgSceneCompiler {
     return node;
   }
 
+  static String? _unwrapCssPathFunction(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final s = raw.trim();
+    final m = RegExp(
+      r'^path\s*\(\s*(["\x27])([\s\S]*)\1\s*\)$',
+      caseSensitive: false,
+    ).firstMatch(s);
+    if (m != null) return m.group(2);
+    return s;
+  }
+
   void _applyElementAttributesAndCss({
     required SvgXmlElement xml,
     required String tagName,
@@ -861,32 +908,26 @@ class _SvgSceneCompiler {
     required List<String> classes,
     required SvgStyle style,
     required List<SvgCssAnimationConfig> outCssAnimations,
+    SvgStyle? parentStyle,
+    SvgCssMatchContext? matchCtx,
   }) {
-    // 1. Presentation attributes on the XML element (lowest precedence)
-    xml.attributes.forEach((key, value) {
-      if (key != 'style' &&
-          key != 'transform' &&
-          key != 'id' &&
-          key != 'class') {
-        SvgCssParser.applySingleAttribute(key, value, style);
-      }
-    });
+    if (parentStyle != null && parentStyle.customProperties.isNotEmpty) {
+      style.customProperties.addAll(parentStyle.customProperties);
+    }
 
-    // 2. Matched <style> sheet rules ordered by (specificity, orderIndex)
+    final ctx =
+        matchCtx ??
+        SvgCssMatchContext(
+          xml: xml,
+          tagName: tagName,
+          id: id,
+          classes: classes,
+        );
+
+    final matched = <SvgCssRule>[];
     if (styleSheet.rules.isNotEmpty) {
-      final matched = <SvgCssRule>[];
       for (final rule in styleSheet.rules) {
-        final sel = rule.selector;
-        bool isMatch = false;
-        switch (sel.type) {
-          case SvgCssSelectorType.id:
-            isMatch = id != null && id == sel.name;
-          case SvgCssSelectorType.className:
-            isMatch = classes.contains(sel.name);
-          case SvgCssSelectorType.tag:
-            isMatch = tagName == sel.name;
-        }
-        if (isMatch) {
+        if (rule.selector.matches(ctx)) {
           matched.add(rule);
         }
       }
@@ -894,19 +935,95 @@ class _SvgSceneCompiler {
         final cmp = a.selector.specificity.compareTo(b.selector.specificity);
         return cmp != 0 ? cmp : a.orderIndex.compareTo(b.orderIndex);
       });
-      for (final rule in matched) {
-        style.mergeFrom(rule.style);
-        if (rule.animations.isNotEmpty) {
-          outCssAnimations.addAll(rule.animations);
-        }
+    }
+
+    final inlineStyle = xml.attr('style');
+    final (
+      inlineNormal,
+      inlineImportant,
+    ) = (inlineStyle != null && inlineStyle.isNotEmpty)
+        ? SvgCssParser.parseDeclarationsSplit(inlineStyle)
+        : (const <String, String>{}, const <String, String>{});
+
+    // Pass 1: Resolve all `--*` custom properties in W3C cascade order
+    for (final rule in matched) {
+      rule.declarations.forEach((k, v) {
+        if (k.startsWith('--')) style.customProperties[k] = v;
+      });
+    }
+    inlineNormal.forEach((k, v) {
+      if (k.startsWith('--')) style.customProperties[k] = v;
+    });
+    for (final rule in matched) {
+      rule.importantDeclarations.forEach((k, v) {
+        if (k.startsWith('--')) style.customProperties[k] = v;
+      });
+    }
+    inlineImportant.forEach((k, v) {
+      if (k.startsWith('--')) style.customProperties[k] = v;
+    });
+
+    // Pass 2: Presentation attributes on the XML element (lowest precedence)
+    xml.attributes.forEach((key, value) {
+      if (key != 'style' &&
+          key != 'transform' &&
+          key != 'translate' &&
+          key != 'rotate' &&
+          key != 'scale' &&
+          key != 'id' &&
+          key != 'class' &&
+          key != 'x' &&
+          key != 'y' &&
+          key != 'width' &&
+          key != 'height' &&
+          key != 'cx' &&
+          key != 'cy' &&
+          key != 'r' &&
+          key != 'rx' &&
+          key != 'ry' &&
+          key != 'd') {
+        SvgCssParser.applySingleAttribute(key, value, style);
+      }
+    });
+
+    // Pass 3: Normal <style> declarations
+    for (final rule in matched) {
+      if (rule.declarations.isNotEmpty) {
+        SvgCssParser.applyDeclarationsToStyle(
+          rule.declarations,
+          style,
+          outCssAnimations,
+        );
       }
     }
 
-    // 3. Inline `style="..."` attribute (highest precedence)
-    final inlineStyle = xml.attr('style');
-    if (inlineStyle != null && inlineStyle.isNotEmpty) {
-      final declMap = SvgCssParser.parseDeclarationsMap(inlineStyle);
-      SvgCssParser.applyDeclarationsToStyle(declMap, style, outCssAnimations);
+    // Pass 4: Normal inline `style="..."` declarations
+    if (inlineNormal.isNotEmpty) {
+      SvgCssParser.applyDeclarationsToStyle(
+        inlineNormal,
+        style,
+        outCssAnimations,
+      );
+    }
+
+    // Pass 5: `!important` <style> declarations
+    for (final rule in matched) {
+      if (rule.importantDeclarations.isNotEmpty) {
+        SvgCssParser.applyDeclarationsToStyle(
+          rule.importantDeclarations,
+          style,
+          outCssAnimations,
+        );
+      }
+    }
+
+    // Pass 6: `!important` inline `style="..."` declarations (highest precedence)
+    if (inlineImportant.isNotEmpty) {
+      SvgCssParser.applyDeclarationsToStyle(
+        inlineImportant,
+        style,
+        outCssAnimations,
+      );
     }
   }
 
@@ -1169,6 +1286,10 @@ class _SvgSceneCompiler {
   SvgFilterPrimitive? _buildFilterPrimitive(SvgXmlElement xml) {
     final inSrc = xml.attr('in');
     final res = xml.attr('result');
+    final px = SvgCssParser.parseNumberOrPercent(xml.attr('x'));
+    final py = SvgCssParser.parseNumberOrPercent(xml.attr('y'));
+    final pw = SvgCssParser.parseNumberOrPercent(xml.attr('width'));
+    final ph = SvgCssParser.parseNumberOrPercent(xml.attr('height'));
     final inlineDecls = xml.attr('style') != null
         ? SvgCssParser.parseDeclarationsMap(xml.attr('style')!)
         : const <String, String>{};
@@ -1268,11 +1389,21 @@ class _SvgSceneCompiler {
         );
 
       case 'feComposite':
+        final opRaw = xml.attr('operator')?.trim().toLowerCase();
         return SvgFeComposite(
           inSource: inSrc,
           result: res,
+          x: px,
+          y: py,
+          width: pw,
+          height: ph,
           in2: xml.attr('in2'),
-          operatorMode: _parseCompositeMode(xml.attr('operator')),
+          operatorMode: _parseCompositeMode(opRaw),
+          isArithmetic: opRaw == 'arithmetic',
+          k1: SvgCssParser.parseLength(xml.attr('k1')) ?? 0.0,
+          k2: SvgCssParser.parseLength(xml.attr('k2')) ?? 0.0,
+          k3: SvgCssParser.parseLength(xml.attr('k3')) ?? 0.0,
+          k4: SvgCssParser.parseLength(xml.attr('k4')) ?? 0.0,
         );
 
       case 'feMerge':
@@ -1352,9 +1483,130 @@ class _SvgSceneCompiler {
           yChannel: _parseChannelSelector(xml.attr('yChannelSelector')),
         );
 
+      case 'feImage':
+        return SvgFeImage(
+          inSource: inSrc,
+          result: res,
+          x: px,
+          y: py,
+          width: pw,
+          height: ph,
+          href: xml.attr('href') ?? xml.attr('xlink:href'),
+          preserveAspectRatio: _parsePreserveAspectRatio(
+            xml.attr('preserveAspectRatio'),
+          ),
+        );
+
+      case 'feTile':
+        return SvgFeTile(
+          inSource: inSrc,
+          result: res,
+          x: px,
+          y: py,
+          width: pw,
+          height: ph,
+        );
+
+      case 'feConvolveMatrix':
+        final ord = SvgCssParser.parseNumberList(xml.attr('order'));
+        final ox = ord.isNotEmpty ? ord[0].round() : 3;
+        final oy = ord.length > 1 ? ord[1].round() : ox;
+        final em = xml.attr('edgeMode')?.trim().toLowerCase();
+        final edgeMode = em == 'wrap'
+            ? ui.TileMode.repeated
+            : (em == 'none' ? ui.TileMode.decal : ui.TileMode.clamp);
+        return SvgFeConvolveMatrix(
+          inSource: inSrc,
+          result: res,
+          x: px,
+          y: py,
+          width: pw,
+          height: ph,
+          orderX: ox,
+          orderY: oy,
+          kernelMatrix: SvgCssParser.parseNumberList(xml.attr('kernelMatrix')),
+          divisor: SvgCssParser.parseLength(xml.attr('divisor')),
+          bias: SvgCssParser.parseLength(xml.attr('bias')) ?? 0.0,
+          targetX: int.tryParse((xml.attr('targetX') ?? '').trim()),
+          targetY: int.tryParse((xml.attr('targetY') ?? '').trim()),
+          edgeMode: edgeMode,
+          preserveAlpha: xml.attr('preserveAlpha')?.trim().toLowerCase() == 'true',
+        );
+
+      case 'feDiffuseLighting':
+        final lcRaw =
+            xml.attr('lighting-color') ?? inlineDecls['lighting-color'];
+        return SvgFeDiffuseLighting(
+          inSource: inSrc,
+          result: res,
+          x: px,
+          y: py,
+          width: pw,
+          height: ph,
+          surfaceScale: SvgCssParser.parseLength(xml.attr('surfaceScale')) ?? 1.0,
+          diffuseConstant:
+              SvgCssParser.parseLength(xml.attr('diffuseConstant')) ?? 1.0,
+          lightingColor:
+              SvgCssParser.parseColor(lcRaw) ?? const ui.Color(0xFFFFFFFF),
+          lightSource: _parseLightSource(xml),
+        );
+
+      case 'feSpecularLighting':
+        final lcRaw =
+            xml.attr('lighting-color') ?? inlineDecls['lighting-color'];
+        return SvgFeSpecularLighting(
+          inSource: inSrc,
+          result: res,
+          x: px,
+          y: py,
+          width: pw,
+          height: ph,
+          surfaceScale: SvgCssParser.parseLength(xml.attr('surfaceScale')) ?? 1.0,
+          specularConstant:
+              SvgCssParser.parseLength(xml.attr('specularConstant')) ?? 1.0,
+          specularExponent:
+              SvgCssParser.parseLength(xml.attr('specularExponent')) ?? 1.0,
+          lightingColor:
+              SvgCssParser.parseColor(lcRaw) ?? const ui.Color(0xFFFFFFFF),
+          lightSource: _parseLightSource(xml),
+        );
+
       default:
         return null;
     }
+  }
+
+  SvgLightSource? _parseLightSource(SvgXmlElement parent) {
+    for (final child in parent.children) {
+      switch (child.name) {
+        case 'feDistantLight':
+          return SvgFeDistantLight(
+            azimuthDeg: SvgCssParser.parseLength(child.attr('azimuth')) ?? 0.0,
+            elevationDeg:
+                SvgCssParser.parseLength(child.attr('elevation')) ?? 0.0,
+          );
+        case 'fePointLight':
+          return SvgFePointLight(
+            x: SvgCssParser.parseLength(child.attr('x')) ?? 0.0,
+            y: SvgCssParser.parseLength(child.attr('y')) ?? 0.0,
+            z: SvgCssParser.parseLength(child.attr('z')) ?? 0.0,
+          );
+        case 'feSpotLight':
+          return SvgFeSpotLight(
+            x: SvgCssParser.parseLength(child.attr('x')) ?? 0.0,
+            y: SvgCssParser.parseLength(child.attr('y')) ?? 0.0,
+            z: SvgCssParser.parseLength(child.attr('z')) ?? 0.0,
+            pointsAtX: SvgCssParser.parseLength(child.attr('pointsAtX')) ?? 0.0,
+            pointsAtY: SvgCssParser.parseLength(child.attr('pointsAtY')) ?? 0.0,
+            pointsAtZ: SvgCssParser.parseLength(child.attr('pointsAtZ')) ?? 0.0,
+            specularExponent:
+                SvgCssParser.parseLength(child.attr('specularExponent')) ?? 1.0,
+            limitingConeAngleDeg:
+                SvgCssParser.parseLength(child.attr('limitingConeAngle')),
+          );
+      }
+    }
+    return null;
   }
 
   static SvgChannelSelector _parseChannelSelector(String? raw) {

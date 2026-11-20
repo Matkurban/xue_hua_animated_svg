@@ -282,7 +282,43 @@ abstract final class SvgTextLayoutEngine {
       }
     }
 
+    // Apply CSS `text-transform` (`uppercase`, `lowercase`, `capitalize`)
+    for (int i = 0; i < processed.length; i++) {
+      final run = processed[i];
+      final mode = run.owner.style.currentTextTransform;
+      if (mode != SvgTextTransform.none) {
+        processed[i] = run.withText(_applyTextTransform(run.text, mode));
+      }
+    }
+
     return processed;
+  }
+
+  /// Transforms [text] according to CSS Text Level 3 `text-transform`.
+  static String _applyTextTransform(String text, SvgTextTransform mode) {
+    switch (mode) {
+      case SvgTextTransform.none:
+        return text;
+      case SvgTextTransform.uppercase:
+        return text.toUpperCase();
+      case SvgTextTransform.lowercase:
+        return text.toLowerCase();
+      case SvgTextTransform.capitalize:
+        final buf = StringBuffer();
+        bool capitalizeNext = true;
+        for (final rune in text.runes) {
+          final ch = String.fromCharCode(rune);
+          final isWordChar = RegExp(r'[A-Za-z0-9\u00C0-\u024F]').hasMatch(ch);
+          if (isWordChar) {
+            buf.write(capitalizeNext ? ch.toUpperCase() : ch);
+            capitalizeNext = false;
+          } else {
+            buf.write(ch);
+            capitalizeNext = true;
+          }
+        }
+        return buf.toString();
+    }
   }
 
   static void _layoutInlineRuns({
@@ -302,7 +338,9 @@ abstract final class SvgTextLayoutEngine {
       final fontSize = style.currentFontSize;
       if (fontSize <= 0.0 || run.text.isEmpty) continue;
 
+      final isVertical = style.currentWritingMode != SvgWritingMode.horizontalTb;
       final needsPerChar =
+          isVertical ||
           run.xList.length > 1 ||
           run.yList.length > 1 ||
           run.dxList.length > 1 ||
@@ -423,6 +461,7 @@ abstract final class SvgTextLayoutEngine {
             currentChunk = _TextChunk(
               anchor: style.currentTextAnchor,
               direction: style.currentTextDirection,
+              isVertical: isVertical,
             );
             chunks.add(currentChunk);
           }
@@ -452,8 +491,14 @@ abstract final class SvgTextLayoutEngine {
             style: style,
             extraLetterSpacing: 0.0,
           );
-          final baselineY = _computeBaselineOffsetY(style, measured);
-          final topLeft = ui.Offset(cursorX, cursorY + baselineY);
+          final ui.Offset topLeft;
+          if (isVertical) {
+            // Center each stacked glyph horizontally around cursorX
+            topLeft = ui.Offset(cursorX - measured.width * 0.5, cursorY);
+          } else {
+            final baselineY = _computeBaselineOffsetY(style, measured);
+            topLeft = ui.Offset(cursorX, cursorY + baselineY);
+          }
           final localBounds = ui.Rect.fromLTWH(
             topLeft.dx,
             topLeft.dy,
@@ -475,7 +520,11 @@ abstract final class SvgTextLayoutEngine {
               localBounds: localBounds,
             ),
           );
-          cursorX += measured.width;
+          if (isVertical) {
+            cursorY += measured.height > 0.0 ? measured.height : fontSize;
+          } else {
+            cursorX += measured.width;
+          }
         }
       }
     }
@@ -483,23 +532,43 @@ abstract final class SvgTextLayoutEngine {
     // Apply per-chunk text-anchor alignment and emit final placements
     for (final chunk in chunks) {
       if (chunk.items.isEmpty) continue;
-      double minX = chunk.items.first.position.dx;
-      double maxX = chunk.items.first.position.dx + chunk.items.first.width;
-      for (int i = 1; i < chunk.items.length; i++) {
-        final item = chunk.items[i];
-        if (item.position.dx < minX) minX = item.position.dx;
-        final right = item.position.dx + item.width;
-        if (right > maxX) maxX = right;
-      }
-      final chunkWidth = maxX - minX;
-      final shiftX = _computeTextAnchorShift(
-        anchor: chunk.anchor,
-        direction: chunk.direction,
-        chunkWidth: chunkWidth,
-      );
+      if (chunk.isVertical) {
+        double minY = chunk.items.first.position.dy;
+        double maxY = chunk.items.first.position.dy + chunk.items.first.height;
+        for (int i = 1; i < chunk.items.length; i++) {
+          final item = chunk.items[i];
+          if (item.position.dy < minY) minY = item.position.dy;
+          final bottom = item.position.dy + item.height;
+          if (bottom > maxY) maxY = bottom;
+        }
+        final chunkHeight = maxY - minY;
+        final shiftY = _computeTextAnchorShift(
+          anchor: chunk.anchor,
+          direction: ui.TextDirection.ltr,
+          chunkWidth: chunkHeight,
+        );
+        for (final item in chunk.items) {
+          outPlacements.add(shiftY == 0.0 ? item : item.shiftY(shiftY));
+        }
+      } else {
+        double minX = chunk.items.first.position.dx;
+        double maxX = chunk.items.first.position.dx + chunk.items.first.width;
+        for (int i = 1; i < chunk.items.length; i++) {
+          final item = chunk.items[i];
+          if (item.position.dx < minX) minX = item.position.dx;
+          final right = item.position.dx + item.width;
+          if (right > maxX) maxX = right;
+        }
+        final chunkWidth = maxX - minX;
+        final shiftX = _computeTextAnchorShift(
+          anchor: chunk.anchor,
+          direction: chunk.direction,
+          chunkWidth: chunkWidth,
+        );
 
-      for (final item in chunk.items) {
-        outPlacements.add(shiftX == 0.0 ? item : item.shiftX(shiftX));
+        for (final item in chunk.items) {
+          outPlacements.add(shiftX == 0.0 ? item : item.shiftX(shiftX));
+        }
       }
     }
   }
@@ -958,9 +1027,14 @@ class _RawTextRun {
 class _TextChunk {
   final SvgTextAnchor anchor;
   final ui.TextDirection direction;
+  final bool isVertical;
   final List<_TextPlacement> items = <_TextPlacement>[];
 
-  _TextChunk({required this.anchor, required this.direction});
+  _TextChunk({
+    required this.anchor,
+    required this.direction,
+    this.isVertical = false,
+  });
 }
 
 class _PathGlyph {
@@ -1031,6 +1105,19 @@ class _TextPlacement {
     scaleX: scaleX,
     rotationRad: rotationRad,
     localBounds: localBounds.shift(ui.Offset(dx, 0.0)),
+  );
+
+  _TextPlacement shiftY(double dy) => _TextPlacement(
+    text: text,
+    owner: owner,
+    position: position.translate(0.0, dy),
+    topLeft: topLeft.translate(0.0, dy),
+    width: width,
+    height: height,
+    extraLetterSpacing: extraLetterSpacing,
+    scaleX: scaleX,
+    rotationRad: rotationRad,
+    localBounds: localBounds.shift(ui.Offset(0.0, dy)),
   );
 }
 

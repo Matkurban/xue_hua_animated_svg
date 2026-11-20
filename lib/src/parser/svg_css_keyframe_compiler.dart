@@ -71,7 +71,9 @@ abstract final class SvgCssKeyframeCompiler {
     final keyTimesList = <double>[];
     final rawValues = <String>[];
     final splines = <Cubic>[];
+    final stepEasings = <SvgStepEasing?>[];
     bool hasCustomSpline = config.timingCurve != null;
+    bool hasPerStopSteps = false;
 
     for (int i = 0; i < stops.length; i++) {
       final stop = stops[i];
@@ -83,6 +85,12 @@ abstract final class SvgCssKeyframeCompiler {
       if (val != null) {
         keyTimesList.add(stop.offset);
         rawValues.add(val);
+        if (stop.stepEasingToNext != null) {
+          hasPerStopSteps = true;
+          stepEasings.add(stop.stepEasingToNext);
+        } else {
+          stepEasings.add(config.stepEasing);
+        }
         if (stop.easingToNext != null) {
           hasCustomSpline = true;
           splines.add(stop.easingToNext!);
@@ -96,19 +104,28 @@ abstract final class SvgCssKeyframeCompiler {
     if (splines.length >= rawValues.length) {
       splines.removeLast();
     }
+    if (stepEasings.length >= rawValues.length) {
+      stepEasings.removeLast();
+    }
 
-    final beginOffsets = List<int>.unmodifiable([config.delayUs]);
+    final beginOffsets = <int>[config.delayUs];
     final timing = SvgAnimationTiming(
       beginOffsetsUs: beginOffsets,
       durationUs: config.durationUs,
       repeatCount: config.iterationCount,
       fillMode: config.fillMode,
       direction: config.direction,
-      calcMode: config.isDiscreteSteps
+      isPaused: config.isPaused,
+      calcMode:
+          (config.isDiscreteSteps &&
+              config.stepEasing == null &&
+              !hasPerStopSteps)
           ? SvgCalcMode.discrete
           : (hasCustomSpline ? SvgCalcMode.spline : SvgCalcMode.linear),
       keyTimes: Float64List.fromList(keyTimesList),
       keySplines: hasCustomSpline ? splines : null,
+      keyStepEasings: hasPerStopSteps ? stepEasings : null,
+      stepEasing: config.stepEasing,
     );
 
     switch (property) {

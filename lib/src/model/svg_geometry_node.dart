@@ -6,7 +6,6 @@ import 'svg_document.dart';
 import 'svg_element.dart';
 import 'svg_marker_node.dart';
 import 'svg_style.dart';
-import 'svg_text_style.dart';
 
 /// Abstract base class for all geometric shape nodes (`<path>`, `<rect>`,
 /// `<circle>`, `<ellipse>`, `<line>`, `<polyline>`, `<polygon>`).
@@ -118,15 +117,26 @@ abstract class SvgGeometryNode extends SvgElement {
           final serverId = fillServer.gradientId!;
           final grad = document.gradientsById[serverId];
           final pat = document.patternsById[serverId];
-          cachedFillPaint.shader =
+          final shader =
               grad?.createShader(cachedBounds) ??
               pat?.createShader(cachedBounds, document);
-          cachedFillPaint.color = ui.Color.fromARGB(
-            (fillAlpha * 255.0).round().clamp(0, 255),
-            255,
-            255,
-            255,
-          );
+          if (shader != null) {
+            cachedFillPaint.shader = shader;
+            cachedFillPaint.color = ui.Color.fromARGB(
+              (fillAlpha * 255.0).round().clamp(0, 255),
+              255,
+              255,
+              255,
+            );
+          } else if (fillServer.fallbackColor != null) {
+            cachedFillPaint.shader = null;
+            final fc = fillServer.fallbackColor!;
+            cachedFillPaint.color = fc.withValues(
+              alpha: (fc.a * fillAlpha).clamp(0.0, 1.0),
+            );
+          } else {
+            return;
+          }
         } else {
           cachedFillPaint.shader = null;
           final c = style.currentFillColor;
@@ -139,7 +149,10 @@ abstract class SvgGeometryNode extends SvgElement {
 
     void paintStrokePass() {
       final strokeServer = style.resolvedStroke;
-      final strokeWidth = style.currentStrokeWidth;
+      final rawStrokeWidth = style.currentStrokeWidth;
+      final strokeWidth = style.currentNonScalingStroke
+          ? rawStrokeWidth / computeAccumulatedScale(document)
+          : rawStrokeWidth;
       final strokeAlpha = (style.currentStrokeOpacity * effectiveOpacity).clamp(
         0.0,
         1.0,
@@ -158,15 +171,26 @@ abstract class SvgGeometryNode extends SvgElement {
           final serverId = strokeServer.gradientId!;
           final grad = document.gradientsById[serverId];
           final pat = document.patternsById[serverId];
-          cachedStrokePaint.shader =
+          final shader =
               grad?.createShader(cachedBounds) ??
               pat?.createShader(cachedBounds, document);
-          cachedStrokePaint.color = ui.Color.fromARGB(
-            (strokeAlpha * 255.0).round().clamp(0, 255),
-            255,
-            255,
-            255,
-          );
+          if (shader != null) {
+            cachedStrokePaint.shader = shader;
+            cachedStrokePaint.color = ui.Color.fromARGB(
+              (strokeAlpha * 255.0).round().clamp(0, 255),
+              255,
+              255,
+              255,
+            );
+          } else if (strokeServer.fallbackColor != null) {
+            cachedStrokePaint.shader = null;
+            final fc = strokeServer.fallbackColor!;
+            cachedStrokePaint.color = fc.withValues(
+              alpha: (fc.a * strokeAlpha).clamp(0.0, 1.0),
+            );
+          } else {
+            return;
+          }
         } else {
           cachedStrokePaint.shader = null;
           final c = style.currentStrokeColor;
@@ -184,16 +208,16 @@ abstract class SvgGeometryNode extends SvgElement {
       }
     }
 
-    if (style.currentPaintOrder == SvgPaintOrder.strokeFill) {
-      paintStrokePass();
-      paintFillPass();
-    } else {
-      paintFillPass();
-      paintStrokePass();
+    for (final layer in style.currentPaintOrderLayers) {
+      switch (layer) {
+        case SvgPaintLayer.fill:
+          paintFillPass();
+        case SvgPaintLayer.stroke:
+          paintStrokePass();
+        case SvgPaintLayer.markers:
+          _paintMarkers(canvas, document, effectiveOpacity);
+      }
     }
-
-    // 3. Marker Pass (`marker-start`, `marker-mid`, `marker-end`)
-    _paintMarkers(canvas, document, effectiveOpacity);
   }
 
   /// Subclasses (`<path>`, `<line>`, `<polyline>`, `<polygon>`) override this

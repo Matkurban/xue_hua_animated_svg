@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/animation.dart' show Cubic;
 
 import '../animation/svg_timeline.dart';
+import '../model/svg_css_clip_shape.dart';
 import '../model/svg_node.dart';
 import '../model/svg_style.dart';
 import '../model/svg_transform.dart';
@@ -73,20 +74,16 @@ abstract final class SvgCssParser {
         if (closeBrace == -1) break;
         final declText = cleaned.substring(openBrace + 1, closeBrace);
 
-        final declMap = parseDeclarationsMap(declText);
-        final style = SvgStyle();
-        final animations = <SvgCssAnimationConfig>[];
-        applyDeclarationsToStyle(declMap, style, animations);
-
-        final selectorTokens = selectorGroup.split(',');
+        final (normalDecls, importantDecls) = parseDeclarationsSplit(declText);
+        final selectorTokens = _splitTopLevelComma(selectorGroup);
         for (final rawSel in selectorTokens) {
-          final sel = _parseSimpleSelector(rawSel.trim());
+          final sel = SvgCssSelectorParser.parse(rawSel.trim());
           if (sel != null) {
             rules.add(
               SvgCssRule(
                 selector: sel,
-                style: style,
-                animations: animations,
+                declarations: normalDecls,
+                importantDeclarations: importantDecls,
                 orderIndex: ruleOrder++,
               ),
             );
@@ -99,29 +96,10 @@ abstract final class SvgCssParser {
     return SvgStyleSheet(rules: rules, keyframesByName: keyframesByName);
   }
 
-  /// Parses only `#id`, `.class`, or `tagName` selectors (explicitly ignoring complex combinators).
-  static SvgCssSelector? _parseSimpleSelector(String raw) {
-    if (raw.isEmpty) return null;
-    // Reject descendant/sibling/pseudo selectors per Out-of-Scope boundary
-    if (raw.contains(' ') ||
-        raw.contains('>') ||
-        raw.contains('+') ||
-        raw.contains('~') ||
-        raw.contains(':')) {
-      return null;
-    }
-    if (raw.startsWith('#') && raw.length > 1) {
-      return SvgCssSelector(SvgCssSelectorType.id, raw.substring(1));
-    }
-    if (raw.startsWith('.') && raw.length > 1) {
-      return SvgCssSelector(SvgCssSelectorType.className, raw.substring(1));
-    }
-    return SvgCssSelector(SvgCssSelectorType.tag, raw);
-  }
-
   static List<SvgCssKeyframeStop> _parseKeyframesBody(String body) {
     final stopsByOffset = <double, Map<String, String>>{};
     final easingByOffset = <double, Cubic?>{};
+    final stepEasingByOffset = <double, SvgStepEasing?>{};
 
     int pos = 0;
     final len = body.length;
@@ -136,10 +114,14 @@ abstract final class SvgCssParser {
 
       final declText = body.substring(openBrace + 1, closeBrace);
       final decls = parseDeclarationsMap(declText);
-      Cubic? stepEasing;
+      Cubic? cubicEasing;
+      SvgStepEasing? stepEasing;
       final tfRaw = decls.remove('animation-timing-function');
       if (tfRaw != null) {
-        stepEasing = parseTimingCubic(tfRaw);
+        stepEasing = SvgStepEasing.parse(tfRaw);
+        if (stepEasing == null) {
+          cubicEasing = parseTimingCubic(tfRaw);
+        }
       }
 
       final offsetTokens = stopHeader.split(',');
@@ -162,8 +144,11 @@ abstract final class SvgCssParser {
             () => <String, String>{},
           );
           existing.addAll(decls);
+          if (cubicEasing != null) {
+            easingByOffset[offset] = cubicEasing;
+          }
           if (stepEasing != null) {
-            easingByOffset[offset] = stepEasing;
+            stepEasingByOffset[offset] = stepEasing;
           }
         }
       }
@@ -177,27 +162,49 @@ abstract final class SvgCssParser {
           offset: off,
           declarations: stopsByOffset[off]!,
           easingToNext: easingByOffset[off],
+          stepEasingToNext: stepEasingByOffset[off],
         ),
     ];
   }
 
-  /// Parses semicolon-separated CSS declarations (`prop: value; ...`) into a Map.
+  /// Parses semicolon-separated CSS declarations (`prop: value; ...`) into a
+  /// single merged Map (preserving `--custom-property` case sensitivity).
   static Map<String, String> parseDeclarationsMap(String inlineStyle) {
-    final map = <String, String>{};
+    final (normal, important) = parseDeclarationsSplit(inlineStyle);
+    if (important.isEmpty) return normal;
+    return <String, String>{...normal, ...important};
+  }
+
+  /// Parses semicolon-separated CSS declarations into `(normal, important)` maps
+  /// so W3C `!important` cascade precedence is honored.
+  static (Map<String, String>, Map<String, String>) parseDeclarationsSplit(
+    String inlineStyle,
+  ) {
+    final normal = <String, String>{};
+    final important = <String, String>{};
     final parts = inlineStyle.split(';');
     for (int i = 0; i < parts.length; i++) {
       final part = parts[i].trim();
       if (part.isEmpty) continue;
       final colonIdx = part.indexOf(':');
       if (colonIdx <= 0) continue;
-      final key = part.substring(0, colonIdx).trim().toLowerCase();
+      final rawKey = part.substring(0, colonIdx).trim();
+      // CSS custom properties (`--*`) are case-sensitive per W3C spec
+      final key = rawKey.startsWith('--') ? rawKey : rawKey.toLowerCase();
       var val = part.substring(colonIdx + 1).trim();
-      if (val.endsWith('!important')) {
+      bool isImportant = false;
+      final lowerVal = val.toLowerCase();
+      if (lowerVal.endsWith('!important')) {
+        isImportant = true;
         val = val.substring(0, val.length - 10).trim();
       }
-      map[key] = val;
+      if (isImportant) {
+        important[key] = val;
+      } else {
+        normal[key] = val;
+      }
     }
-    return map;
+    return (normal, important);
   }
 
   /// Applies parsed CSS declarations to [style] and extracts any `animation`
@@ -235,6 +242,7 @@ abstract final class SvgCssParser {
       final funcs = _splitTopLevelComma(
         decls['animation-timing-function'] ?? '',
       );
+      final playStates = _splitList(decls['animation-play-state']);
 
       for (int i = 0; i < names.length; i++) {
         final name = names[i];
@@ -267,14 +275,63 @@ abstract final class SvgCssParser {
         }
         if (funcs.isNotEmpty && funcs[i % funcs.length].isNotEmpty) {
           final fStr = funcs[i % funcs.length];
-          if (fStr.startsWith('steps')) {
+          final parsedStep = SvgStepEasing.parse(fStr);
+          if (parsedStep != null) {
+            cfg.stepEasing = parsedStep;
+            cfg.isDiscreteSteps = false;
+          } else if (fStr.toLowerCase().startsWith('steps')) {
             cfg.isDiscreteSteps = true;
           } else {
             cfg.timingCurve = parseTimingCubic(fStr) ?? cfg.timingCurve;
           }
         }
+        if (playStates.isNotEmpty) {
+          final ps = playStates[i % playStates.length].toLowerCase();
+          if (ps == 'paused') {
+            cfg.isPaused = true;
+          } else if (ps == 'running') {
+            cfg.isPaused = false;
+          }
+        }
         if (i >= outAnimations.length) {
           outAnimations.add(cfg);
+        }
+      }
+    } else if (outAnimations.isNotEmpty) {
+      // Standalone longhand overrides after `animation:` shorthand or higher-specificity rules
+      final playStates = _splitList(decls['animation-play-state']);
+      if (playStates.isNotEmpty) {
+        for (int i = 0; i < outAnimations.length; i++) {
+          final ps = playStates[i % playStates.length].toLowerCase();
+          if (ps == 'paused') {
+            outAnimations[i].isPaused = true;
+          } else if (ps == 'running') {
+            outAnimations[i].isPaused = false;
+          }
+        }
+      }
+      final delays = _splitList(decls['animation-delay']);
+      if (delays.isNotEmpty) {
+        for (int i = 0; i < outAnimations.length; i++) {
+          outAnimations[i].delayUs =
+              parseClockMicroseconds(delays[i % delays.length]) ??
+              outAnimations[i].delayUs;
+        }
+      }
+      final funcs = _splitTopLevelComma(
+        decls['animation-timing-function'] ?? '',
+      );
+      if (funcs.isNotEmpty && funcs.first.isNotEmpty) {
+        for (int i = 0; i < outAnimations.length; i++) {
+          final fStr = funcs[i % funcs.length];
+          final parsedStep = SvgStepEasing.parse(fStr);
+          if (parsedStep != null) {
+            outAnimations[i].stepEasing = parsedStep;
+            outAnimations[i].isDiscreteSteps = false;
+          } else {
+            outAnimations[i].timingCurve =
+                parseTimingCubic(fStr) ?? outAnimations[i].timingCurve;
+          }
         }
       }
     }
@@ -282,7 +339,15 @@ abstract final class SvgCssParser {
 
   /// Applies a single presentation attribute or CSS property to [style].
   static void applySingleAttribute(String key, String rawVal, SvgStyle style) {
-    final val = rawVal.trim();
+    final trimmedRaw = rawVal.trim();
+    if (trimmedRaw.isEmpty) return;
+    if (key.startsWith('--')) {
+      style.customProperties[key] = trimmedRaw;
+      return;
+    }
+    final val = trimmedRaw.contains('var(')
+        ? SvgCssVariables.resolve(trimmedRaw, style.customProperties).trim()
+        : trimmedRaw;
     if (val.isEmpty) return;
 
     switch (key) {
@@ -367,13 +432,88 @@ abstract final class SvgCssParser {
         }
       case 'transform-origin':
         style.baseTransformOrigin = parseTransformOrigin(val);
+      case 'transform-box':
+        final tb = val.toLowerCase();
+        if (tb == 'view-box') {
+          style.baseTransformBox = SvgTransformBox.viewBox;
+        } else if (tb == 'fill-box' ||
+            tb == 'border-box' ||
+            tb == 'content-box') {
+          style.baseTransformBox = SvgTransformBox.fillBox;
+        }
+      case 'translate':
+        if (val.toLowerCase() == 'none') {
+          style.baseCssTranslateOp = null;
+        } else {
+          final nums = parseNumberList(val);
+          if (nums.isNotEmpty) {
+            style.baseCssTranslateOp = SvgTransformOp.translate(
+              nums[0],
+              nums.length > 1 ? nums[1] : 0.0,
+            );
+          }
+        }
+      case 'rotate':
+        if (val.toLowerCase() == 'none') {
+          style.baseCssRotateOp = null;
+        } else {
+          final deg = parseAngleOrLength(val);
+          if (deg != null) {
+            style.baseCssRotateOp = SvgTransformOp.rotateZ(deg);
+          }
+        }
+      case 'scale':
+        if (val.toLowerCase() == 'none') {
+          style.baseCssScaleOp = null;
+        } else {
+          final nums = parseNumberList(val);
+          if (nums.isNotEmpty) {
+            style.baseCssScaleOp = SvgTransformOp.scale(
+              nums[0],
+              nums.length > 1 ? nums[1] : nums[0],
+            );
+          }
+        }
       case 'transform':
         final ops = parseTransformOps(val);
         if (ops.isNotEmpty) {
           style.cssBaseTransformOps = ops;
         }
+      case 'x':
+      case 'y':
+      case 'width':
+      case 'height':
+      case 'cx':
+      case 'cy':
+      case 'r':
+      case 'rx':
+      case 'ry':
+      case 'd':
+        (style.cssGeometryProps ??= <String, String>{})[key] = val;
       case 'clip-path':
-        style.clipPathId = extractUrlId(val);
+        if (val.toLowerCase() == 'none') {
+          style.clipPathId = null;
+          style.cssClipShape = null;
+        } else {
+          final cId = extractUrlId(val);
+          if (cId != null && cId.isNotEmpty) {
+            style.clipPathId = cId;
+            style.cssClipShape = null;
+          } else {
+            final shape = SvgCssClipShapeParser.parse(val);
+            if (shape != null) {
+              style.cssClipShape = shape;
+              style.clipPathId = null;
+            }
+          }
+        }
+      case 'vector-effect':
+        final ve = val.toLowerCase();
+        if (ve == 'non-scaling-stroke') {
+          style.baseNonScalingStroke = true;
+        } else if (ve == 'none') {
+          style.baseNonScalingStroke = false;
+        }
       case 'mask':
         style.maskId = val == 'none' ? null : extractUrlId(val);
       case 'marker':
@@ -486,9 +626,17 @@ abstract final class SvgCssParser {
             lower == 'pre-line') {
           style.baseWhiteSpace = SvgWhiteSpace.normal;
         }
+      case 'text-transform':
+        final tt = SvgCssValueParser.parseTextTransform(val);
+        if (tt != null) style.baseTextTransform = tt;
+      case 'writing-mode':
+        final wm = SvgCssValueParser.parseWritingMode(val);
+        if (wm != null) style.baseWritingMode = wm;
       case 'paint-order':
         final po = SvgCssValueParser.parsePaintOrder(val);
         if (po != null) style.basePaintOrder = po;
+        final layers = SvgCssValueParser.parsePaintOrderLayers(val);
+        if (layers != null) style.basePaintOrderLayers = layers;
     }
   }
 
@@ -571,11 +719,22 @@ abstract final class SvgCssParser {
     SvgAnimationDirection direction = SvgAnimationDirection.normal;
     SvgAnimationFillMode fillMode = SvgAnimationFillMode.remove;
     Cubic? timingCurve;
+    SvgStepEasing? stepEasing;
     bool isDiscrete = false;
+    bool isPaused = false;
 
     for (final tok in tokens) {
       final lower = tok.toLowerCase();
       if (lower == 'none') continue;
+
+      if (lower == 'paused') {
+        isPaused = true;
+        continue;
+      }
+      if (lower == 'running') {
+        isPaused = false;
+        continue;
+      }
 
       final dir = _parseDirection(lower);
       if (dir != null) {
@@ -594,6 +753,11 @@ abstract final class SvgCssParser {
         continue;
       }
 
+      final parsedStep = SvgStepEasing.parse(lower);
+      if (parsedStep != null) {
+        stepEasing = parsedStep;
+        continue;
+      }
       if (lower.startsWith('steps')) {
         isDiscrete = true;
         continue;
@@ -635,7 +799,9 @@ abstract final class SvgCssParser {
       direction: direction,
       fillMode: fillMode,
       timingCurve: timingCurve,
+      stepEasing: stepEasing,
       isDiscreteSteps: isDiscrete,
+      isPaused: isPaused,
     );
   }
 

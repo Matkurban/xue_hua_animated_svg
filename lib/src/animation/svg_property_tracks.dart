@@ -58,7 +58,7 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
     final progress = timing.evaluateSimpleProgress(elapsedUs);
     if (progress < 0.0) return;
 
-    final double value;
+    double value;
     if (keyframes.length == 1) {
       value = keyframes[0];
     } else {
@@ -67,6 +67,13 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
       final v0 = keyframes[seg];
       final v1 = keyframes[seg + 1];
       value = v0 + (v1 - v0) * localT;
+    }
+
+    if (timing.accumulateSum && keyframes.length >= 2) {
+      final cycle = timing.evaluateCycleIndex(elapsedUs);
+      if (cycle > 0) {
+        value += keyframes[keyframes.length - 1] * cycle;
+      }
     }
 
     _writeScalarValue(value);

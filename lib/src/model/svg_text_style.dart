@@ -26,6 +26,12 @@ enum SvgWhiteSpace { normal, preserve }
 /// Rendering order of `fill` vs `stroke` (SVG 2 `paint-order`).
 enum SvgPaintOrder { fillStroke, strokeFill }
 
+/// Case transformation applied to SVG text content (CSS Text Level 3 `text-transform`).
+enum SvgTextTransform { none, uppercase, lowercase, capitalize }
+
+/// Inline progression direction of SVG text (CSS Writing Modes / SVG `writing-mode`).
+enum SvgWritingMode { horizontalTb, verticalRl, verticalLr }
+
 /// Kind of `baseline-shift` specification (W3C SVG 1.1 §10.9.2).
 enum SvgBaselineShiftKind { baseline, sub, superScript, length, percentage }
 

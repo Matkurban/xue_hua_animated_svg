@@ -88,14 +88,26 @@ abstract class SvgGradientNode {
     syncStopsToBuffers();
   }
 
-  /// Resolves inherited stops from `href` / `xlink:href` template gradients.
+  /// Resolves inherited stops (and gradientTransform) recursively along `href`
+  /// template chains with cycle protection (W3C SVG 2 §14.2).
   void resolveTemplate(Map<String, SvgGradientNode> gradientsById) {
-    if (stops.isEmpty && hrefId != null) {
-      final template = gradientsById[hrefId!];
-      if (template != null) {
+    final visited = <String>{id};
+    SvgGradientNode? cur = this;
+    while (cur != null && cur.hrefId != null) {
+      final nextId = cur.hrefId!;
+      if (!visited.add(nextId)) break;
+      final template = gradientsById[nextId];
+      if (template == null) break;
+      if (stops.isEmpty && template.stops.isNotEmpty) {
         stops.addAll(template.stops);
         _allocateStopBuffers();
       }
+      if (baseGradientTransformOps.isEmpty &&
+          template.baseGradientTransformOps.isNotEmpty) {
+        SvgMatrixMath.copyInto(template.baseGradientMatrix, baseGradientMatrix);
+        SvgMatrixMath.copyInto(baseGradientMatrix, currentGradientMatrix);
+      }
+      cur = template;
     }
     for (final stop in stops) {
       if (stop.isAnimated) {

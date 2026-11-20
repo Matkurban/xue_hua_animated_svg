@@ -1,9 +1,13 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'svg_css_clip_shape.dart';
 import 'svg_filter_node.dart';
 import 'svg_text_style.dart';
 import 'svg_transform.dart';
+
+/// Reference box for `transform-origin` percentages (W3C CSS Transforms Level 1).
+enum SvgTransformBox { fillBox, viewBox }
 
 /// How `transform-origin` X/Y coordinates are specified.
 enum SvgOriginUnit {
@@ -71,19 +75,25 @@ class SvgTransformOrigin {
   }
 }
 
+/// Paint layer token for full 3-layer W3C SVG 2 `paint-order`.
+enum SvgPaintLayer { fill, stroke, markers }
+
 /// Paint server type for `fill` or `stroke`.
 enum SvgPaintType { none, color, gradient, currentColor }
 
-/// Precompiled paint server (solid color, gradient reference, currentColor, or none).
+/// Precompiled paint server (solid color, gradient/pattern reference with
+/// optional W3C fallback color, currentColor, or none).
 class SvgPaintServer {
   final SvgPaintType type;
   final ui.Color color;
   final String? gradientId;
+  final ui.Color? fallbackColor;
 
   const SvgPaintServer._({
     required this.type,
     this.color = const ui.Color(0xFF000000),
     this.gradientId,
+    this.fallbackColor,
   });
 
   static const SvgPaintServer none = SvgPaintServer._(type: SvgPaintType.none);
@@ -98,8 +108,12 @@ class SvgPaintServer {
   factory SvgPaintServer.fromColor(ui.Color color) =>
       SvgPaintServer._(type: SvgPaintType.color, color: color);
 
-  factory SvgPaintServer.fromGradient(String id) =>
-      SvgPaintServer._(type: SvgPaintType.gradient, gradientId: id);
+  factory SvgPaintServer.fromGradient(String id, {ui.Color? fallbackColor}) =>
+      SvgPaintServer._(
+        type: SvgPaintType.gradient,
+        gradientId: id,
+        fallbackColor: fallbackColor,
+      );
 
   bool get isVisible => type != SvgPaintType.none;
 }
@@ -127,8 +141,11 @@ class SvgStyle {
   double? baseBlurSigma;
   SvgTransformOrigin? baseTransformOrigin;
   String? clipPathId;
+  SvgCssClipShape? cssClipShape;
   String? maskId;
   String? filterId;
+  bool? baseNonScalingStroke;
+  List<SvgPaintLayer>? basePaintOrderLayers;
   List<SvgFilterPrimitive>? baseCssFilterPrimitives;
   String? baseMarkerStartId;
   String? baseMarkerMidId;
@@ -139,6 +156,12 @@ class SvgStyle {
   bool? baseShapeRenderingCrisp;
   ui.BlendMode? baseMixBlendMode;
   bool? baseIsolationIsolate;
+  SvgTransformBox? baseTransformBox;
+  SvgTransformOp? baseCssTranslateOp;
+  SvgTransformOp? baseCssRotateOp;
+  SvgTransformOp? baseCssScaleOp;
+  Map<String, String>? cssGeometryProps;
+  final Map<String, String> customProperties = <String, String>{};
   bool displayNone = false;
   bool visibilityHidden = false;
   List<SvgTransformOp>? cssBaseTransformOps;
@@ -159,6 +182,8 @@ class SvgStyle {
   ui.TextDecoration? baseTextDecoration;
   ui.TextDirection? baseTextDirection;
   SvgWhiteSpace? baseWhiteSpace;
+  SvgTextTransform? baseTextTransform;
+  SvgWritingMode? baseWritingMode;
   SvgPaintOrder? basePaintOrder;
 
   // Runtime mutated properties (written in-place during animation tick)
@@ -186,6 +211,7 @@ class SvgStyle {
   bool currentShapeRenderingCrisp = false;
   ui.BlendMode currentMixBlendMode = ui.BlendMode.srcOver;
   bool currentIsolationIsolate = false;
+  SvgTransformBox currentTransformBox = SvgTransformBox.fillBox;
 
   // Runtime resolved SVG text properties
   String? currentFontFamily;
@@ -205,7 +231,15 @@ class SvgStyle {
   ui.TextDecoration currentTextDecoration = ui.TextDecoration.none;
   ui.TextDirection currentTextDirection = ui.TextDirection.ltr;
   SvgWhiteSpace currentWhiteSpace = SvgWhiteSpace.normal;
+  SvgTextTransform currentTextTransform = SvgTextTransform.none;
+  SvgWritingMode currentWritingMode = SvgWritingMode.horizontalTb;
+  bool currentNonScalingStroke = false;
   SvgPaintOrder currentPaintOrder = SvgPaintOrder.fillStroke;
+  List<SvgPaintLayer> currentPaintOrderLayers = const [
+    SvgPaintLayer.fill,
+    SvgPaintLayer.stroke,
+    SvgPaintLayer.markers,
+  ];
 
   /// Resolves inherited style properties from [parentStyle] once during AST finalization.
   void resolveInheritance(SvgStyle? parentStyle) {
@@ -260,6 +294,12 @@ class SvgStyle {
         false;
     currentMixBlendMode = baseMixBlendMode ?? ui.BlendMode.srcOver;
     currentIsolationIsolate = baseIsolationIsolate ?? false;
+    currentTransformBox = baseTransformBox ?? SvgTransformBox.fillBox;
+    if (parentStyle != null && parentStyle.customProperties.isNotEmpty) {
+      for (final entry in parentStyle.customProperties.entries) {
+        customProperties.putIfAbsent(entry.key, () => entry.value);
+      }
+    }
     currentMarkerStartId =
         baseMarkerStartId ?? parentStyle?.currentMarkerStartId;
     currentMarkerMidId = baseMarkerMidId ?? parentStyle?.currentMarkerMidId;
@@ -334,10 +374,23 @@ class SvgStyle {
         baseWhiteSpace ??
         parentStyle?.currentWhiteSpace ??
         SvgWhiteSpace.normal;
+    currentTextTransform =
+        baseTextTransform ??
+        parentStyle?.currentTextTransform ??
+        SvgTextTransform.none;
+    currentWritingMode =
+        baseWritingMode ??
+        parentStyle?.currentWritingMode ??
+        SvgWritingMode.horizontalTb;
+    currentNonScalingStroke = baseNonScalingStroke ?? false;
     currentPaintOrder =
         basePaintOrder ??
         parentStyle?.currentPaintOrder ??
         SvgPaintOrder.fillStroke;
+    currentPaintOrderLayers =
+        basePaintOrderLayers ??
+        parentStyle?.currentPaintOrderLayers ??
+        const [SvgPaintLayer.fill, SvgPaintLayer.stroke, SvgPaintLayer.markers];
   }
 
   /// Resets runtime values back to resolved initial values without allocating memory
@@ -488,6 +541,12 @@ class SvgStyle {
     if (baseWhiteSpace == null) {
       currentWhiteSpace = parentStyle.currentWhiteSpace;
     }
+    if (baseTextTransform == null) {
+      currentTextTransform = parentStyle.currentTextTransform;
+    }
+    if (baseWritingMode == null) {
+      currentWritingMode = parentStyle.currentWritingMode;
+    }
     if (basePaintOrder == null) {
       currentPaintOrder = parentStyle.currentPaintOrder;
     }
@@ -532,6 +591,13 @@ class SvgStyle {
       baseTransformOrigin = other.baseTransformOrigin;
     }
     if (other.clipPathId != null) clipPathId = other.clipPathId;
+    if (other.cssClipShape != null) cssClipShape = other.cssClipShape;
+    if (other.baseNonScalingStroke != null) {
+      baseNonScalingStroke = other.baseNonScalingStroke;
+    }
+    if (other.basePaintOrderLayers != null) {
+      basePaintOrderLayers = other.basePaintOrderLayers;
+    }
     if (other.maskId != null) maskId = other.maskId;
     if (other.filterId != null) filterId = other.filterId;
     if (other.baseCssFilterPrimitives != null) {
@@ -556,6 +622,24 @@ class SvgStyle {
     }
     if (other.baseOverflowVisible != null) {
       baseOverflowVisible = other.baseOverflowVisible;
+    }
+    if (other.baseTransformBox != null) {
+      baseTransformBox = other.baseTransformBox;
+    }
+    if (other.baseCssTranslateOp != null) {
+      baseCssTranslateOp = other.baseCssTranslateOp;
+    }
+    if (other.baseCssRotateOp != null) {
+      baseCssRotateOp = other.baseCssRotateOp;
+    }
+    if (other.baseCssScaleOp != null) {
+      baseCssScaleOp = other.baseCssScaleOp;
+    }
+    if (other.cssGeometryProps != null && other.cssGeometryProps!.isNotEmpty) {
+      (cssGeometryProps ??= <String, String>{}).addAll(other.cssGeometryProps!);
+    }
+    if (other.customProperties.isNotEmpty) {
+      customProperties.addAll(other.customProperties);
     }
     if (other.cssBaseTransformOps != null) {
       cssBaseTransformOps = other.cssBaseTransformOps;
@@ -595,6 +679,12 @@ class SvgStyle {
       baseTextDirection = other.baseTextDirection;
     }
     if (other.baseWhiteSpace != null) baseWhiteSpace = other.baseWhiteSpace;
+    if (other.baseTextTransform != null) {
+      baseTextTransform = other.baseTextTransform;
+    }
+    if (other.baseWritingMode != null) {
+      baseWritingMode = other.baseWritingMode;
+    }
     if (other.basePaintOrder != null) basePaintOrder = other.basePaintOrder;
   }
 }

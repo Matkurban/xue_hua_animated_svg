@@ -1,41 +1,10 @@
 import 'package:flutter/animation.dart' show Cubic;
 
 import '../animation/svg_timeline.dart';
-import '../model/svg_node.dart';
-import '../model/svg_style.dart';
+import 'svg_css_selector.dart';
 
-/// Precompiled CSS selector supporting only `#id`, `.class`, and `tagName`.
-enum SvgCssSelectorType { id, className, tag }
-
-class SvgCssSelector {
-  final SvgCssSelectorType type;
-  final String name;
-
-  const SvgCssSelector(this.type, this.name);
-
-  /// Specificity score (`#id` = 100, `.class` = 10, `tag` = 1).
-  int get specificity {
-    switch (type) {
-      case SvgCssSelectorType.id:
-        return 100;
-      case SvgCssSelectorType.className:
-        return 10;
-      case SvgCssSelectorType.tag:
-        return 1;
-    }
-  }
-
-  bool matches(SvgElement element) {
-    switch (type) {
-      case SvgCssSelectorType.id:
-        return element.id == name;
-      case SvgCssSelectorType.className:
-        return element.classes.contains(name);
-      case SvgCssSelectorType.tag:
-        return element.tagName == name;
-    }
-  }
-}
+export 'svg_css_selector.dart';
+export 'svg_css_variables.dart';
 
 /// Precompiled CSS animation binding parsed from `animation` or `animation-*` properties.
 class SvgCssAnimationConfig {
@@ -46,7 +15,9 @@ class SvgCssAnimationConfig {
   SvgAnimationDirection direction;
   SvgAnimationFillMode fillMode;
   Cubic? timingCurve;
+  SvgStepEasing? stepEasing;
   bool isDiscreteSteps;
+  bool isPaused;
 
   SvgCssAnimationConfig({
     required this.name,
@@ -56,22 +27,25 @@ class SvgCssAnimationConfig {
     this.direction = SvgAnimationDirection.normal,
     this.fillMode = SvgAnimationFillMode.remove,
     this.timingCurve,
+    this.stepEasing,
     this.isDiscreteSteps = false,
+    this.isPaused = false,
   });
 }
 
-/// A single CSS rule linking a simple selector to precompiled [SvgStyle] and
-/// optional [SvgCssAnimationConfig] list.
+/// A single CSS rule linking a [SvgCssComplexSelector] to its raw normal and
+/// `!important` declaration maps so `var()` custom properties and W3C cascade
+/// precedence resolve accurately per matched element.
 class SvgCssRule {
-  final SvgCssSelector selector;
-  final SvgStyle style;
-  final List<SvgCssAnimationConfig> animations;
+  final SvgCssComplexSelector selector;
+  final Map<String, String> declarations;
+  final Map<String, String> importantDeclarations;
   final int orderIndex;
 
   const SvgCssRule({
     required this.selector,
-    required this.style,
-    required this.animations,
+    required this.declarations,
+    this.importantDeclarations = const {},
     required this.orderIndex,
   });
 }
@@ -81,15 +55,17 @@ class SvgCssKeyframeStop {
   final double offset; // 0.0 .. 1.0
   final Map<String, String> declarations;
   final Cubic? easingToNext;
+  final SvgStepEasing? stepEasingToNext;
 
   const SvgCssKeyframeStop({
     required this.offset,
     required this.declarations,
     this.easingToNext,
+    this.stepEasingToNext,
   });
 }
 
-/// Parsed `<style>` sheet containing simple rules and `@keyframes` definitions.
+/// Parsed `<style>` sheet containing selector rules and `@keyframes` definitions.
 class SvgStyleSheet {
   final List<SvgCssRule> rules;
   final Map<String, List<SvgCssKeyframeStop>> keyframesByName;

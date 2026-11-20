@@ -1,17 +1,58 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'svg_filter_noise.dart';
 import 'svg_gradient.dart';
+import 'svg_preserve_aspect_ratio.dart';
 
 export 'svg_filter_noise.dart';
+
+part 'svg_filter_advanced.dart';
 
 /// Base sealed class for precompiled SVG `<filter>` primitives (`fe*`).
 sealed class SvgFilterPrimitive {
   final String? inSource;
   final String? result;
+  final double? x;
+  final double? y;
+  final double? width;
+  final double? height;
 
-  const SvgFilterPrimitive({this.inSource, this.result});
+  const SvgFilterPrimitive({
+    this.inSource,
+    this.result,
+    this.x,
+    this.y,
+    this.width,
+    this.height,
+  });
+
+  /// Resolves the primitive subregion clipped within [filterRegion].
+  ui.Rect resolveSubregion(
+    ui.Rect filterRegion,
+    ui.Rect targetBounds,
+    SvgGradientUnits primitiveUnits,
+  ) {
+    if (x == null && y == null && width == null && height == null) {
+      return filterRegion;
+    }
+    if (primitiveUnits == SvgGradientUnits.objectBoundingBox) {
+      final bw = targetBounds.width == 0.0 ? filterRegion.width : targetBounds.width;
+      final bh = targetBounds.height == 0.0 ? filterRegion.height : targetBounds.height;
+      final rx = x != null ? targetBounds.left + x! * bw : filterRegion.left;
+      final ry = y != null ? targetBounds.top + y! * bh : filterRegion.top;
+      final rw = width != null ? width! * bw : filterRegion.width;
+      final rh = height != null ? height! * bh : filterRegion.height;
+      return ui.Rect.fromLTWH(rx, ry, rw, rh);
+    }
+    return ui.Rect.fromLTWH(
+      x ?? filterRegion.left,
+      y ?? filterRegion.top,
+      width ?? filterRegion.width,
+      height ?? filterRegion.height,
+    );
+  }
 }
 
 /// `<feGaussianBlur stdDeviation="sx [sy]" edgeMode="none|duplicate|wrap" />`
@@ -105,16 +146,30 @@ final class SvgFeBlend extends SvgFilterPrimitive {
   });
 }
 
-/// `<feComposite in="..." in2="..." operator="..." />`
+/// `<feComposite in="..." in2="..." operator="over|in|out|atop|xor|lighter|arithmetic" />`
 final class SvgFeComposite extends SvgFilterPrimitive {
   final String? in2;
   final ui.BlendMode operatorMode;
+  final bool isArithmetic;
+  final double k1;
+  final double k2;
+  final double k3;
+  final double k4;
 
   const SvgFeComposite({
     super.inSource,
     super.result,
+    super.x,
+    super.y,
+    super.width,
+    super.height,
     this.in2,
     this.operatorMode = ui.BlendMode.srcOver,
+    this.isArithmetic = false,
+    this.k1 = 0.0,
+    this.k2 = 0.0,
+    this.k3 = 0.0,
+    this.k4 = 0.0,
   });
 }
 
