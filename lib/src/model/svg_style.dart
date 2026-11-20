@@ -122,6 +122,9 @@ class SvgStyle {
   double? baseBlurSigma;
   SvgTransformOrigin? baseTransformOrigin;
   String? clipPathId;
+  bool baseDisplayNone = false;
+  bool? baseVisibilityHidden;
+  bool? baseOverflowVisible;
   bool displayNone = false;
   bool visibilityHidden = false;
   List<SvgTransformOp>? cssBaseTransformOps;
@@ -221,6 +224,9 @@ class SvgStyle {
     currentPathLength = basePathLength;
     currentBlurSigma = baseBlurSigma ?? 0.0;
     currentTransformOrigin = baseTransformOrigin ?? SvgTransformOrigin.zero;
+    displayNone = baseDisplayNone;
+    visibilityHidden =
+        baseVisibilityHidden ?? parentStyle?.visibilityHidden ?? false;
 
     // Text presentation properties
     final parentFontSize = parentStyle?.currentFontSize ?? 16.0;
@@ -314,6 +320,9 @@ class SvgStyle {
     currentStrokeDashoffset =
         baseStrokeDashoffset ?? parentStyle?.currentStrokeDashoffset ?? 0.0;
     currentBlurSigma = baseBlurSigma ?? 0.0;
+    displayNone = baseDisplayNone;
+    visibilityHidden =
+        baseVisibilityHidden ?? parentStyle?.visibilityHidden ?? false;
     currentFontSize = baseFontSizeSpec != null
         ? resolvedBaseFontSize
         : (parentStyle?.currentFontSize ?? resolvedBaseFontSize);
@@ -373,6 +382,9 @@ class SvgStyle {
     if (baseStrokeDasharray == null &&
         parentStyle.currentStrokeDasharray != null) {
       currentStrokeDasharray = parentStyle.currentStrokeDasharray;
+    }
+    if (baseVisibilityHidden == null) {
+      visibilityHidden = parentStyle.visibilityHidden;
     }
     if (baseFontFamily == null) {
       currentFontFamily = parentStyle.currentFontFamily;
@@ -445,8 +457,17 @@ class SvgStyle {
       baseTransformOrigin = other.baseTransformOrigin;
     }
     if (other.clipPathId != null) clipPathId = other.clipPathId;
-    if (other.displayNone) displayNone = true;
-    if (other.visibilityHidden) visibilityHidden = true;
+    if (other.baseDisplayNone) {
+      baseDisplayNone = true;
+      displayNone = true;
+    }
+    if (other.baseVisibilityHidden != null) {
+      baseVisibilityHidden = other.baseVisibilityHidden;
+      visibilityHidden = other.baseVisibilityHidden!;
+    }
+    if (other.baseOverflowVisible != null) {
+      baseOverflowVisible = other.baseOverflowVisible;
+    }
     if (other.cssBaseTransformOps != null) {
       cssBaseTransformOps = other.cssBaseTransformOps;
     }

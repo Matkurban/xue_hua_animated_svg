@@ -6,6 +6,7 @@ import 'svg_document.dart';
 import 'svg_element.dart';
 import 'svg_geometry_node.dart';
 import 'svg_transform.dart';
+import 'svg_viewport_nodes.dart';
 
 /// Container `<g>` or root `<svg>` group node.
 class SvgGroupNode extends SvgElement {
@@ -32,6 +33,7 @@ class SvgGroupNode extends SvgElement {
       child.initializeGeometry(document);
       if (child is SvgDefsNode ||
           child is SvgClipPathNode ||
+          child is SvgSymbolNode ||
           child.style.displayNone) {
         continue;
       }
@@ -136,13 +138,21 @@ class SvgClipPathNode extends SvgGroupNode {
   }
 }
 
-/// `<use>` node that references a `<defs>` element by `href` / `xlink:href` with `(x, y)` offset.
+/// `<use>` node that references a `<defs>` or scene element by `href` / `xlink:href`
+/// with `(x, y)` offset, optional `(width, height)` viewport sizing, and cycle protection.
 class SvgUseNode extends SvgElement {
+  static const int _maxUseDepth = 16;
+  static int _activeUseDepth = 0;
+
   final String? hrefId;
   final double baseX;
   final double baseY;
+  final double? baseWidth;
+  final double? baseHeight;
   double currentX;
   double currentY;
+  double? currentWidth;
+  double? currentHeight;
 
   SvgUseNode({
     super.id,
@@ -152,16 +162,41 @@ class SvgUseNode extends SvgElement {
     this.hrefId,
     this.baseX = 0.0,
     this.baseY = 0.0,
+    this.baseWidth,
+    this.baseHeight,
   }) : currentX = baseX,
        currentY = baseY,
+       currentWidth = baseWidth,
+       currentHeight = baseHeight,
        super(tagName: 'use');
+
+  SvgElement? _resolveTarget(SvgDocument document) {
+    if (hrefId == null || hrefId!.isEmpty) return null;
+    final target = document.defsById[hrefId!] ?? document.elementsById[hrefId!];
+    if (identical(target, this)) return null;
+    return target;
+  }
 
   @override
   void initializeGeometry(SvgDocument document) {
-    final target = hrefId != null ? document.defsById[hrefId!] : null;
-    if (target != null) {
-      target.initializeGeometry(document);
-      cachedBounds = target.cachedBounds.shift(ui.Offset(baseX, baseY));
+    final target = _resolveTarget(document);
+    if (target != null && _activeUseDepth < _maxUseDepth) {
+      _activeUseDepth++;
+      try {
+        target.initializeGeometry(document);
+        if (baseWidth != null && baseHeight != null) {
+          cachedBounds = ui.Rect.fromLTWH(
+            baseX,
+            baseY,
+            baseWidth!,
+            baseHeight!,
+          );
+        } else {
+          cachedBounds = target.cachedBounds.shift(ui.Offset(baseX, baseY));
+        }
+      } finally {
+        _activeUseDepth--;
+      }
     } else {
       cachedBounds = ui.Rect.zero;
     }
@@ -171,10 +206,15 @@ class SvgUseNode extends SvgElement {
   @override
   bool propagateAnimationFlags(SvgDocument document) {
     bool animated = super.propagateAnimationFlags(document);
-    final target = hrefId != null ? document.defsById[hrefId!] : null;
-    if (target != null) {
-      if (target.propagateAnimationFlags(document)) {
-        animated = true;
+    final target = _resolveTarget(document);
+    if (target != null && _activeUseDepth < _maxUseDepth) {
+      _activeUseDepth++;
+      try {
+        if (target.propagateAnimationFlags(document)) {
+          animated = true;
+        }
+      } finally {
+        _activeUseDepth--;
       }
     }
     isAnimated = animated;
@@ -186,6 +226,8 @@ class SvgUseNode extends SvgElement {
     super.resetFrameState();
     currentX = baseX;
     currentY = baseY;
+    currentWidth = baseWidth;
+    currentHeight = baseHeight;
   }
 
   @override
@@ -195,18 +237,41 @@ class SvgUseNode extends SvgElement {
     double effectiveOpacity,
   ) {
     if (style.visibilityHidden || hrefId == null) return;
-    final target = document.defsById[hrefId!];
+    if (_activeUseDepth >= _maxUseDepth) return;
+    final target = _resolveTarget(document);
     if (target == null) return;
 
-    final hasOffset = currentX != 0.0 || currentY != 0.0;
-    if (hasOffset) {
-      canvas.save();
-      canvas.translate(currentX, currentY);
-    }
-    target.style.syncInheritedFromParent(style);
-    target.paint(canvas, document);
-    if (hasOffset) {
-      canvas.restore();
+    _activeUseDepth++;
+    try {
+      final hasOffset = currentX != 0.0 || currentY != 0.0;
+      if (hasOffset) {
+        canvas.save();
+        canvas.translate(currentX, currentY);
+      }
+      target.style.syncInheritedFromParent(style);
+      if (target is SvgSymbolNode) {
+        target.paintInstantiated(
+          canvas,
+          document,
+          useWidth: currentWidth,
+          useHeight: currentHeight,
+        );
+      } else if (target is SvgNestedSvgNode) {
+        target.paintWithViewport(
+          canvas,
+          document,
+          effectiveOpacity,
+          overrideWidth: currentWidth,
+          overrideHeight: currentHeight,
+        );
+      } else {
+        target.paint(canvas, document);
+      }
+      if (hasOffset) {
+        canvas.restore();
+      }
+    } finally {
+      _activeUseDepth--;
     }
   }
 }

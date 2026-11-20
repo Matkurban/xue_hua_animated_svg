@@ -7,3 +7,4 @@ export 'svg_preserve_aspect_ratio.dart';
 export 'svg_shape_nodes.dart';
 export 'svg_text_node.dart';
 export 'svg_text_style.dart';
+export 'svg_viewport_nodes.dart';

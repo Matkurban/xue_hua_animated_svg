@@ -120,6 +120,8 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
             t.markGeometryDirty();
           } else if (t is SvgUseNode) {
             t.currentX = isSum ? t.currentX + value : value;
+          } else if (t is SvgNestedSvgNode) {
+            t.currentX = isSum ? t.currentX + value : value;
           } else if (t is SvgTextNode) {
             t.animatedX = isSum ? (t.animatedX ?? 0.0) + value : value;
           } else if (t is SvgTextSpanNode) {
@@ -130,6 +132,8 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
             t.currentY = isSum ? t.currentY + value : value;
             t.markGeometryDirty();
           } else if (t is SvgUseNode) {
+            t.currentY = isSum ? t.currentY + value : value;
+          } else if (t is SvgNestedSvgNode) {
             t.currentY = isSum ? t.currentY + value : value;
           } else if (t is SvgTextNode) {
             t.animatedY = isSum ? (t.animatedY ?? 0.0) + value : value;
@@ -155,6 +159,16 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
               isSum ? t.currentWidth + value : value,
             );
             t.markGeometryDirty();
+          } else if (t is SvgUseNode) {
+            t.currentWidth = math.max(
+              0.0,
+              isSum ? (t.currentWidth ?? 0.0) + value : value,
+            );
+          } else if (t is SvgNestedSvgNode) {
+            t.currentWidth = math.max(
+              0.0,
+              isSum ? (t.currentWidth ?? 0.0) + value : value,
+            );
           }
         case SvgScalarTarget.height:
           if (t is SvgRectNode) {
@@ -163,6 +177,16 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
               isSum ? t.currentHeight + value : value,
             );
             t.markGeometryDirty();
+          } else if (t is SvgUseNode) {
+            t.currentHeight = math.max(
+              0.0,
+              isSum ? (t.currentHeight ?? 0.0) + value : value,
+            );
+          } else if (t is SvgNestedSvgNode) {
+            t.currentHeight = math.max(
+              0.0,
+              isSum ? (t.currentHeight ?? 0.0) + value : value,
+            );
           }
         case SvgScalarTarget.rx:
           if (t is SvgRectNode) {
@@ -358,5 +382,56 @@ class SvgDashArrayAnimationTrack extends SvgAnimationTrack {
       }
     }
     target.style.currentStrokeDasharray = _interpolatedBuffer;
+  }
+}
+
+/// Target discrete property kind for SMIL `<set>`.
+enum SvgSetTargetKind { displayNone, visibilityHidden, fillPaint, strokePaint }
+
+/// Precompiled SMIL `<set>` discrete state-switching track (`display`,
+/// `visibility`, `fill`, `stroke`).
+class SvgSetAnimationTrack extends SvgAnimationTrack {
+  final SvgElement target;
+  final SvgSetTargetKind kind;
+  final bool boolValue;
+  final SvgPaintServer? paintValue;
+
+  SvgSetAnimationTrack.boolean({
+    required super.timing,
+    required this.target,
+    required this.kind,
+    required this.boolValue,
+  }) : paintValue = null;
+
+  SvgSetAnimationTrack.paint({
+    required super.timing,
+    required this.target,
+    required this.kind,
+    required SvgPaintServer this.paintValue,
+  }) : boolValue = false;
+
+  @override
+  void applyAt(int elapsedUs) {
+    final progress = timing.evaluateSimpleProgress(elapsedUs);
+    if (progress < 0.0) return;
+
+    switch (kind) {
+      case SvgSetTargetKind.displayNone:
+        target.style.displayNone = boolValue;
+      case SvgSetTargetKind.visibilityHidden:
+        target.style.visibilityHidden = boolValue;
+      case SvgSetTargetKind.fillPaint:
+        final p = paintValue;
+        if (p != null) {
+          target.style.resolvedFill = p;
+          target.style.currentFillColor = p.color;
+        }
+      case SvgSetTargetKind.strokePaint:
+        final p = paintValue;
+        if (p != null) {
+          target.style.resolvedStroke = p;
+          target.style.currentStrokeColor = p.color;
+        }
+    }
   }
 }

@@ -352,9 +352,18 @@ abstract final class SvgCssParser {
       case 'clip-path':
         style.clipPathId = extractUrlId(val);
       case 'display':
-        style.displayNone = val == 'none';
+        style.baseDisplayNone = val == 'none';
+        style.displayNone = style.baseDisplayNone;
       case 'visibility':
-        style.visibilityHidden = val == 'hidden' || val == 'collapse';
+        style.baseVisibilityHidden = val == 'hidden' || val == 'collapse';
+        style.visibilityHidden = style.baseVisibilityHidden!;
+      case 'overflow':
+        final lower = val.toLowerCase();
+        if (lower == 'visible') {
+          style.baseOverflowVisible = true;
+        } else if (lower == 'hidden' || lower == 'scroll' || lower == 'auto') {
+          style.baseOverflowVisible = false;
+        }
       case 'font':
         SvgCssValueParser.applyFontShorthand(val, style);
       case 'font-family':

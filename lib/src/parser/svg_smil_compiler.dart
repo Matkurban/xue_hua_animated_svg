@@ -431,6 +431,127 @@ class SvgSmilCompiler {
     }
   }
 
+  /// Compiles a SMIL `<set attributeName="..." to="..." />` element into a
+  /// discrete animation track (supports `display`, `visibility`, `fill`, `stroke`,
+  /// and all scalar numeric attributes, including omitted/indefinite `dur`).
+  void compileSmilSetOnElement(SvgElement element, SvgXmlElement setXml) {
+    final attrName = setXml.attr('attributeName')?.trim() ?? '';
+    final toRaw = setXml.attr('to')?.trim();
+    if (attrName.isEmpty || toRaw == null || toRaw.isEmpty) return;
+
+    final timing = _parseSetTiming(setXml);
+    if (timing == null) return;
+
+    if (attrName == 'visibility') {
+      final lower = toRaw.toLowerCase();
+      final isHidden = lower == 'hidden' || lower == 'collapse';
+      tracks.add(
+        SvgSetAnimationTrack.boolean(
+          timing: timing,
+          target: element,
+          kind: SvgSetTargetKind.visibilityHidden,
+          boolValue: isHidden,
+        ),
+      );
+      element.hasSelfAnimation = true;
+      animatedElementsSet.add(element);
+      return;
+    }
+
+    if (attrName == 'display') {
+      final isNone = toRaw.toLowerCase() == 'none';
+      tracks.add(
+        SvgSetAnimationTrack.boolean(
+          timing: timing,
+          target: element,
+          kind: SvgSetTargetKind.displayNone,
+          boolValue: isNone,
+        ),
+      );
+      element.hasSelfAnimation = true;
+      animatedElementsSet.add(element);
+      return;
+    }
+
+    if (attrName == 'fill' || attrName == 'stroke') {
+      final paint = SvgCssParser.parsePaintServer(toRaw);
+      if (paint == null) return;
+      tracks.add(
+        SvgSetAnimationTrack.paint(
+          timing: timing,
+          target: element,
+          kind: attrName == 'fill'
+              ? SvgSetTargetKind.fillPaint
+              : SvgSetTargetKind.strokePaint,
+          paintValue: paint,
+        ),
+      );
+      element.hasSelfAnimation = true;
+      animatedElementsSet.add(element);
+      return;
+    }
+
+    final scalarTarget = _mapElementScalarTarget(attrName);
+    if (scalarTarget != null) {
+      final numVal =
+          (attrName.contains('opacity')
+              ? SvgCssParser.parseNumberOrPercent(toRaw)
+              : SvgCssParser.parseLength(toRaw)) ??
+          0.0;
+      if (scalarTarget == SvgScalarTarget.strokeDashoffset &&
+          element is SvgGeometryNode) {
+        element.needsPathMetrics = true;
+      }
+      tracks.add(
+        SvgScalarAnimationTrack(
+          timing: timing,
+          target: element,
+          property: scalarTarget,
+          keyframes: Float64List.fromList([numVal]),
+        ),
+      );
+      element.hasSelfAnimation = true;
+      animatedElementsSet.add(element);
+    }
+  }
+
+  SvgAnimationTiming? _parseSetTiming(SvgXmlElement setXml) {
+    final rawDur = setXml.attr('dur')?.trim().toLowerCase();
+    final isIndefiniteDur =
+        rawDur == null || rawDur.isEmpty || rawDur == 'indefinite';
+    final durUs = isIndefiniteDur
+        ? 1000000
+        : SvgCssParser.parseClockMicroseconds(rawDur);
+    if (durUs == null || durUs <= 0) return null;
+
+    final beginRaw = setXml.attr('begin');
+    final beginList = <int>[];
+    if (beginRaw != null && beginRaw.trim().isNotEmpty) {
+      for (final p in beginRaw.split(';')) {
+        final us = SvgCssParser.parseClockMicroseconds(p);
+        if (us != null) beginList.add(us);
+      }
+    }
+    if (beginList.isEmpty) beginList.add(0);
+
+    final endUs = SvgCssParser.parseClockMicroseconds(setXml.attr('end'));
+    final fillRaw = (setXml.attr('fill') ?? 'remove').trim().toLowerCase();
+    final fillMode = fillRaw == 'freeze'
+        ? SvgAnimationFillMode.freeze
+        : SvgAnimationFillMode.remove;
+
+    return SvgAnimationTiming(
+      beginOffsetsUs: List<int>.unmodifiable(beginList),
+      durationUs: durUs,
+      endUs: endUs,
+      repeatCount: isIndefiniteDur ? double.infinity : 1.0,
+      fillMode: fillMode,
+      calcMode: SvgCalcMode.discrete,
+      additiveMode: SvgAdditiveMode.replace,
+      keyTimes: Float64List.fromList([0.0]),
+    );
+  }
+
   void compileSmilAnimateTransformOnElement(
     SvgElement element,
     SvgXmlElement animXml,
@@ -550,7 +671,9 @@ class SvgSmilCompiler {
     SvgElement element,
     SvgXmlElement animXml,
   ) {
-    final kpList = SvgCssParser.parseNumberList(animXml.attr('keyPoints'));
+    final kpList = SvgCssParser.parseNumberList(
+      animXml.attr('keyPoints')?.replaceAll(';', ' '),
+    );
     final rawKeyframes = extractRawKeyframes(animXml);
     final keyframeCount = kpList.length >= 2
         ? kpList.length
@@ -672,7 +795,9 @@ class SvgSmilCompiler {
       fixedAngleDeg = SvgCssParser.parseAngleOrLength(rotateStr) ?? 0.0;
     }
 
-    final keyPoints = SvgCssParser.parseNumberList(xml.attr('keyPoints'));
+    final keyPoints = SvgCssParser.parseNumberList(
+      xml.attr('keyPoints')?.replaceAll(';', ' '),
+    );
 
     return SvgMotionAnimationTrack.fromPath(
       timing: pending.timing,

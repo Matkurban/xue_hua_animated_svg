@@ -254,7 +254,11 @@ class _SvgSceneCompiler {
           }
 
         case 'animate':
+        case 'animateColor':
           _smilCompiler.compileSmilAnimateOnElement(parentGroup, childXml);
+
+        case 'set':
+          _smilCompiler.compileSmilSetOnElement(parentGroup, childXml);
 
         case 'animateTransform':
           _smilCompiler.compileSmilAnimateTransformOnElement(
@@ -276,7 +280,7 @@ class _SvgSceneCompiler {
             parentGroup.children.add(elem);
             if (elem.id != null && elem.id!.isNotEmpty) {
               elementsById[elem.id!] = elem;
-              if (insideDefs) {
+              if (insideDefs || elem is SvgSymbolNode) {
                 defsById[elem.id!] = elem;
               }
               if (elem is SvgGeometryNode) {
@@ -317,8 +321,6 @@ class _SvgSceneCompiler {
 
     switch (tag) {
       case 'g':
-      case 'svg':
-      case 'symbol':
         final group = SvgGroupNode(
           tagName: tag,
           id: id,
@@ -329,9 +331,179 @@ class _SvgSceneCompiler {
         _buildChildren(
           parentXml: xml,
           parentGroup: group,
-          insideDefs: insideDefs || tag == 'symbol',
+          insideDefs: insideDefs,
         );
         node = group;
+
+      case 'a':
+        final anchor = SvgAnchorNode(
+          id: id,
+          classes: classes,
+          style: style,
+          baseTransformOps: baseTransformOps,
+          href: xml.attr('href') ?? xml.attr('xlink:href'),
+          target: xml.attr('target'),
+        );
+        _buildChildren(
+          parentXml: xml,
+          parentGroup: anchor,
+          insideDefs: insideDefs,
+        );
+        node = anchor;
+
+      case 'switch':
+        final childConditions = <SvgConditionalAttrs>[];
+        final switchNode = SvgSwitchNode(
+          id: id,
+          classes: classes,
+          style: style,
+          baseTransformOps: baseTransformOps,
+          childConditions: childConditions,
+        );
+        for (final childXml in xml.children) {
+          final childTag = childXml.name;
+          if (childTag == 'style' ||
+              childTag == 'title' ||
+              childTag == 'desc' ||
+              childTag == 'metadata') {
+            continue;
+          }
+          if (childTag == 'animate' || childTag == 'animateColor') {
+            _smilCompiler.compileSmilAnimateOnElement(switchNode, childXml);
+            continue;
+          }
+          if (childTag == 'set') {
+            _smilCompiler.compileSmilSetOnElement(switchNode, childXml);
+            continue;
+          }
+          if (childTag == 'animateTransform') {
+            _smilCompiler.compileSmilAnimateTransformOnElement(
+              switchNode,
+              childXml,
+            );
+            continue;
+          }
+          if (childTag == 'animateMotion') {
+            _smilCompiler.deferSmilAnimateMotionOnElement(switchNode, childXml);
+            continue;
+          }
+          final childElem = _buildElementNode(
+            xml: childXml,
+            parentElement: switchNode,
+            insideDefs: insideDefs,
+          );
+          if (childElem != null) {
+            childElem.parent = switchNode;
+            switchNode.children.add(childElem);
+            childConditions.add(
+              SvgConditionalAttrs(
+                requiredExtensions: childXml.attr('requiredExtensions'),
+                requiredFeatures: childXml.attr('requiredFeatures'),
+                systemLanguages: _parseCommaOrSpaceList(
+                  childXml.attr('systemLanguage'),
+                ),
+              ),
+            );
+            if (childElem.id != null && childElem.id!.isNotEmpty) {
+              elementsById[childElem.id!] = childElem;
+              if (insideDefs || childElem is SvgSymbolNode) {
+                defsById[childElem.id!] = childElem;
+              }
+              if (childElem is SvgGeometryNode) {
+                geometryById[childElem.id!] = childElem;
+              }
+            }
+          }
+        }
+        node = switchNode;
+
+      case 'svg':
+        final nestedSvg = SvgNestedSvgNode(
+          id: id,
+          classes: classes,
+          style: style,
+          baseTransformOps: baseTransformOps,
+          baseX:
+              SvgCssParser.parseNumberOrPercent(
+                xml.attr('x'),
+                referenceExtent: viewBox.width,
+              ) ??
+              0.0,
+          baseY:
+              SvgCssParser.parseNumberOrPercent(
+                xml.attr('y'),
+                referenceExtent: viewBox.height,
+              ) ??
+              0.0,
+          baseWidth: SvgCssParser.parseNumberOrPercent(
+            xml.attr('width'),
+            referenceExtent: viewBox.width,
+          ),
+          baseHeight: SvgCssParser.parseNumberOrPercent(
+            xml.attr('height'),
+            referenceExtent: viewBox.height,
+          ),
+          innerViewBox: _parseOptionalViewBox(xml.attr('viewBox')),
+          preserveAspectRatio: _parsePreserveAspectRatio(
+            xml.attr('preserveAspectRatio'),
+          ),
+        );
+        _buildChildren(
+          parentXml: xml,
+          parentGroup: nestedSvg,
+          insideDefs: insideDefs,
+        );
+        node = nestedSvg;
+
+      case 'symbol':
+        final symbolNode = SvgSymbolNode(
+          id: id,
+          classes: classes,
+          style: style,
+          baseTransformOps: baseTransformOps,
+          baseX:
+              SvgCssParser.parseNumberOrPercent(
+                xml.attr('x'),
+                referenceExtent: viewBox.width,
+              ) ??
+              0.0,
+          baseY:
+              SvgCssParser.parseNumberOrPercent(
+                xml.attr('y'),
+                referenceExtent: viewBox.height,
+              ) ??
+              0.0,
+          baseWidth: SvgCssParser.parseNumberOrPercent(
+            xml.attr('width'),
+            referenceExtent: viewBox.width,
+          ),
+          baseHeight: SvgCssParser.parseNumberOrPercent(
+            xml.attr('height'),
+            referenceExtent: viewBox.height,
+          ),
+          refX:
+              SvgCssParser.parseNumberOrPercent(
+                xml.attr('refX'),
+                referenceExtent: viewBox.width,
+              ) ??
+              0.0,
+          refY:
+              SvgCssParser.parseNumberOrPercent(
+                xml.attr('refY'),
+                referenceExtent: viewBox.height,
+              ) ??
+              0.0,
+          innerViewBox: _parseOptionalViewBox(xml.attr('viewBox')),
+          preserveAspectRatio: _parsePreserveAspectRatio(
+            xml.attr('preserveAspectRatio'),
+          ),
+        );
+        _buildChildren(
+          parentXml: xml,
+          parentGroup: symbolNode,
+          insideDefs: true,
+        );
+        node = symbolNode;
 
       case 'use':
         node = SvgUseNode(
@@ -352,6 +524,14 @@ class _SvgSceneCompiler {
                 referenceExtent: viewBox.height,
               ) ??
               0.0,
+          baseWidth: SvgCssParser.parseNumberOrPercent(
+            xml.attr('width'),
+            referenceExtent: viewBox.width,
+          ),
+          baseHeight: SvgCssParser.parseNumberOrPercent(
+            xml.attr('height'),
+            referenceExtent: viewBox.height,
+          ),
         );
 
       case 'path':
@@ -553,7 +733,10 @@ class _SvgSceneCompiler {
       for (final animXml in xml.children) {
         switch (animXml.name) {
           case 'animate':
+          case 'animateColor':
             _smilCompiler.compileSmilAnimateOnElement(node, animXml);
+          case 'set':
+            _smilCompiler.compileSmilSetOnElement(node, animXml);
           case 'animateTransform':
             _smilCompiler.compileSmilAnimateTransformOnElement(node, animXml);
           case 'animateMotion':
@@ -736,7 +919,7 @@ class _SvgSceneCompiler {
       );
 
       for (final animXml in child.children) {
-        if (animXml.name == 'animate') {
+        if (animXml.name == 'animate' || animXml.name == 'animateColor') {
           _smilCompiler.compileStopAnimate(stop, animXml);
         }
       }
@@ -941,7 +1124,10 @@ class _SvgSceneCompiler {
     for (final child in xml.children) {
       switch (child.name) {
         case 'animate':
+        case 'animateColor':
           _smilCompiler.compileSmilAnimateOnElement(element, child);
+        case 'set':
+          _smilCompiler.compileSmilSetOnElement(element, child);
         case 'animateTransform':
           _smilCompiler.compileSmilAnimateTransformOnElement(element, child);
         case 'animateMotion':
@@ -971,6 +1157,24 @@ class _SvgSceneCompiler {
       return SvgLengthAdjust.spacingAndGlyphs;
     }
     return SvgLengthAdjust.spacing;
+  }
+
+  static ui.Rect? _parseOptionalViewBox(String? viewBoxAttr) {
+    if (viewBoxAttr == null || viewBoxAttr.trim().isEmpty) return null;
+    final nums = SvgCssParser.parseNumberList(viewBoxAttr);
+    if (nums.length >= 4) {
+      return ui.Rect.fromLTWH(nums[0], nums[1], nums[2], nums[3]);
+    }
+    return null;
+  }
+
+  static List<String> _parseCommaOrSpaceList(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return const [];
+    return raw
+        .trim()
+        .split(RegExp(r'[\s,]+'))
+        .where((e) => e.isNotEmpty)
+        .toList(growable: false);
   }
 
   static List<String> _parseClasses(String? raw) {

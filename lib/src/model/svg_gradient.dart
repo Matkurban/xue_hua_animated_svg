@@ -93,16 +93,7 @@ abstract class SvgGradientNode {
     if (stops.isEmpty && hrefId != null) {
       final template = gradientsById[hrefId!];
       if (template != null) {
-        for (final stop in template.stops) {
-          stops.add(
-            SvgGradientStop(
-              id: stop.id,
-              baseOffset: stop.baseOffset,
-              baseColor: stop.baseColor,
-              baseOpacity: stop.baseOpacity,
-            )..isAnimated = stop.isAnimated,
-          );
-        }
+        stops.addAll(template.stops);
         _allocateStopBuffers();
       }
     }
