@@ -1,6 +1,7 @@
 export 'svg_container_nodes.dart';
 export 'svg_document.dart';
 export 'svg_element.dart';
+export 'svg_filter_node.dart';
 export 'svg_geometry_node.dart';
 export 'svg_image_node.dart';
 export 'svg_marker_node.dart';

@@ -131,31 +131,32 @@ AnimatedSvgPicture.asset(
 
 ## Supported SVG surface
 
-Tags and features the parser builds into the scene graph (others are dropped):
+Tags and features the parser builds into the scene graph:
 
 | Area | Supported |
 |------|-----------|
-| Structure | `<svg>`, `<g>`, `<defs>`, `<symbol>`, `<use>` |
+| Structure & Views | `<svg>` (root & nested viewports), `<g>`, `<defs>`, `<symbol>`, `<use>` (with `width`/`height` & cycle guard), `<a>`, `<switch>`, `<view>` (selectable via `viewId`) |
 | Geometry | `<path>`, `<rect>`, `<circle>`, `<ellipse>`, `<line>`, `<polyline>`, `<polygon>` |
-| Paint | `<linearGradient>`, `<radialGradient>`, `<stop>`, `<clipPath>` |
-| SMIL | `<animate>`, `<animateTransform>`, `<animateMotion>`, `<mpath>` |
-| CSS | `<style>`, `@keyframes`; selectors **only** `#id`, `.class`, `tagName`; CSS `filter: blur(...)` (sigma → `MaskFilter`, not SVG filter graphs) |
+| Text | `<text>`, `<tspan>`, `<textPath>` (with `font`, `font-family`, `font-size`, `font-weight`, `font-style`, `font-variant`, `text-anchor`, `dominant-baseline`, `alignment-baseline`, `baseline-shift`, `x`/`y`/`dx`/`dy`/`rotate` lists, `textLength`/`lengthAdjust`, `xml:space`/`white-space`, `paint-order`) |
+| Paint, Clipping & Masks | `<linearGradient>`, `<radialGradient>` (with SVG 2 `fr`), `<stop>`, `<pattern>`, `<clipPath>` (`userSpaceOnUse` & `objectBoundingBox`), `<mask>` (`luminance` & `alpha`), `<marker>` (`marker-start`/`mid`/`end`) |
+| Raster / Embedded | `<image>` (`data:image/png|jpeg|webp|gif;base64,...` and `data:image/svg+xml,...`) |
+| Filters | `<filter>`, `<feGaussianBlur>`, `<feDropShadow>`, `<feOffset>`, `<feColorMatrix>`, `<feFlood>`, `<feBlend>`, `<feComposite>`, `<feMerge>`, `<feMergeNode>`, `<feMorphology>`, `<feComponentTransfer>` (`<feFuncR/G/B/A>`) |
+| SMIL | `<animate>`, `<animateColor>`, `<animateTransform>`, `<animateMotion>`, `<mpath>`, `<set>` |
+| CSS | `<style>`, `@keyframes`; selectors `#id`, `.class`, `tagName`; inline `style="..."`; CSS `filter: blur(...)` & `url(#filterId)` |
 
 Skipped metadata (no render): `<style>` text is parsed; `<title>`, `<desc>`, `<metadata>` are ignored.
 
-## Out-of-Scope (do not implement)
+## Out-of-Scope
 
-These are **explicitly unsupported**. Unknown tags return `null` and are omitted. Do **not** grow the engine toward them (no full CSS selector engine, no text layout stack):
+The following remain intentionally out-of-scope for a pure-Dart vector engine:
 
-| Forbidden | Why |
-|-----------|-----|
-| `<filter>` and all `fe*` primitives (`feGaussianBlur`, `feBlend`, …) | Not a filter graph engine; only optional CSS `blur()` sigma |
-| `<text>`, `<tspan>`, `<textPath>`, `<tref>` | No glyph / text shaping |
-| `<foreignObject>` | No HTML/Flutter subtree embedding |
-| Complex CSS selectors | No descendant/child/sibling (` `, `>`, `+`, `~`), attribute, or pseudo (`:hover`, `:nth-child`, …) selectors; no `@media` / `@import` stylesheet rules |
-| Also dropped today | `<image>`, `<mask>`, `<marker>`, `<pattern>`, `<switch>`, `<a>`, `<script>`, `<view>`, `<set>`, and any other tag not listed under Supported |
-
-Author SVG for geometry + SMIL/CSS motion within the Supported table. Treat Out-of-Scope as a hard product boundary.
+| Unsupported | Why |
+|-------------|-----|
+| `<script>` | No JavaScript DOM execution |
+| `<foreignObject>` | No HTML/CSS DOM subtree embedding |
+| Deprecated SVG 1.1 font/ref tags | `<font>`, `<glyph>`, `<missing-glyph>`, `<hkern>`, `<vkern>`, `<tref>` |
+| Complex CSS selectors | No descendant/child/sibling (` `, `>`, `+`, `~`), attribute, or pseudo selectors; no `@media` / `@import` |
+| Procedural lighting/turbulence filters | `<feTurbulence>`, `<feDisplacementMap>`, `<feConvolveMatrix>`, `<feDiffuseLighting>`, `<feSpecularLighting>`, `<feDistantLight>`, `<fePointLight>`, `<feSpotLight>`, `<feTile>`, `<feImage>` |
 
 ## License
 

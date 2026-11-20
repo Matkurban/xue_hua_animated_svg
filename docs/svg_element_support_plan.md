@@ -30,17 +30,17 @@
 | 10 | `<image>` | 位图/嵌入图 | ✅ 已在 Phase 3 完成 | `ui.instantiateImageCodec` 解码内联 Base64 位图与嵌套 SVG Data URI，解码后自动重绘 | P2 |
 | 11 | `<view>` | 命名视图 | ✅ 已在 Phase 3 完成 | 解析 `id` / `viewBox` / `preserveAspectRatio`，支持 `AnimatedSvgPicture(viewId: ...)` 切换视口 | P2 |
 | 12 | `<radialGradient fr>` | 渐变完善 | ✅ 已在 Phase 3 完成 | 接入 `ui.Gradient.radial` 原生 `focalRadius` 参数并支持 SMIL `fr` 动画 | P2 |
-| 13 | `<filter>` 容器 | 滤镜管线 | 未支持（仅支持 CSS `blur()`） | 基于 `saveLayer` 与 `ui.ImageFilter` / `ui.ColorFilter` / `ui.BlendMode` 构建滤镜图 | P3 |
-| 14 | `<feGaussianBlur>` | 滤镜原语 | 未支持 | `ui.ImageFilter.blur(sigmaX, sigmaY)` | P3 |
-| 15 | `<feDropShadow>` | 滤镜原语 | 未支持 | 偏移 + 高斯模糊 + 颜色着色合成 | P3 |
-| 16 | `<feOffset>` | 滤镜原语 | 未支持 | `ui.ImageFilter.matrix` 平移矩阵 | P3 |
-| 17 | `<feColorMatrix>` | 滤镜原语 | 未支持 | `ui.ColorFilter.matrix`（`matrix`/`saturate`/`hueRotate`/`luminanceToAlpha`） | P3 |
-| 18 | `<feFlood>` | 滤镜原语 | 未支持 | `flood-color` / `flood-opacity` 纯色图元填充 | P3 |
-| 19 | `<feBlend>` | 滤镜原语 | 未支持 | 映射 `ui.BlendMode`（`normal`/`multiply`/`screen`/`overlay`/`darken`/`lighten` 等） | P3 |
-| 20 | `<feComposite>` | 滤镜原语 | 未支持 | 映射 `ui.BlendMode`（`over`/`in`/`out`/`atop`/`xor`/`lighter`） | P3 |
-| 21 | `<feMerge>` / `<feMergeNode>` | 滤镜原语 | 未支持 | 多图层按序叠合 | P3 |
-| 22 | `<feMorphology>` | 滤镜原语 | 未支持 | Flutter `dart:ui` 原生 `ui.ImageFilter.erode` / `ui.ImageFilter.dilate` | P3 |
-| 23 | `<feComponentTransfer>` + `<feFuncR/G/B/A>` | 滤镜原语 | 未支持 | 线性/Gamma 映射转 `ColorFilter.matrix` 或 LUT 着色器 | P3 |
+| 13 | `<filter>` 容器 | 滤镜管线 | ✅ 已在 Phase 4 完成 | 基于 `saveLayer` 快路径与 `ui.Picture` 多步命名缓冲图执行 | P3 |
+| 14 | `<feGaussianBlur>` | 滤镜原语 | ✅ 已在 Phase 4 完成 | `ui.ImageFilter.blur(sigmaX, sigmaY)` | P3 |
+| 15 | `<feDropShadow>` | 滤镜原语 | ✅ 已在 Phase 4 完成 | 偏移 + 高斯模糊 + 颜色着色合成 | P3 |
+| 16 | `<feOffset>` | 滤镜原语 | ✅ 已在 Phase 4 完成 | 坐标平移变换 | P3 |
+| 17 | `<feColorMatrix>` | 滤镜原语 | ✅ 已在 Phase 4 完成 | `ui.ColorFilter.matrix`（`matrix`/`saturate`/`hueRotate`/`luminanceToAlpha`） | P3 |
+| 18 | `<feFlood>` | 滤镜原语 | ✅ 已在 Phase 4 完成 | `flood-color` / `flood-opacity` 纯色图元填充 | P3 |
+| 19 | `<feBlend>` | 滤镜原语 | ✅ 已在 Phase 4 完成 | 映射 `ui.BlendMode`（`normal`/`multiply`/`screen`/`overlay` 等 16 种模式） | P3 |
+| 20 | `<feComposite>` | 滤镜原语 | ✅ 已在 Phase 4 完成 | 映射 `ui.BlendMode`（`over`/`in`/`out`/`atop`/`xor`/`lighter`） | P3 |
+| 21 | `<feMerge>` / `<feMergeNode>` | 滤镜原语 | ✅ 已在 Phase 4 完成 | 多命名缓冲按序叠合 | P3 |
+| 22 | `<feMorphology>` | 滤镜原语 | ✅ 已在 Phase 4 完成 | Flutter 原生 `ui.ImageFilter.erode` / `ui.ImageFilter.dilate` | P3 |
+| 23 | `<feComponentTransfer>` + `<feFuncR/G/B/A>` | 滤镜原语 | ✅ 已在 Phase 4 完成 | 通道线性/Gamma/Table 映射至 `ColorFilter.matrix` | P3 |
 
 ### 1.3 明确维持边界不实现的元素
 以下元素超出纯 Dart 矢量动画引擎职责或已在 W3C SVG 2 中废弃，不纳入计划：

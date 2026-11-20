@@ -51,6 +51,7 @@ class _SvgSceneCompiler {
   final Map<String, SvgMaskNode> masksById = <String, SvgMaskNode>{};
   final Map<String, SvgPatternNode> patternsById = <String, SvgPatternNode>{};
   final Map<String, SvgMarkerNode> markersById = <String, SvgMarkerNode>{};
+  final Map<String, SvgFilterNode> filtersById = <String, SvgFilterNode>{};
   final Map<String, SvgViewNode> viewsById = <String, SvgViewNode>{};
   final List<SvgImageNode> imageNodes = <SvgImageNode>[];
 
@@ -147,6 +148,7 @@ class _SvgSceneCompiler {
       masksById: masksById,
       patternsById: patternsById,
       markersById: markersById,
+      filtersById: filtersById,
       viewsById: viewsById,
       imageNodes: imageNodes,
     );
@@ -279,6 +281,12 @@ class _SvgSceneCompiler {
           final marker = _buildMarker(childXml, parentGroup.style);
           if (marker.id != null && marker.id!.isNotEmpty) {
             markersById[marker.id!] = marker;
+          }
+
+        case 'filter':
+          final filterNode = _buildFilter(childXml);
+          if (filterNode != null && filterNode.id.isNotEmpty) {
+            filtersById[filterNode.id] = filterNode;
           }
 
         case 'view':
@@ -1101,6 +1109,285 @@ class _SvgSceneCompiler {
     );
     _buildChildren(parentXml: xml, parentGroup: markerNode, insideDefs: true);
     return markerNode;
+  }
+
+  SvgFilterNode? _buildFilter(SvgXmlElement xml) {
+    final id = xml.attr('id') ?? '';
+    if (id.isEmpty) return null;
+
+    final filterUnits = xml.attr('filterUnits') == 'userSpaceOnUse'
+        ? SvgGradientUnits.userSpaceOnUse
+        : SvgGradientUnits.objectBoundingBox;
+    final primitiveUnits = xml.attr('primitiveUnits') == 'objectBoundingBox'
+        ? SvgGradientUnits.objectBoundingBox
+        : SvgGradientUnits.userSpaceOnUse;
+    final isUserSpace = filterUnits == SvgGradientUnits.userSpaceOnUse;
+
+    final x =
+        SvgCssParser.parseNumberOrPercent(
+          xml.attr('x'),
+          referenceExtent: isUserSpace ? viewBox.width : null,
+        ) ??
+        (isUserSpace ? viewBox.left : -0.1);
+    final y =
+        SvgCssParser.parseNumberOrPercent(
+          xml.attr('y'),
+          referenceExtent: isUserSpace ? viewBox.height : null,
+        ) ??
+        (isUserSpace ? viewBox.top : -0.1);
+    final w =
+        SvgCssParser.parseNumberOrPercent(
+          xml.attr('width'),
+          referenceExtent: isUserSpace ? viewBox.width : null,
+        ) ??
+        (isUserSpace ? viewBox.width : 1.2);
+    final h =
+        SvgCssParser.parseNumberOrPercent(
+          xml.attr('height'),
+          referenceExtent: isUserSpace ? viewBox.height : null,
+        ) ??
+        (isUserSpace ? viewBox.height : 1.2);
+
+    final primitives = <SvgFilterPrimitive>[];
+    for (final child in xml.children) {
+      final prim = _buildFilterPrimitive(child);
+      if (prim != null) primitives.add(prim);
+    }
+
+    return SvgFilterNode(
+      id: id,
+      filterUnits: filterUnits,
+      primitiveUnits: primitiveUnits,
+      x: x,
+      y: y,
+      width: w,
+      height: h,
+      primitives: primitives,
+    );
+  }
+
+  SvgFilterPrimitive? _buildFilterPrimitive(SvgXmlElement xml) {
+    final inSrc = xml.attr('in');
+    final res = xml.attr('result');
+    final inlineDecls = xml.attr('style') != null
+        ? SvgCssParser.parseDeclarationsMap(xml.attr('style')!)
+        : const <String, String>{};
+
+    switch (xml.name) {
+      case 'feGaussianBlur':
+        final sd = SvgCssParser.parseNumberList(xml.attr('stdDeviation'));
+        final sx = sd.isNotEmpty ? sd[0] : 0.0;
+        final sy = sd.length > 1 ? sd[1] : sx;
+        return SvgFeGaussianBlur(
+          inSource: inSrc,
+          result: res,
+          sigmaX: sx,
+          sigmaY: sy,
+        );
+
+      case 'feDropShadow':
+        final sd = SvgCssParser.parseNumberList(xml.attr('stdDeviation'));
+        final sx = sd.isNotEmpty ? sd[0] : 2.0;
+        final sy = sd.length > 1 ? sd[1] : sx;
+        final fcRaw = xml.attr('flood-color') ?? inlineDecls['flood-color'];
+        final foRaw = xml.attr('flood-opacity') ?? inlineDecls['flood-opacity'];
+        return SvgFeDropShadow(
+          inSource: inSrc,
+          result: res,
+          dx: SvgCssParser.parseLength(xml.attr('dx')) ?? 2.0,
+          dy: SvgCssParser.parseLength(xml.attr('dy')) ?? 2.0,
+          sigmaX: sx,
+          sigmaY: sy,
+          floodColor:
+              SvgCssParser.parseColor(fcRaw) ?? const ui.Color(0xFF000000),
+          floodOpacity:
+              (SvgCssParser.parseNumberOrPercent(foRaw) ?? 1.0).clamp(0.0, 1.0),
+        );
+
+      case 'feOffset':
+        return SvgFeOffset(
+          inSource: inSrc,
+          result: res,
+          dx: SvgCssParser.parseLength(xml.attr('dx')) ?? 0.0,
+          dy: SvgCssParser.parseLength(xml.attr('dy')) ?? 0.0,
+        );
+
+      case 'feColorMatrix':
+        final typeRaw = (xml.attr('type') ?? 'matrix').trim().toLowerCase();
+        final SvgFeColorMatrixType cmType;
+        switch (typeRaw) {
+          case 'saturate':
+            cmType = SvgFeColorMatrixType.saturate;
+          case 'huerotate':
+            cmType = SvgFeColorMatrixType.hueRotate;
+          case 'luminancetoalpha':
+            cmType = SvgFeColorMatrixType.luminanceToAlpha;
+          default:
+            cmType = SvgFeColorMatrixType.matrix;
+        }
+        return SvgFeColorMatrix(
+          inSource: inSrc,
+          result: res,
+          type: cmType,
+          values: SvgCssParser.parseNumberList(xml.attr('values')),
+        );
+
+      case 'feFlood':
+        final fcRaw = xml.attr('flood-color') ?? inlineDecls['flood-color'];
+        final foRaw = xml.attr('flood-opacity') ?? inlineDecls['flood-opacity'];
+        return SvgFeFlood(
+          inSource: inSrc,
+          result: res,
+          floodColor:
+              SvgCssParser.parseColor(fcRaw) ?? const ui.Color(0xFF000000),
+          floodOpacity:
+              (SvgCssParser.parseNumberOrPercent(foRaw) ?? 1.0).clamp(0.0, 1.0),
+        );
+
+      case 'feBlend':
+        return SvgFeBlend(
+          inSource: inSrc,
+          result: res,
+          in2: xml.attr('in2'),
+          mode: _parseBlendMode(xml.attr('mode')),
+        );
+
+      case 'feComposite':
+        return SvgFeComposite(
+          inSource: inSrc,
+          result: res,
+          in2: xml.attr('in2'),
+          operatorMode: _parseCompositeMode(xml.attr('operator')),
+        );
+
+      case 'feMerge':
+        final inputs = <String?>[
+          for (final child in xml.children)
+            if (child.name == 'feMergeNode') child.attr('in'),
+        ];
+        return SvgFeMerge(inSource: inSrc, result: res, inputs: inputs);
+
+      case 'feMorphology':
+        final rad = SvgCssParser.parseNumberList(xml.attr('radius'));
+        final rx = rad.isNotEmpty ? rad[0] : 0.0;
+        final ry = rad.length > 1 ? rad[1] : rx;
+        return SvgFeMorphology(
+          inSource: inSrc,
+          result: res,
+          isDilate: xml.attr('operator')?.trim().toLowerCase() == 'dilate',
+          radiusX: rx,
+          radiusY: ry,
+        );
+
+      case 'feComponentTransfer':
+        SvgFeTransferFunc? rFunc;
+        SvgFeTransferFunc? gFunc;
+        SvgFeTransferFunc? bFunc;
+        SvgFeTransferFunc? aFunc;
+        for (final child in xml.children) {
+          switch (child.name) {
+            case 'feFuncR':
+              rFunc = _buildTransferFunc(child);
+            case 'feFuncG':
+              gFunc = _buildTransferFunc(child);
+            case 'feFuncB':
+              bFunc = _buildTransferFunc(child);
+            case 'feFuncA':
+              aFunc = _buildTransferFunc(child);
+          }
+        }
+        return SvgFeComponentTransfer(
+          inSource: inSrc,
+          result: res,
+          funcR: rFunc,
+          funcG: gFunc,
+          funcB: bFunc,
+          funcA: aFunc,
+        );
+
+      default:
+        return null;
+    }
+  }
+
+  SvgFeTransferFunc _buildTransferFunc(SvgXmlElement xml) {
+    final rawType = (xml.attr('type') ?? 'identity').trim().toLowerCase();
+    final SvgFeTransferFuncType type;
+    switch (rawType) {
+      case 'linear':
+        type = SvgFeTransferFuncType.linear;
+      case 'gamma':
+        type = SvgFeTransferFuncType.gamma;
+      case 'table':
+        type = SvgFeTransferFuncType.table;
+      case 'discrete':
+        type = SvgFeTransferFuncType.discrete;
+      default:
+        type = SvgFeTransferFuncType.identity;
+    }
+    return SvgFeTransferFunc(
+      type: type,
+      slope: SvgCssParser.parseLength(xml.attr('slope')) ?? 1.0,
+      intercept: SvgCssParser.parseLength(xml.attr('intercept')) ?? 0.0,
+      amplitude: SvgCssParser.parseLength(xml.attr('amplitude')) ?? 1.0,
+      exponent: SvgCssParser.parseLength(xml.attr('exponent')) ?? 1.0,
+      offset: SvgCssParser.parseLength(xml.attr('offset')) ?? 0.0,
+      tableValues: SvgCssParser.parseNumberList(xml.attr('tableValues')),
+    );
+  }
+
+  static ui.BlendMode _parseBlendMode(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'multiply':
+        return ui.BlendMode.multiply;
+      case 'screen':
+        return ui.BlendMode.screen;
+      case 'overlay':
+        return ui.BlendMode.overlay;
+      case 'darken':
+        return ui.BlendMode.darken;
+      case 'lighten':
+        return ui.BlendMode.lighten;
+      case 'color-dodge':
+        return ui.BlendMode.colorDodge;
+      case 'color-burn':
+        return ui.BlendMode.colorBurn;
+      case 'hard-light':
+        return ui.BlendMode.hardLight;
+      case 'soft-light':
+        return ui.BlendMode.softLight;
+      case 'difference':
+        return ui.BlendMode.difference;
+      case 'exclusion':
+        return ui.BlendMode.exclusion;
+      case 'hue':
+        return ui.BlendMode.hue;
+      case 'saturation':
+        return ui.BlendMode.saturation;
+      case 'color':
+        return ui.BlendMode.color;
+      case 'luminosity':
+        return ui.BlendMode.luminosity;
+      default:
+        return ui.BlendMode.srcOver;
+    }
+  }
+
+  static ui.BlendMode _parseCompositeMode(String? raw) {
+    switch (raw?.trim().toLowerCase()) {
+      case 'in':
+        return ui.BlendMode.srcIn;
+      case 'out':
+        return ui.BlendMode.srcOut;
+      case 'atop':
+        return ui.BlendMode.srcATop;
+      case 'xor':
+        return ui.BlendMode.xor;
+      case 'lighter':
+        return ui.BlendMode.plus;
+      default:
+        return ui.BlendMode.srcOver;
+    }
   }
 
   SvgLinearGradientNode _buildLinearGradient(SvgXmlElement xml) {

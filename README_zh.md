@@ -123,31 +123,32 @@ AnimatedSvgPicture.asset(
 
 ## 支持的 SVG 表面
 
-解析器会编入场景图的标签与能力（其余标签直接丢弃）：
+解析器会编入场景图的标签与能力：
 
 | 类别 | 支持 |
 |------|------|
-| 结构 | `<svg>`、`<g>`、`<defs>`、`<symbol>`、`<use>` |
+| 结构与视图 | `<svg>`（根与嵌套视口）、`<g>`、`<defs>`、`<symbol>`、`<use>`（支持 `width`/`height` 与防循环引用）、`<a>`、`<switch>`、`<view>`（可通过 `viewId` 切换） |
 | 几何 | `<path>`、`<rect>`、`<circle>`、`<ellipse>`、`<line>`、`<polyline>`、`<polygon>` |
-| 填充 | `<linearGradient>`、`<radialGradient>`、`<stop>`、`<clipPath>` |
-| SMIL | `<animate>`、`<animateTransform>`、`<animateMotion>`、`<mpath>` |
-| CSS | `<style>`、`@keyframes`；选择器**仅** `#id`、`.class`、`tagName`；CSS `filter: blur(...)`（模糊半径 → `MaskFilter`，不是 SVG 滤镜图） |
+| 文本 | `<text>`、`<tspan>`、`<textPath>`（完整支持字体、基线、锚点、`x`/`y`/`dx`/`dy`/`rotate` 列表、`textLength`/`lengthAdjust`、`xml:space`/`white-space` 与 `paint-order`） |
+| 画刷、裁剪与遮罩 | `<linearGradient>`、`<radialGradient>`（含 SVG 2 `fr`）、`<stop>`、`<pattern>`、`<clipPath>`（`userSpaceOnUse` 与 `objectBoundingBox`）、`<mask>`（`luminance` 与 `alpha`）、`<marker>`（`marker-start`/`mid`/`end`） |
+| 位图与内联图 | `<image>`（支持 `data:image/png|jpeg|webp|gif;base64,...` 与 `data:image/svg+xml,...`） |
+| 滤镜管线 | `<filter>`、`<feGaussianBlur>`、`<feDropShadow>`、`<feOffset>`、`<feColorMatrix>`、`<feFlood>`、`<feBlend>`、`<feComposite>`、`<feMerge>`、`<feMergeNode>`、`<feMorphology>`、`<feComponentTransfer>`（`<feFuncR/G/B/A>`） |
+| SMIL | `<animate>`、`<animateColor>`、`<animateTransform>`、`<animateMotion>`、`<mpath>`、`<set>` |
+| CSS | `<style>`、`@keyframes`；选择器 `#id`、`.class`、`tagName`；内联 `style="..."`；CSS `filter: blur(...)` 与 `url(#filterId)` |
 
 元数据：`<style>` 正文会解析；`<title>`、`<desc>`、`<metadata>` 忽略不绘制。
 
-## Out-of-Scope（明确不做）
+## Out-of-Scope（明确边界）
 
-下列能力**明确不支持**。未知标签在解析期返回 `null` 并省略。**禁止**为它们扩展引擎（不要写完整 CSS 选择器词法/分析器，不要做半吊子文字排版）：
+以下能力超出纯 Dart 矢量动画引擎范围或在 SVG 2 中已废弃：
 
-| 禁止项 | 原因 |
-|--------|------|
-| `<filter>` 及全部 `fe*` 图元（`feGaussianBlur`、`feBlend` 等） | 不做滤镜图；仅可选 CSS `blur()` 半径 |
-| `<text>`、`<tspan>`、`<textPath>`、`<tref>` | 不做字形/文字排版 |
-| `<foreignObject>` | 不嵌入 HTML / Flutter 子树 |
-| 复杂 CSS 选择器 | 不做后代/子代/兄弟（` `、`>`、`+`、`~`）、属性选择器或伪类（`:hover`、`:nth-child` 等）；不做 `@media` / `@import` |
-| 当前一并丢弃 | `<image>`、`<mask>`、`<marker>`、`<pattern>`、`<switch>`、`<a>`、`<script>`、`<view>`、`<set>`，以及一切未列入「支持」表的标签 |
-
-请按「支持」表编写几何与 SMIL/CSS 动效 SVG。Out-of-Scope 为硬边界，不为它们补半吊子实现。
+| 不支持项 | 原因 |
+|----------|------|
+| `<script>` | 不含 JavaScript DOM 执行引擎 |
+| `<foreignObject>` | 不嵌入 HTML / DOM 子树 |
+| 已废弃的 SVG 1.1 字体/引用标签 | `<font>`、`<glyph>`、`<missing-glyph>`、`<hkern>`、`<vkern>`、`<tref>` |
+| 复杂 CSS 选择器 | 不含后代/子代/兄弟（` `、`>`、`+`、`~`）、属性或伪类选择器；不含 `@media` / `@import` |
+| 程序化光照/噪点滤镜 | `<feTurbulence>`、`<feDisplacementMap>`、`<feConvolveMatrix>`、`<feDiffuseLighting>`、`<feSpecularLighting>`、`<feDistantLight>`、`<fePointLight>`、`<feSpotLight>`、`<feTile>`、`<feImage>` |
 
 ## 许可证
 

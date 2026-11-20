@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'svg_container_nodes.dart';
 import 'svg_element.dart';
+import 'svg_filter_node.dart';
 import 'svg_geometry_node.dart';
 import 'svg_gradient.dart';
 import 'svg_image_node.dart';
@@ -30,6 +31,7 @@ class SvgDocument {
   final Map<String, SvgMaskNode> masksById;
   final Map<String, SvgPatternNode> patternsById;
   final Map<String, SvgMarkerNode> markersById;
+  final Map<String, SvgFilterNode> filtersById;
   final Map<String, SvgViewNode> viewsById;
   final List<SvgImageNode> imageNodes;
 
@@ -53,6 +55,7 @@ class SvgDocument {
     this.masksById = const {},
     this.patternsById = const {},
     this.markersById = const {},
+    this.filtersById = const {},
     this.viewsById = const {},
     this.imageNodes = const [],
   });

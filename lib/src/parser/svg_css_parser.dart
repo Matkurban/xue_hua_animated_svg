@@ -338,9 +338,18 @@ abstract final class SvgCssParser {
       case 'pathLength':
         style.basePathLength = parseLength(val);
       case 'filter':
-        final blur = SvgCssValueParser.parseBlurFilter(val);
-        if (blur != null) {
-          style.baseBlurSigma = blur;
+        if (val == 'none') {
+          style.filterId = null;
+          style.baseBlurSigma = 0.0;
+        } else {
+          final fId = extractUrlId(val);
+          if (fId != null && fId.isNotEmpty) {
+            style.filterId = fId;
+          }
+          final blur = SvgCssValueParser.parseBlurFilter(val);
+          if (blur != null) {
+            style.baseBlurSigma = blur;
+          }
         }
       case 'transform-origin':
         style.baseTransformOrigin = parseTransformOrigin(val);

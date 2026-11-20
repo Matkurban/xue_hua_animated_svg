@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'svg_document.dart';
+import 'svg_filter_executor.dart';
 import 'svg_mask_node.dart';
 import 'svg_style.dart';
 import 'svg_transform.dart';
@@ -194,6 +195,8 @@ abstract class SvgElement {
     final clipNode = clipId != null ? document.clipPathsById[clipId] : null;
     final maskId = style.maskId;
     final maskNode = maskId != null ? document.masksById[maskId] : null;
+    final filterId = style.filterId;
+    final filterNode = filterId != null ? document.filtersById[filterId] : null;
     final opacity = style.currentOpacity.clamp(0.0, 1.0);
     final needsLayer = opacity < 1.0 && children.isNotEmpty;
 
@@ -202,6 +205,7 @@ abstract class SvgElement {
         hasMotion ||
         clipNode != null ||
         maskNode != null ||
+        filterNode != null ||
         needsLayer;
     if (needsSave) {
       canvas.save();
@@ -226,20 +230,33 @@ abstract class SvgElement {
       canvas.saveLayer(null, cachedLayerPaint);
     }
 
-    if (maskNode != null) {
-      final maskBounds = maskNode.resolveMaskRegion(cachedBounds);
-      canvas.saveLayer(maskBounds, ui.Paint());
-      paintContent(canvas, document, needsLayer ? 1.0 : opacity);
-      final dstInPaint = ui.Paint()..blendMode = ui.BlendMode.dstIn;
-      if (maskNode.maskType == SvgMaskType.luminance) {
-        dstInPaint.colorFilter = SvgMaskNode.luminanceToAlphaFilter;
+    void drawBody(ui.Canvas targetCanvas) {
+      if (maskNode != null) {
+        final maskBounds = maskNode.resolveMaskRegion(cachedBounds);
+        targetCanvas.saveLayer(maskBounds, ui.Paint());
+        paintContent(targetCanvas, document, needsLayer ? 1.0 : opacity);
+        final dstInPaint = ui.Paint()..blendMode = ui.BlendMode.dstIn;
+        if (maskNode.maskType == SvgMaskType.luminance) {
+          dstInPaint.colorFilter = SvgMaskNode.luminanceToAlphaFilter;
+        }
+        targetCanvas.saveLayer(maskBounds, dstInPaint);
+        maskNode.paintMaskContent(targetCanvas, document, cachedBounds);
+        targetCanvas.restore();
+        targetCanvas.restore();
+      } else {
+        paintContent(targetCanvas, document, needsLayer ? 1.0 : opacity);
       }
-      canvas.saveLayer(maskBounds, dstInPaint);
-      maskNode.paintMaskContent(canvas, document, cachedBounds);
-      canvas.restore();
-      canvas.restore();
+    }
+
+    if (filterNode != null) {
+      SvgFilterExecutor.paintWithFilter(
+        canvas: canvas,
+        filter: filterNode,
+        targetBounds: cachedBounds,
+        paintSource: drawBody,
+      );
     } else {
-      paintContent(canvas, document, needsLayer ? 1.0 : opacity);
+      drawBody(canvas);
     }
 
     if (needsLayer) {

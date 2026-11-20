@@ -123,6 +123,7 @@ class SvgStyle {
   SvgTransformOrigin? baseTransformOrigin;
   String? clipPathId;
   String? maskId;
+  String? filterId;
   String? baseMarkerStartId;
   String? baseMarkerMidId;
   String? baseMarkerEndId;
@@ -468,6 +469,7 @@ class SvgStyle {
     }
     if (other.clipPathId != null) clipPathId = other.clipPathId;
     if (other.maskId != null) maskId = other.maskId;
+    if (other.filterId != null) filterId = other.filterId;
     if (other.baseMarkerStartId != null) {
       baseMarkerStartId = other.baseMarkerStartId;
     }
