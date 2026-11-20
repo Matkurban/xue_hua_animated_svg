@@ -1,0 +1,22 @@
+<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="desaturate" filterUnits="userSpaceOnUse" x="0" y="0" width="320" height="200">
+      <feColorMatrix type="saturate" values="0" />
+    </filter>
+    <filter id="hueShift" filterUnits="userSpaceOnUse" x="0" y="0" width="320" height="200">
+      <feColorMatrix type="hueRotate" values="140" />
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="304" height="184" rx="18" fill="#0F172A" />
+  <circle cx="72" cy="88" r="36" fill="#EF4444" />
+  <circle cx="160" cy="88" r="36" fill="#EF4444" filter="url(#desaturate)" />
+  <circle cx="248" cy="88" r="36" fill="#EF4444" filter="url(#hueShift)">
+    <animate attributeName="r" values="32;38;32" dur="2.2s" repeatCount="indefinite" />
+  </circle>
+  <text x="72" y="146" text-anchor="middle" font-family="monospace" font-size="12" fill="#FCA5A5">Orig</text>
+  <text x="160" y="146" text-anchor="middle" font-family="monospace" font-size="12" fill="#CBD5E1">Gray</text>
+  <text x="248" y="146" text-anchor="middle" font-family="monospace" font-size="12" fill="#86EFAC">Hue+140</text>
+  <text x="160" y="176" text-anchor="middle" font-family="monospace" font-size="14" fill="#E2E8F0">
+    &lt;feColorMatrix&gt; saturate / hueRotate
+  </text>
+</svg>

@@ -1,0 +1,13 @@
+<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="8" width="304" height="184" rx="18" fill="#0F172A" />
+  <image x="40" y="40" width="96" height="96" preserveAspectRatio="none"
+    href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR4nGP4z8DAwMDAxMDAwMDAAQABjgEB6J6W4AAAAABJRU5ErkJggg==" />
+  <rect x="40" y="40" width="96" height="96" fill="none" stroke="#38BDF8" stroke-width="2" />
+  <image x="184" y="40" width="96" height="96"
+    href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%2040%22%3E%3Crect%20width%3D%2240%22%20height%3D%2240%22%20rx%3D%2210%22%20fill%3D%22%2310B981%22%2F%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%2220%22%20r%3D%2211%22%20fill%3D%22%23FEF08A%22%2F%3E%3C%2Fsvg%3E">
+    <animate attributeName="opacity" values="0.75;1;0.75" dur="2s" repeatCount="indefinite" />
+  </image>
+  <text x="160" y="172" text-anchor="middle" font-family="monospace" font-size="14" fill="#CBD5E1">
+    &lt;image&gt; Base64 PNG + SVG URI
+  </text>
+</svg>

@@ -1,0 +1,18 @@
+<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38BDF8" />
+    </marker>
+    <marker id="midNode" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <circle cx="5" cy="5" r="4" fill="#FBBF24" />
+    </marker>
+  </defs>
+  <rect x="8" y="8" width="304" height="184" rx="18" fill="#0F172A" />
+  <polyline points="42,130 112,62 204,126 276,58" fill="none" stroke="#38BDF8" stroke-width="4"
+    marker-start="url(#arrowHead)" marker-mid="url(#midNode)" marker-end="url(#arrowHead)">
+    <animate attributeName="stroke-opacity" values="0.65;1;0.65" dur="2s" repeatCount="indefinite" />
+  </polyline>
+  <text x="160" y="174" text-anchor="middle" font-family="monospace" font-size="14" fill="#BAE6FD">
+    &lt;marker&gt; start / mid / end
+  </text>
+</svg>

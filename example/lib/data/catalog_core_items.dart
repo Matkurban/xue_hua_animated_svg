@@ -124,13 +124,4 @@ final List<SvgCatalogItem> coreCatalogItems = [
     assetPath: 'assets/svgs/neon_equalizer.svg',
     iconName: 'equalizer',
   ),
-  const SvgCatalogItem(
-    id: 'text_svg',
-    title: '文本显示',
-    subtitle: 'SVG <text>：描边文字、旋转变换与基线居中',
-    tags: ['text', 'stroke', 'transform'],
-    kind: SvgCatalogSourceKind.asset,
-    assetPath: 'assets/svgs/text_svg.svg',
-    iconName: 'text_fields',
-  ),
 ];

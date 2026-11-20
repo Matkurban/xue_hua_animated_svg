@@ -23,7 +23,7 @@
 
 ```yaml
 dependencies:
-  xue_hua_animated_svg: ^1.2.0
+  xue_hua_animated_svg: ^1.3.0
 ```
 
 ```bash

@@ -1,0 +1,20 @@
+<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="neonGlow" filterUnits="userSpaceOnUse" x="0" y="0" width="320" height="200">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blurred" />
+      <feOffset in="blurred" dx="0" dy="2" result="shifted" />
+      <feMerge>
+        <feMergeNode in="shifted" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="304" height="184" rx="18" fill="#090D16" />
+  <polygon points="160,34 176,76 222,78 186,106 198,148 160,124 122,148 134,106 98,78 144,76"
+    fill="#F472B6" stroke="#FDF2F8" stroke-width="2" filter="url(#neonGlow)">
+    <animate attributeName="opacity" values="0.75;1;0.75" dur="2s" repeatCount="indefinite" />
+  </polygon>
+  <text x="160" y="176" text-anchor="middle" font-family="monospace" font-size="13" fill="#FBCFE8">
+    &lt;feGaussianBlur&gt; + &lt;feOffset&gt; + &lt;feMerge&gt;
+  </text>
+</svg>

@@ -1,0 +1,15 @@
+<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="orbFr" cx="50%" cy="50%" r="50%" fx="34%" fy="32%" fr="8%">
+      <animate attributeName="fr" values="0.04;0.24;0.04" dur="2.6s" repeatCount="indefinite" />
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="45%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#1E3A8A" />
+    </radialGradient>
+  </defs>
+  <rect x="8" y="8" width="304" height="184" rx="18" fill="#090D16" />
+  <circle cx="160" cy="92" r="58" fill="url(#orbFr)" />
+  <text x="160" y="174" text-anchor="middle" font-family="monospace" font-size="14" fill="#BAE6FD">
+    &lt;radialGradient fr&gt; focal radius
+  </text>
+</svg>

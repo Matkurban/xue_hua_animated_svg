@@ -1,3 +1,29 @@
+## 1.3.0
+
+* **Full W3C SVG 1.1 / SVG 2 Text Engine (`<text>`, `<tspan>`, `<textPath>`)**:
+  * Upgraded `SvgXmlTokenizer` with ordered mixed-content `contentNodes` (`SvgXmlNode`, `SvgXmlTextContent`) and numeric/named XML entity decoding (`&#...;`, `&#x...;`, `&nbsp;`).
+  * Added `SvgTextNode`, `SvgTextSpanNode`, `SvgTextPathNode`, and `SvgTextLayoutEngine` supporting `font` shorthand, `font-family` cross-platform fallback chains, `font-size` (`px`/`pt`/`em`/`rem`/`%`/keywords), `font-weight`, `font-style`, `font-variant` (`small-caps`), `text-anchor` (`start`/`middle`/`end`), `dominant-baseline`, `alignment-baseline`, `baseline-shift`, `letter-spacing`, `word-spacing`, `text-decoration`, `direction` (`ltr`/`rtl`), `xml:space`/`white-space` collapsing, per-glyph `x`/`y`/`dx`/`dy`/`rotate` lists, `textLength`/`lengthAdjust` (`spacing` & `spacingAndGlyphs`), `<textPath>` tangent placement, solid/gradient/pattern fill & stroke, `paint-order`, static `ui.Picture` caching, and SMIL/CSS text animations.
+* **Phase 1 — Structural Containers, Viewport Spec & SMIL Additions**:
+  * Added graphic-level `<a>` (`SvgAnchorNode`), conditional `<switch>` (`SvgSwitchNode` evaluating `requiredExtensions` and `systemLanguage`), nested `<svg>` (`SvgNestedSvgNode` with `viewBox` & `overflow: hidden` clipping), and non-directly-rendered `<symbol>` (`SvgSymbolNode`).
+  * Upgraded `<use>` (`SvgUseNode`) with `width`/`height` viewport scaling (including animations), global `elementsById` lookup, and recursion cycle protection.
+  * Added SMIL `<set>` (`SvgSetAnimationTrack` supporting `visibility`, `display`, `fill`, `stroke`, and scalar properties, including omitted/indefinite `dur`) and `<animateColor>`.
+* **Phase 2 — Masking, Pattern Shaders, Path Markers & ClipPath Upgrade**:
+  * Added `<mask>` (`SvgMaskNode`) supporting `luminance` (Rec.709 matrix) and `alpha` compositing via `BlendMode.dstIn`, `maskUnits`, and `maskContentUnits`.
+  * Added `<pattern>` (`SvgPatternNode`) with cached offscreen `ui.Image` tile rasterization, `ui.ImageShader(TileMode.repeated)`, `patternTransform`, and `href` template inheritance for both geometry and text.
+  * Added `<marker>` (`SvgMarkerNode`) supporting `marker-start`, `marker-mid`, `marker-end`, shorthand `marker`, `orient="auto"` / `"auto-start-reverse"`, and `markerUnits` across `<path>`, `<line>`, `<polyline>`, and `<polygon>`.
+  * Upgraded `<clipPath>` (`SvgClipPathNode`) to support `clipPathUnits="objectBoundingBox"`, `<use>` children, and dynamically animated clipping paths.
+* **Phase 3 — Embedded Images, Named Views & SVG 2 Radial Gradient**:
+  * Added `<image>` (`SvgImageNode`) supporting embedded `data:image/png|jpeg|webp|gif;base64,...` raster decoding with automatic repaint notification (`precacheImages()` helper) and recursive `data:image/svg+xml,...` rendering.
+  * Added `<view>` (`SvgViewNode`) and optional `viewId` parameter on `SvgDocument.paint`, `AnimatedSvgPainter`, and all `AnimatedSvgPicture` constructors.
+  * Added SVG 2 `<radialGradient fr>` focal radius support (including SMIL animation).
+* **Phase 4 — GPU-Accelerated `<filter>` Pipeline (10 `fe*` Primitives)**:
+  * Added `SvgFilterNode` and `SvgFilterExecutor` supporting `<filter>` with single-primitive `saveLayer` fast paths and multi-step named-buffer `ui.Picture` graphs across `<feGaussianBlur>`, `<feDropShadow>`, `<feOffset>`, `<feColorMatrix>`, `<feFlood>`, `<feBlend>`, `<feComposite>`, `<feMerge>`/`<feMergeNode>`, `<feMorphology>`, and `<feComponentTransfer>` (`<feFuncR/G/B/A>`).
+* **Bug Fixes**:
+  * Fixed `<linearGradient>`/`<radialGradient>` `href` template inheritance to share live animated `SvgGradientStop` instances.
+  * Fixed `<animateMotion keyPoints="...">` semicolon-delimited parsing per W3C SMIL spec.
+* **Example App & Tests**:
+  * Added 22 showcase SVGs covering every newly supported element at the front of the example catalog (`catalog_v130_element_items.dart`), extracted shared `CatalogSvgPicture` widget into `example/lib/widgets/`, and added comprehensive unit & offscreen pixel test suites (`svg_text_rendering_test.dart`, `svg_phase1_elements_test.dart`, `svg_phase2_elements_test.dart`, `svg_phase3_elements_test.dart`, `svg_phase4_filters_test.dart`).
+
 ## 1.2.0
 
 * Refactored internal architecture into modular, single-responsibility Dart files following standard Dart and Flutter package conventions without any breaking changes to public APIs or runtime behavior:

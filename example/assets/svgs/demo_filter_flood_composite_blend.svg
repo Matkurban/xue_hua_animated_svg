@@ -1,0 +1,21 @@
+<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="floodTint" filterUnits="userSpaceOnUse" x="0" y="0" width="320" height="200">
+      <feFlood flood-color="#22C55E" flood-opacity="1" result="greenFlood" />
+      <feComposite in="greenFlood" in2="SourceGraphic" operator="in" />
+    </filter>
+    <filter id="blendScreen" filterUnits="userSpaceOnUse" x="0" y="0" width="320" height="200">
+      <feFlood flood-color="#38BDF8" flood-opacity="0.7" result="sky" />
+      <feBlend in="SourceGraphic" in2="sky" mode="screen" result="blended" />
+      <feComposite in="blended" in2="SourceGraphic" operator="in" />
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="304" height="184" rx="18" fill="#0F172A" />
+  <rect x="42" y="42" width="96" height="96" rx="20" fill="#EF4444" filter="url(#floodTint)" />
+  <circle cx="226" cy="90" r="48" fill="#EC4899" filter="url(#blendScreen)">
+    <animate attributeName="r" values="42;50;42" dur="2.2s" repeatCount="indefinite" />
+  </circle>
+  <text x="160" y="174" text-anchor="middle" font-family="monospace" font-size="13" fill="#CBD5E1">
+    &lt;feFlood&gt; + &lt;feComposite&gt; + &lt;feBlend&gt;
+  </text>
+</svg>

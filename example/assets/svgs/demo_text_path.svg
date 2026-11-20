@@ -1,0 +1,23 @@
+<svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tpGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06B6D4" />
+      <stop offset="50%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#EC4899" />
+    </linearGradient>
+    <path id="wavePath" d="M 24 140 Q 160 20 296 140" />
+  </defs>
+  <rect x="8" y="8" width="304" height="184" rx="18" fill="#111827" />
+  <path d="M 24 140 Q 160 20 296 140" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" />
+  <text font-family="sans-serif" font-size="24" font-weight="bold" fill="url(#tpGrad)">
+    <textPath href="#wavePath" startOffset="50%" text-anchor="middle">
+      CURVED TEXT PATH
+    </textPath>
+  </text>
+  <circle cx="24" cy="140" r="5" fill="#06B6D4">
+    <animate attributeName="r" values="4;7;4" dur="1.6s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="296" cy="140" r="5" fill="#EC4899">
+    <animate attributeName="r" values="7;4;7" dur="1.6s" repeatCount="indefinite" />
+  </circle>
+</svg>
