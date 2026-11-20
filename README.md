@@ -3,7 +3,7 @@
 [English](README.md) | [中文](README_zh.md)
 
 High-performance, **zero-native-dependency**, 100% pure Dart animated SVG rendering engine for Flutter.
-Precompiles SMIL and CSS animations into a strongly typed AST and paints at **60fps / 120fps** with
+Precompiles W3C SVG 2, SMIL, and CSS into a strongly typed AST and paints at **60fps / 120fps** with
 static subtree `Picture` caching and a zero-allocation paint loop.
 
 **Live demo (GitHub Pages):** https://matkurban.github.io/xue_hua_animated_svg/
@@ -14,18 +14,22 @@ static subtree `Picture` caching and a zero-allocation paint loop.
 
 ## Features
 
-1. **Parse-time precompilation** — XML, CSS, colors, path `d`, and clock units are resolved once in
+1. **Parse-time precompilation** — XML, CSS selectors, `var()` custom properties, CSS Color 4,
+   `calc()`/`min()`/`max()`/`clamp()`, path `d`, and SMIL/CSS clocks are resolved once in
    `SvgParser.compile()` into typed `double` / `Color` / `Float64List` / spline data. Runtime paint
    never re-parses strings.
 2. **Static subtree Picture caching** — nodes with `isAnimated == false` are recorded into
-   `ui.Picture` on first paint and replayed with `canvas.drawPicture()`.
+   `ui.Picture` on first paint and replayed with `canvas.drawPicture()`, with automatic invalidation
+   when embedded async `<image>` assets finish decoding.
 3. **Cached PathMetrics** — dash and motion paths keep precomputed `PathMetric` lists; frames only
    call `extractPath` / `getTangentForOffset`.
 4. **Zero-allocation paint loop** — paints, layer opacity, and 4×4 column-major matrices are reused
    in place every tick.
-5. **SMIL + CSS** — `<animate>`, `<animateTransform>`, `<animateMotion>` / `<mpath>`, isomorphic
-   path morphing (`d`), stroke dash growth (`pathLength`), and CSS `@keyframes` with
-   `transform-origin`.
+5. **Complete non-JS W3C SVG 2 + Filter Effects + SMIL + CSS** — all 17 W3C Filter Effects Level 1
+   primitives + 10 CSS `filter` functions, W3C Selectors Level 4 static selectors, `--*`/`var()`,
+   `!important` cascade, CSS Color 4 (`oklch`/`oklab`/`lab`/`lch`/`hsl`/`hwb`/`color-mix`),
+   CSS `clip-path` shapes, full `<text>`/`<tspan>`/`<textPath>` layout, SMIL `additive`/`accumulate`
+   & Syncbase timing, and CSS `@keyframes` (`steps()`, negative delay, `animation-play-state`).
 
 ## Install
 
@@ -110,13 +114,14 @@ scene.dispose();
 | `SvgParser.compile`                                                         | Precompile SVG XML → `CompiledSvgScene`          |
 | `AnimatedSvgShowcasePresets.cyberCoreCompositeSvg`                          | Composite showcase SVG string                    |
 
-### Layout tint: `fit`, `alignment` & `colorFilter`
+### Layout, tint & views: `fit`, `alignment`, `colorFilter`, `viewId`
 
 | Parameter | Type | Default | Notes |
 |-----------|------|---------|-------|
 | `fit` | `BoxFit` | `BoxFit.contain` | How the SVG intrinsic box is inscribed into the widget size (`applyBoxFit`). |
 | `alignment` | `AlignmentGeometry` | `Alignment.center` | Places the fitted rect in leftover / cropped space (`alignment.inscribe`). |
-| `colorFilter` | `ColorFilter?` | `null` | Whole-picture Flutter tint (e.g. `ColorFilter.mode(color, BlendMode.srcIn)`). **Not** SVG `<filter>`. |
+| `colorFilter` | `ColorFilter?` | `null` | Whole-picture Flutter tint (e.g. `ColorFilter.mode(color, BlendMode.srcIn)`). Independent of SVG `<filter>`. |
+| `viewId` | `String?` | `null` | Optional `<view id="...">` selector to override `viewBox` and `preserveAspectRatio`. |
 
 ```dart
 AnimatedSvgPicture.asset(
@@ -129,34 +134,34 @@ AnimatedSvgPicture.asset(
 );
 ```
 
-## Supported SVG surface
+## Supported SVG 2 & CSS surface
 
-Tags and features the parser builds into the scene graph:
+Tags and specifications compiled into the scene graph:
 
 | Area | Supported |
 |------|-----------|
-| Structure & Views | `<svg>` (root & nested viewports), `<g>`, `<defs>`, `<symbol>`, `<use>` (with `width`/`height` & cycle guard), `<a>`, `<switch>`, `<view>` (selectable via `viewId`) |
-| Geometry | `<path>`, `<rect>`, `<circle>`, `<ellipse>`, `<line>`, `<polyline>`, `<polygon>` |
-| Text | `<text>`, `<tspan>`, `<textPath>` (with `font`, `font-family`, `font-size`, `font-weight`, `font-style`, `font-variant`, `text-anchor`, `dominant-baseline`, `alignment-baseline`, `baseline-shift`, `x`/`y`/`dx`/`dy`/`rotate` lists, `textLength`/`lengthAdjust`, `xml:space`/`white-space`, `paint-order`) |
-| Paint, Clipping & Masks | `<linearGradient>`, `<radialGradient>` (with SVG 2 `fr`), `<stop>`, `<pattern>`, `<clipPath>` (`userSpaceOnUse` & `objectBoundingBox`), `<mask>` (`luminance` & `alpha`), `<marker>` (`marker-start`/`mid`/`end`) |
+| Structure & Views | `<svg>` (root & nested viewports, W3C default `overflow: hidden` clipping), `<g>`, `<defs>`, `<symbol>`, `<use>` (with `width`/`height`, aspect sizing, deep style isolation & cycle guard), `<a>`, `<switch>`, `<view>` (selectable via `viewId`) |
+| Geometry & Paint Rules | `<path>`, `<rect>`, `<circle>`, `<ellipse>`, `<line>`, `<polyline>`, `<polygon>`; SVG 2 CSS geometry properties (`x`, `y`, `width`, `height`, `cx`, `cy`, `r`, `rx`, `ry`, `d: path(...)`); `vector-effect="non-scaling-stroke"`; 3-layer `paint-order` (`fill`, `stroke`, `markers`); `shape-rendering`; `mix-blend-mode` & `isolation` |
+| Text | `<text>`, `<tspan>`, `<textPath>` (`font`, `font-family`, `font-size`, `font-weight`, `font-style`, `font-variant`, `text-anchor`, `dominant-baseline`, `alignment-baseline`, `baseline-shift`, `letter-spacing`, `word-spacing`, `text-decoration`, `direction`, `xml:space`/`white-space`, `text-transform`, vertical `writing-mode` (`vertical-rl`/`vertical-lr`/`tb`/`tb-rl`), `x`/`y`/`dx`/`dy`/`rotate` lists, `textLength`/`lengthAdjust`, `paint-order`) |
+| Paint, Clipping & Masks | `<linearGradient>`, `<radialGradient>` (with SVG 2 `fr` & chained `href` inheritance), `<stop>`, `<pattern>`, `<marker>` (`marker-start`/`mid`/`end`, `orient="auto"`/`"auto-start-reverse"`), `<clipPath>` (`userSpaceOnUse` & `objectBoundingBox`), CSS `clip-path` shapes (`inset`/`circle`/`ellipse`/`polygon`/`path`), `<mask>` (`luminance` & `alpha`), `url(#id) <fallback>` & `currentColor` |
 | Raster / Embedded | `<image>` (`data:image/png|jpeg|webp|gif;base64,...` and `data:image/svg+xml,...`) |
-| Filters | `<filter>`, `<feGaussianBlur>`, `<feDropShadow>`, `<feOffset>`, `<feColorMatrix>`, `<feFlood>`, `<feBlend>`, `<feComposite>`, `<feMerge>`, `<feMergeNode>`, `<feMorphology>`, `<feComponentTransfer>` (`<feFuncR/G/B/A>`) |
-| SMIL | `<animate>`, `<animateColor>`, `<animateTransform>`, `<animateMotion>`, `<mpath>`, `<set>` |
-| CSS | `<style>`, `@keyframes`; selectors `#id`, `.class`, `tagName`; inline `style="..."`; CSS `filter: blur(...)` & `url(#filterId)` |
+| Filters (All 17 W3C Level 1 Primitives + 10 CSS Functions) | `<filter>` (with `filterUnits`, `primitiveUnits` & per-primitive `x`/`y`/`width`/`height` subregions): `<feGaussianBlur>` (`edgeMode`), `<feDropShadow>`, `<feOffset>`, `<feColorMatrix>`, `<feFlood>`, `<feBlend>`, `<feComposite>` (including `operator="arithmetic"`), `<feMerge>`, `<feMergeNode>`, `<feMorphology>`, `<feComponentTransfer>` (`<feFuncR/G/B/A>`), `<feTurbulence>`, `<feDisplacementMap>`, `<feImage>`, `<feTile>`, `<feConvolveMatrix>`, `<feDiffuseLighting>`, `<feSpecularLighting>` (`<feDistantLight>`, `<fePointLight>`, `<feSpotLight>`); CSS `filter:` (`blur`, `drop-shadow`, `brightness`, `contrast`, `grayscale`, `saturate`, `sepia`, `hue-rotate`, `invert`, `opacity`) |
+| CSS Selectors, Color & Math | `<style>`, inline `style="..."`, `!important` 6-pass cascade; W3C Selectors Level 4 static selectors (combinators ` ` / `>` / `+` / `~`, attribute selectors `[attr=val]` / `^=` / `$=` / `*=` / `~=` / `|=`, structural pseudos `:first-child` / `:last-child` / `:only-child` / `:nth-child(An+B)` / `:nth-last-child` / `:first-of-type` / `:last-of-type` / `:nth-of-type` / `:empty` / `:root`, `:not()` / `:is()` / `:where()`); CSS custom properties (`--*` & `var()`); CSS Color 4 (`hsl`/`hsla`/`hwb`/`oklab`/`oklch`/`lab`/`lch`/`color-mix`); CSS Math (`calc`/`min`/`max`/`clamp`); `transform-origin`, `transform-box`, standalone `translate`/`rotate`/`scale` |
+| SMIL & CSS Animations | `<animate>`, `<animateColor>`, `<animateTransform>`, `<animateMotion>`, `<mpath>`, `<set>`; `additive="sum"`, `accumulate="sum"`, SMIL Syncbase timing (`begin="anim1.end+0.5s"`); CSS `@keyframes`, `steps(N, jump-start|jump-end|jump-none|jump-both|start|end)`, `step-start`/`step-end`, negative `animation-delay`, `animation-play-state: paused|running` |
 
 Skipped metadata (no render): `<style>` text is parsed; `<title>`, `<desc>`, `<metadata>` are ignored.
 
 ## Out-of-Scope
 
-The following remain intentionally out-of-scope for a pure-Dart vector engine:
+Only capabilities requiring a JavaScript engine, interactive browser DOM, external stylesheet/font loader, or deprecated SVG 1.1 specs remain out of scope:
 
 | Unsupported | Why |
 |-------------|-----|
-| `<script>` | No JavaScript DOM execution |
-| `<foreignObject>` | No HTML/CSS DOM subtree embedding |
-| Deprecated SVG 1.1 font/ref tags | `<font>`, `<glyph>`, `<missing-glyph>`, `<hkern>`, `<vkern>`, `<tref>` |
-| Complex CSS selectors | No descendant/child/sibling (` `, `>`, `+`, `~`), attribute, or pseudo selectors; no `@media` / `@import` |
-| Procedural lighting/turbulence filters | `<feTurbulence>`, `<feDisplacementMap>`, `<feConvolveMatrix>`, `<feDiffuseLighting>`, `<feSpecularLighting>`, `<feDistantLight>`, `<fePointLight>`, `<feSpotLight>`, `<feTile>`, `<feImage>` |
+| `<script>` & JS DOM APIs | No JavaScript execution engine |
+| Event triggers & interactive pseudos (`onclick`, `begin="btn.click"`, `:hover`, `:active`, `:focus`) | No interactive browser DOM / hit-test state machine |
+| `<foreignObject>` | No HTML/CSS DOM subtree layout engine |
+| `@media`, `@import`, `@font-face` | No external network CSS/font loader or media-query runtime |
+| Deprecated SVG 1.1 font/ref tags | `<font>`, `<glyph>`, `<missing-glyph>`, `<hkern>`, `<vkern>`, `<tref>` (removed in SVG 2) |
 
 ## License
 
