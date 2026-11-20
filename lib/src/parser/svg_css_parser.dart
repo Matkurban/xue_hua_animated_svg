@@ -350,14 +350,19 @@ abstract final class SvgCssParser {
         if (val == 'none') {
           style.filterId = null;
           style.baseBlurSigma = 0.0;
+          style.baseCssFilterPrimitives = null;
         } else {
           final fId = extractUrlId(val);
           if (fId != null && fId.isNotEmpty) {
             style.filterId = fId;
           }
-          final blur = SvgCssValueParser.parseBlurFilter(val);
-          if (blur != null) {
-            style.baseBlurSigma = blur;
+          final chain = SvgCssValueParser.parseCssFilterChain(val);
+          if (chain.length == 1 && chain.first is SvgFeGaussianBlur) {
+            final blur = chain.first as SvgFeGaussianBlur;
+            style.baseBlurSigma = blur.sigmaX;
+            style.baseCssFilterPrimitives = null;
+          } else if (chain.isNotEmpty) {
+            style.baseCssFilterPrimitives = chain;
           }
         }
       case 'transform-origin':

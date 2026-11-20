@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'svg_filter_node.dart';
 import 'svg_text_style.dart';
 import 'svg_transform.dart';
 
@@ -128,6 +129,7 @@ class SvgStyle {
   String? clipPathId;
   String? maskId;
   String? filterId;
+  List<SvgFilterPrimitive>? baseCssFilterPrimitives;
   String? baseMarkerStartId;
   String? baseMarkerMidId;
   String? baseMarkerEndId;
@@ -529,6 +531,9 @@ class SvgStyle {
     if (other.clipPathId != null) clipPathId = other.clipPathId;
     if (other.maskId != null) maskId = other.maskId;
     if (other.filterId != null) filterId = other.filterId;
+    if (other.baseCssFilterPrimitives != null) {
+      baseCssFilterPrimitives = other.baseCssFilterPrimitives;
+    }
     if (other.baseMarkerStartId != null) {
       baseMarkerStartId = other.baseMarkerStartId;
     }

@@ -6,6 +6,7 @@ import 'svg_document.dart';
 import 'svg_element.dart';
 import 'svg_marker_node.dart';
 import 'svg_style.dart';
+import 'svg_text_style.dart';
 
 /// Abstract base class for all geometric shape nodes (`<path>`, `<rect>`,
 /// `<circle>`, `<ellipse>`, `<line>`, `<polyline>`, `<polygon>`).
@@ -100,85 +101,95 @@ abstract class SvgGeometryNode extends SvgElement {
     final maskFilter = resolveMaskFilter();
     final antiAlias = !style.currentShapeRenderingCrisp;
 
-    // 1. Fill Pass
-    final fillServer = style.resolvedFill;
-    final fillAlpha = (style.currentFillOpacity * effectiveOpacity).clamp(
-      0.0,
-      1.0,
-    );
-    if (fillServer.isVisible && fillAlpha > 0.0) {
-      basePath.fillType = style.currentFillRule;
-      cachedFillPaint
-        ..isAntiAlias = antiAlias
-        ..maskFilter = maskFilter;
+    void paintFillPass() {
+      final fillServer = style.resolvedFill;
+      final fillAlpha = (style.currentFillOpacity * effectiveOpacity).clamp(
+        0.0,
+        1.0,
+      );
+      if (fillServer.isVisible && fillAlpha > 0.0) {
+        basePath.fillType = style.currentFillRule;
+        cachedFillPaint
+          ..isAntiAlias = antiAlias
+          ..maskFilter = maskFilter;
 
-      if (fillServer.type == SvgPaintType.gradient &&
-          fillServer.gradientId != null) {
-        final serverId = fillServer.gradientId!;
-        final grad = document.gradientsById[serverId];
-        final pat = document.patternsById[serverId];
-        cachedFillPaint.shader =
-            grad?.createShader(cachedBounds) ??
-            pat?.createShader(cachedBounds, document);
-        cachedFillPaint.color = ui.Color.fromARGB(
-          (fillAlpha * 255.0).round().clamp(0, 255),
-          255,
-          255,
-          255,
-        );
-      } else {
-        cachedFillPaint.shader = null;
-        final c = style.currentFillColor;
-        final combinedAlpha = (c.a * fillAlpha).clamp(0.0, 1.0);
-        cachedFillPaint.color = c.withValues(alpha: combinedAlpha);
+        if (fillServer.type == SvgPaintType.gradient &&
+            fillServer.gradientId != null) {
+          final serverId = fillServer.gradientId!;
+          final grad = document.gradientsById[serverId];
+          final pat = document.patternsById[serverId];
+          cachedFillPaint.shader =
+              grad?.createShader(cachedBounds) ??
+              pat?.createShader(cachedBounds, document);
+          cachedFillPaint.color = ui.Color.fromARGB(
+            (fillAlpha * 255.0).round().clamp(0, 255),
+            255,
+            255,
+            255,
+          );
+        } else {
+          cachedFillPaint.shader = null;
+          final c = style.currentFillColor;
+          final combinedAlpha = (c.a * fillAlpha).clamp(0.0, 1.0);
+          cachedFillPaint.color = c.withValues(alpha: combinedAlpha);
+        }
+        canvas.drawPath(basePath, cachedFillPaint);
       }
-      canvas.drawPath(basePath, cachedFillPaint);
     }
 
-    // 2. Stroke Pass
-    final strokeServer = style.resolvedStroke;
-    final strokeWidth = style.currentStrokeWidth;
-    final strokeAlpha = (style.currentStrokeOpacity * effectiveOpacity).clamp(
-      0.0,
-      1.0,
-    );
-    if (strokeServer.isVisible && strokeWidth > 0.0 && strokeAlpha > 0.0) {
-      cachedStrokePaint
-        ..isAntiAlias = antiAlias
-        ..strokeWidth = strokeWidth
-        ..strokeCap = style.currentStrokeCap
-        ..strokeJoin = style.currentStrokeJoin
-        ..strokeMiterLimit = style.currentStrokeMiterLimit
-        ..maskFilter = maskFilter;
+    void paintStrokePass() {
+      final strokeServer = style.resolvedStroke;
+      final strokeWidth = style.currentStrokeWidth;
+      final strokeAlpha = (style.currentStrokeOpacity * effectiveOpacity).clamp(
+        0.0,
+        1.0,
+      );
+      if (strokeServer.isVisible && strokeWidth > 0.0 && strokeAlpha > 0.0) {
+        cachedStrokePaint
+          ..isAntiAlias = antiAlias
+          ..strokeWidth = strokeWidth
+          ..strokeCap = style.currentStrokeCap
+          ..strokeJoin = style.currentStrokeJoin
+          ..strokeMiterLimit = style.currentStrokeMiterLimit
+          ..maskFilter = maskFilter;
 
-      if (strokeServer.type == SvgPaintType.gradient &&
-          strokeServer.gradientId != null) {
-        final serverId = strokeServer.gradientId!;
-        final grad = document.gradientsById[serverId];
-        final pat = document.patternsById[serverId];
-        cachedStrokePaint.shader =
-            grad?.createShader(cachedBounds) ??
-            pat?.createShader(cachedBounds, document);
-        cachedStrokePaint.color = ui.Color.fromARGB(
-          (strokeAlpha * 255.0).round().clamp(0, 255),
-          255,
-          255,
-          255,
-        );
-      } else {
-        cachedStrokePaint.shader = null;
-        final c = style.currentStrokeColor;
-        final combinedAlpha = (c.a * strokeAlpha).clamp(0.0, 1.0);
-        cachedStrokePaint.color = c.withValues(alpha: combinedAlpha);
-      }
+        if (strokeServer.type == SvgPaintType.gradient &&
+            strokeServer.gradientId != null) {
+          final serverId = strokeServer.gradientId!;
+          final grad = document.gradientsById[serverId];
+          final pat = document.patternsById[serverId];
+          cachedStrokePaint.shader =
+              grad?.createShader(cachedBounds) ??
+              pat?.createShader(cachedBounds, document);
+          cachedStrokePaint.color = ui.Color.fromARGB(
+            (strokeAlpha * 255.0).round().clamp(0, 255),
+            255,
+            255,
+            255,
+          );
+        } else {
+          cachedStrokePaint.shader = null;
+          final c = style.currentStrokeColor;
+          final combinedAlpha = (c.a * strokeAlpha).clamp(0.0, 1.0);
+          cachedStrokePaint.color = c.withValues(alpha: combinedAlpha);
+        }
 
-      final dashArray = style.currentStrokeDasharray;
-      if (dashArray != null && dashArray.isNotEmpty) {
-        _buildDashedPathInPlace(dashArray, style.currentStrokeDashoffset);
-        canvas.drawPath(dashedStrokePath, cachedStrokePaint);
-      } else {
-        canvas.drawPath(basePath, cachedStrokePaint);
+        final dashArray = style.currentStrokeDasharray;
+        if (dashArray != null && dashArray.isNotEmpty) {
+          _buildDashedPathInPlace(dashArray, style.currentStrokeDashoffset);
+          canvas.drawPath(dashedStrokePath, cachedStrokePaint);
+        } else {
+          canvas.drawPath(basePath, cachedStrokePaint);
+        }
       }
+    }
+
+    if (style.currentPaintOrder == SvgPaintOrder.strokeFill) {
+      paintStrokePass();
+      paintFillPass();
+    } else {
+      paintFillPass();
+      paintStrokePass();
     }
 
     // 3. Marker Pass (`marker-start`, `marker-mid`, `marker-end`)

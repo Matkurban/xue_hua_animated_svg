@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'svg_document.dart';
 import 'svg_filter_executor.dart';
+import 'svg_filter_node.dart';
 import 'svg_mask_node.dart';
 import 'svg_style.dart';
 import 'svg_transform.dart';
@@ -285,10 +286,43 @@ abstract class SvgElement {
       }
     }
 
-    if (filterNode != null) {
+    final cssFilters = style.baseCssFilterPrimitives;
+    if (filterNode != null && cssFilters != null && cssFilters.isNotEmpty) {
+      final combined = SvgFilterNode(
+        id: filterNode.id,
+        filterUnits: filterNode.filterUnits,
+        primitiveUnits: filterNode.primitiveUnits,
+        x: filterNode.x,
+        y: filterNode.y,
+        width: filterNode.width,
+        height: filterNode.height,
+        primitives: [...filterNode.primitives, ...cssFilters],
+      );
+      SvgFilterExecutor.paintWithFilter(
+        canvas: canvas,
+        filter: combined,
+        targetBounds: cachedBounds,
+        paintSource: drawBody,
+      );
+    } else if (filterNode != null) {
       SvgFilterExecutor.paintWithFilter(
         canvas: canvas,
         filter: filterNode,
+        targetBounds: cachedBounds,
+        paintSource: drawBody,
+      );
+    } else if (cssFilters != null && cssFilters.isNotEmpty) {
+      final inlineFilter = SvgFilterNode(
+        id: '',
+        x: -0.5,
+        y: -0.5,
+        width: 2.0,
+        height: 2.0,
+        primitives: cssFilters,
+      );
+      SvgFilterExecutor.paintWithFilter(
+        canvas: canvas,
+        filter: inlineFilter,
         targetBounds: cachedBounds,
         paintSource: drawBody,
       );

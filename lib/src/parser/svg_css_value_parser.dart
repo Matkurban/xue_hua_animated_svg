@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/animation.dart' show Cubic;
 
+import '../model/svg_filter_node.dart';
 import '../model/svg_style.dart';
 import '../model/svg_text_style.dart';
 import '../model/svg_transform.dart';
@@ -1018,5 +1019,155 @@ abstract final class SvgCssValueParser {
       default:
         return null;
     }
+  }
+
+  /// Parses a CSS `filter` function chain (`blur()`, `drop-shadow()`,
+  /// `brightness()`, `contrast()`, `grayscale()`, `saturate()`, `sepia()`,
+  /// `hue-rotate()`, `invert()`, `opacity()`) into [SvgFilterPrimitive] nodes.
+  static List<SvgFilterPrimitive> parseCssFilterChain(String raw) {
+    final primitives = <SvgFilterPrimitive>[];
+    final matches = RegExp(r'([a-zA-Z-]+)\s*\(([^)]*)\)').allMatches(raw);
+    for (final m in matches) {
+      final fn = m.group(1)!.trim().toLowerCase();
+      final args = m.group(2)!.trim();
+      if (fn == 'url') continue;
+
+      switch (fn) {
+        case 'blur':
+          final sigma = parseLength(args) ?? 0.0;
+          if (sigma > 0.0) {
+            primitives.add(SvgFeGaussianBlur(sigmaX: sigma, sigmaY: sigma));
+          }
+        case 'brightness':
+          final b = (parseNumberOrPercent(args) ?? 1.0).clamp(0.0, 100.0);
+          primitives.add(
+            SvgFeColorMatrix(
+              type: SvgFeColorMatrixType.matrix,
+              values: Float64List.fromList(<double>[
+                b, 0, 0, 0, 0,
+                0, b, 0, 0, 0,
+                0, 0, b, 0, 0,
+                0, 0, 0, 1, 0,
+              ]),
+            ),
+          );
+        case 'contrast':
+          final c = (parseNumberOrPercent(args) ?? 1.0).clamp(0.0, 100.0);
+          final t = 0.5 * (1.0 - c);
+          primitives.add(
+            SvgFeColorMatrix(
+              type: SvgFeColorMatrixType.matrix,
+              values: Float64List.fromList(<double>[
+                c, 0, 0, 0, t,
+                0, c, 0, 0, t,
+                0, 0, c, 0, t,
+                0, 0, 0, 1, 0,
+              ]),
+            ),
+          );
+        case 'grayscale':
+          final g = (parseNumberOrPercent(args) ?? 1.0).clamp(0.0, 1.0);
+          primitives.add(
+            SvgFeColorMatrix(
+              type: SvgFeColorMatrixType.saturate,
+              values: Float64List.fromList(<double>[1.0 - g]),
+            ),
+          );
+        case 'saturate':
+          final s = (parseNumberOrPercent(args) ?? 1.0).clamp(0.0, 100.0);
+          primitives.add(
+            SvgFeColorMatrix(
+              type: SvgFeColorMatrixType.saturate,
+              values: Float64List.fromList(<double>[s]),
+            ),
+          );
+        case 'sepia':
+          final a = (parseNumberOrPercent(args) ?? 1.0).clamp(0.0, 1.0);
+          final inv = 1.0 - a;
+          primitives.add(
+            SvgFeColorMatrix(
+              type: SvgFeColorMatrixType.matrix,
+              values: Float64List.fromList(<double>[
+                0.393 + 0.607 * inv, 0.769 - 0.769 * inv, 0.189 - 0.189 * inv, 0, 0,
+                0.349 - 0.349 * inv, 0.686 + 0.314 * inv, 0.168 - 0.168 * inv, 0, 0,
+                0.272 - 0.272 * inv, 0.534 - 0.534 * inv, 0.131 + 0.869 * inv, 0, 0,
+                0, 0, 0, 1, 0,
+              ]),
+            ),
+          );
+        case 'hue-rotate':
+          final deg = parseAngleOrLength(args) ?? 0.0;
+          primitives.add(
+            SvgFeColorMatrix(
+              type: SvgFeColorMatrixType.hueRotate,
+              values: Float64List.fromList(<double>[deg]),
+            ),
+          );
+        case 'invert':
+          final a = (parseNumberOrPercent(args) ?? 1.0).clamp(0.0, 1.0);
+          final s = 1.0 - 2.0 * a;
+          primitives.add(
+            SvgFeColorMatrix(
+              type: SvgFeColorMatrixType.matrix,
+              values: Float64List.fromList(<double>[
+                s, 0, 0, 0, a,
+                0, s, 0, 0, a,
+                0, 0, s, 0, a,
+                0, 0, 0, 1, 0,
+              ]),
+            ),
+          );
+        case 'opacity':
+          final a = (parseNumberOrPercent(args) ?? 1.0).clamp(0.0, 1.0);
+          primitives.add(
+            SvgFeColorMatrix(
+              type: SvgFeColorMatrixType.matrix,
+              values: Float64List.fromList(<double>[
+                1, 0, 0, 0, 0,
+                0, 1, 0, 0, 0,
+                0, 0, 1, 0, 0,
+                0, 0, 0, a, 0,
+              ]),
+            ),
+          );
+        case 'drop-shadow':
+          final ds = _parseCssDropShadow(args);
+          if (ds != null) primitives.add(ds);
+      }
+    }
+    return primitives;
+  }
+
+  static SvgFeDropShadow? _parseCssDropShadow(String args) {
+    if (args.isEmpty) return null;
+    // Extract optional color function (rgb/rgba/hsl/hsla/hwb) first so spaces inside parens stay intact
+    ui.Color? color;
+    var remaining = args;
+    final fnColorMatch = RegExp(r'(?:rgba?|hsla?|hwb)\s*\([^)]*\)', caseSensitive: false).firstMatch(remaining);
+    if (fnColorMatch != null) {
+      color = parseColor(fnColorMatch.group(0));
+      remaining = remaining.replaceRange(fnColorMatch.start, fnColorMatch.end, ' ');
+    }
+    final tokens = remaining.trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    final lengths = <double>[];
+    for (final tok in tokens) {
+      final c = color == null ? parseColor(tok) : null;
+      if (c != null) {
+        color = c;
+      } else {
+        final len = parseLength(tok);
+        if (len != null) lengths.add(len);
+      }
+    }
+    if (lengths.length < 2) return null;
+    final sigma = lengths.length >= 3 ? lengths[2] * 0.5 : 0.0;
+    return SvgFeDropShadow(
+      dx: lengths[0],
+      dy: lengths[1],
+      sigmaX: sigma,
+      sigmaY: sigma,
+      floodColor: color ?? const ui.Color(0xFF000000),
+      floodOpacity: 1.0,
+    );
   }
 }
