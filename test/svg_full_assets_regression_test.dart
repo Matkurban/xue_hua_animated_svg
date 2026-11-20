@@ -11,15 +11,12 @@ Future<List<int>> _renderRgba(
 ) async {
   final recorder = ui.PictureRecorder();
   final canvas = ui.Canvas(recorder);
-  scene.document.paint(
-    canvas,
-    ui.Size(width.toDouble(), height.toDouble()),
-  );
+  scene.document.paint(canvas, ui.Size(width.toDouble(), height.toDouble()));
   final picture = recorder.endRecording();
   final image = await picture.toImage(width, height);
-  final bytes = (await image.toByteData(
-    format: ui.ImageByteFormat.rawRgba,
-  ))!.buffer.asUint8List();
+  final bytes = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!
+      .buffer
+      .asUint8List();
   image.dispose();
   picture.dispose();
   return bytes;
@@ -27,35 +24,38 @@ Future<List<int>> _renderRgba(
 
 void main() {
   group('Phase 3 (P2): CSS filter chains, geometry paint-order, and 42 full_svg regression', () {
-    test('executes CSS filter function chains (grayscale, invert, drop-shadow)', () async {
-      const svg = '''
+    test(
+      'executes CSS filter function chains (grayscale, invert, drop-shadow)',
+      () async {
+        const svg = '''
 <svg viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
   <rect x="5" y="10" width="30" height="30" fill="#FF0000" style="filter: grayscale(100%)" />
   <rect x="45" y="10" width="30" height="30" fill="#FF0000" style="filter: invert(100%)" />
   <rect x="85" y="10" width="20" height="20" fill="#00FF00" style="filter: drop-shadow(8px 8px 0px #0000FF)" />
 </svg>
 ''';
-      final scene = SvgParser.compile(svg);
-      final bytes = await _renderRgba(scene, 120, 60);
+        final scene = SvgParser.compile(svg);
+        final bytes = await _renderRgba(scene, 120, 60);
 
-      // (20, 25): grayscale red -> R == G == B
-      final gIdx = (25 * 120 + 20) * 4;
-      expect((bytes[gIdx] - bytes[gIdx + 1]).abs(), lessThanOrEqualTo(2));
-      expect((bytes[gIdx + 1] - bytes[gIdx + 2]).abs(), lessThanOrEqualTo(2));
+        // (20, 25): grayscale red -> R == G == B
+        final gIdx = (25 * 120 + 20) * 4;
+        expect((bytes[gIdx] - bytes[gIdx + 1]).abs(), lessThanOrEqualTo(2));
+        expect((bytes[gIdx + 1] - bytes[gIdx + 2]).abs(), lessThanOrEqualTo(2));
 
-      // (60, 25): inverted red (#FF0000) -> cyan (#00FFFF)
-      final iIdx = (25 * 120 + 60) * 4;
-      expect(bytes[iIdx], lessThan(10));
-      expect(bytes[iIdx + 1], greaterThan(245));
-      expect(bytes[iIdx + 2], greaterThan(245));
+        // (60, 25): inverted red (#FF0000) -> cyan (#00FFFF)
+        final iIdx = (25 * 120 + 60) * 4;
+        expect(bytes[iIdx], lessThan(10));
+        expect(bytes[iIdx + 1], greaterThan(245));
+        expect(bytes[iIdx + 2], greaterThan(245));
 
-      // (108, 33): blue drop-shadow behind green rect
-      final sIdx = (33 * 120 + 108) * 4;
-      expect(bytes[sIdx + 2], greaterThan(240));
-      expect(bytes[sIdx + 3], greaterThan(240));
+        // (108, 33): blue drop-shadow behind green rect
+        final sIdx = (33 * 120 + 108) * 4;
+        expect(bytes[sIdx + 2], greaterThan(240));
+        expect(bytes[sIdx + 3], greaterThan(240));
 
-      scene.dispose();
-    });
+        scene.dispose();
+      },
+    );
 
     test('honors paint-order="stroke fill" vs default fill stroke on geometry nodes', () async {
       const svg = '''
@@ -83,12 +83,13 @@ void main() {
       final dir = Directory('example/assets/full_svg');
       if (!dir.existsSync()) return;
 
-      final svgFiles = dir
-          .listSync()
-          .whereType<File>()
-          .where((f) => f.path.endsWith('.svg'))
-          .toList()
-        ..sort((a, b) => a.path.compareTo(b.path));
+      final svgFiles =
+          dir
+              .listSync()
+              .whereType<File>()
+              .where((f) => f.path.endsWith('.svg'))
+              .toList()
+            ..sort((a, b) => a.path.compareTo(b.path));
       expect(svgFiles.length, greaterThanOrEqualTo(40));
 
       for (final file in svgFiles) {
@@ -121,9 +122,9 @@ void main() {
       scene.document.paint(canvas, const ui.Size(100, 50));
       final pic = recorder.endRecording();
       final img = await pic.toImage(100, 100);
-      final bytes = (await img.toByteData(
-        format: ui.ImageByteFormat.rawRgba,
-      ))!.buffer.asUint8List();
+      final bytes = (await img.toByteData(format: ui.ImageByteFormat.rawRgba))!
+          .buffer
+          .asUint8List();
 
       // Inside viewport (y=25): blue
       final insideIdx = (25 * 100 + 50) * 4;

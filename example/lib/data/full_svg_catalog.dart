@@ -1,9 +1,6 @@
 /// Metadata for a fullscreen SVG showcase asset under `assets/full_svg/`.
 class FullSvgAssetItem {
-  const FullSvgAssetItem({
-    required this.title,
-    required this.assetPath,
-  });
+  const FullSvgAssetItem({required this.title, required this.assetPath});
 
   final String title;
   final String assetPath;
@@ -36,18 +33,12 @@ abstract final class FullSvgCatalog {
       title: 'ccclaymoji',
       assetPath: 'assets/full_svg/ccclaymoji.svg',
     ),
-    FullSvgAssetItem(
-      title: 'cccoil',
-      assetPath: 'assets/full_svg/cccoil.svg',
-    ),
+    FullSvgAssetItem(title: 'cccoil', assetPath: 'assets/full_svg/cccoil.svg'),
     FullSvgAssetItem(
       title: 'ffflurry',
       assetPath: 'assets/full_svg/ffflurry.svg',
     ),
-    FullSvgAssetItem(
-      title: 'ffflux',
-      assetPath: 'assets/full_svg/ffflux.svg',
-    ),
+    FullSvgAssetItem(title: 'ffflux', assetPath: 'assets/full_svg/ffflux.svg'),
     FullSvgAssetItem(
       title: 'ggglitch',
       assetPath: 'assets/full_svg/ggglitch.svg',
@@ -88,10 +79,7 @@ abstract final class FullSvgCatalog {
       title: 'nnneon (2)',
       assetPath: 'assets/full_svg/nnneon (2).svg',
     ),
-    FullSvgAssetItem(
-      title: 'nnneon',
-      assetPath: 'assets/full_svg/nnneon.svg',
-    ),
+    FullSvgAssetItem(title: 'nnneon', assetPath: 'assets/full_svg/nnneon.svg'),
     FullSvgAssetItem(
       title: 'ooorganize',
       assetPath: 'assets/full_svg/ooorganize.svg',
@@ -136,26 +124,17 @@ abstract final class FullSvgCatalog {
       title: 'sssplatter',
       assetPath: 'assets/full_svg/sssplatter.svg',
     ),
-    FullSvgAssetItem(
-      title: 'ssspot',
-      assetPath: 'assets/full_svg/ssspot.svg',
-    ),
+    FullSvgAssetItem(title: 'ssspot', assetPath: 'assets/full_svg/ssspot.svg'),
     FullSvgAssetItem(
       title: 'sssquiggly',
       assetPath: 'assets/full_svg/sssquiggly.svg',
     ),
-    FullSvgAssetItem(
-      title: 'sssurf',
-      assetPath: 'assets/full_svg/sssurf.svg',
-    ),
+    FullSvgAssetItem(title: 'sssurf', assetPath: 'assets/full_svg/sssurf.svg'),
     FullSvgAssetItem(
       title: 'sssurface',
       assetPath: 'assets/full_svg/sssurface.svg',
     ),
-    FullSvgAssetItem(
-      title: 'ttten',
-      assetPath: 'assets/full_svg/ttten.svg',
-    ),
+    FullSvgAssetItem(title: 'ttten', assetPath: 'assets/full_svg/ttten.svg'),
     FullSvgAssetItem(
       title: 'tttwinkle (1)',
       assetPath: 'assets/full_svg/tttwinkle (1).svg',

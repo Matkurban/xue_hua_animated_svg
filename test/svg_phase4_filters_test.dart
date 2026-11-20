@@ -5,8 +5,10 @@ import 'package:xue_hua_animated_svg/xue_hua_animated_svg.dart';
 
 void main() {
   group('Phase 4 (P3): <filter> and 10 GPU-accelerated fe* primitives', () {
-    test('renders <feDropShadow> shadow offset behind source graphic', () async {
-      const svg = '''
+    test(
+      'renders <feDropShadow> shadow offset behind source graphic',
+      () async {
+        const svg = '''
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <filter id="dropShadow" filterUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
@@ -16,32 +18,33 @@ void main() {
   <rect x="20" y="20" width="30" height="30" fill="#FF0000" filter="url(#dropShadow)" />
 </svg>
 ''';
-      final scene = SvgParser.compile(svg);
-      expect(scene.document.filtersById['dropShadow'], isA<SvgFilterNode>());
+        final scene = SvgParser.compile(svg);
+        expect(scene.document.filtersById['dropShadow'], isA<SvgFilterNode>());
 
-      final recorder = ui.PictureRecorder();
-      final canvas = ui.Canvas(recorder);
-      scene.document.paint(canvas, const ui.Size(100, 100));
-      final picture = recorder.endRecording();
-      final image = await picture.toImage(100, 100);
-      final bytes = (await image.toByteData(
-        format: ui.ImageByteFormat.rawRgba,
-      ))!.buffer.asUint8List();
+        final recorder = ui.PictureRecorder();
+        final canvas = ui.Canvas(recorder);
+        scene.document.paint(canvas, const ui.Size(100, 100));
+        final picture = recorder.endRecording();
+        final image = await picture.toImage(100, 100);
+        final bytes = (await image.toByteData(
+          format: ui.ImageByteFormat.rawRgba,
+        ))!.buffer.asUint8List();
 
-      // (25, 25): source rect -> red
-      final srcIdx = (25 * 100 + 25) * 4;
-      expect(bytes[srcIdx], greaterThan(200));
-      expect(bytes[srcIdx + 2], lessThan(20));
+        // (25, 25): source rect -> red
+        final srcIdx = (25 * 100 + 25) * 4;
+        expect(bytes[srcIdx], greaterThan(200));
+        expect(bytes[srcIdx + 2], lessThan(20));
 
-      // (58, 58): offset shadow [35..65, 35..65] outside source [20..50] -> blue
-      final shadowIdx = (58 * 100 + 58) * 4;
-      expect(bytes[shadowIdx + 2], greaterThan(200));
-      expect(bytes[shadowIdx + 3], greaterThan(200));
+        // (58, 58): offset shadow [35..65, 35..65] outside source [20..50] -> blue
+        final shadowIdx = (58 * 100 + 58) * 4;
+        expect(bytes[shadowIdx + 2], greaterThan(200));
+        expect(bytes[shadowIdx + 3], greaterThan(200));
 
-      image.dispose();
-      picture.dispose();
-      scene.dispose();
-    });
+        image.dispose();
+        picture.dispose();
+        scene.dispose();
+      },
+    );
 
     test('executes multi-step <feGaussianBlur> + <feOffset> + <feMerge> filter graph', () async {
       const svg = '''
@@ -124,7 +127,10 @@ void main() {
       // (15, 15): desaturated red -> R == G == B (grayscale)
       final grayIdx = (15 * 100 + 15) * 4;
       expect((bytes[grayIdx] - bytes[grayIdx + 1]).abs(), lessThanOrEqualTo(2));
-      expect((bytes[grayIdx + 1] - bytes[grayIdx + 2]).abs(), lessThanOrEqualTo(2));
+      expect(
+        (bytes[grayIdx + 1] - bytes[grayIdx + 2]).abs(),
+        lessThanOrEqualTo(2),
+      );
 
       // (50, 15): green flood composited "in" red rect -> green
       final compIdx = (15 * 100 + 50) * 4;

@@ -260,7 +260,8 @@ class SvgStyle {
         false;
     currentMixBlendMode = baseMixBlendMode ?? ui.BlendMode.srcOver;
     currentIsolationIsolate = baseIsolationIsolate ?? false;
-    currentMarkerStartId = baseMarkerStartId ?? parentStyle?.currentMarkerStartId;
+    currentMarkerStartId =
+        baseMarkerStartId ?? parentStyle?.currentMarkerStartId;
     currentMarkerMidId = baseMarkerMidId ?? parentStyle?.currentMarkerMidId;
     currentMarkerEndId = baseMarkerEndId ?? parentStyle?.currentMarkerEndId;
 
@@ -330,7 +331,9 @@ class SvgStyle {
         parentStyle?.currentTextDirection ??
         ui.TextDirection.ltr;
     currentWhiteSpace =
-        baseWhiteSpace ?? parentStyle?.currentWhiteSpace ?? SvgWhiteSpace.normal;
+        baseWhiteSpace ??
+        parentStyle?.currentWhiteSpace ??
+        SvgWhiteSpace.normal;
     currentPaintOrder =
         basePaintOrder ??
         parentStyle?.currentPaintOrder ??

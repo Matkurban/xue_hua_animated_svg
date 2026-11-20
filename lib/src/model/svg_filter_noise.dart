@@ -267,7 +267,10 @@ abstract final class SvgFilterNoiseEngine {
         final srcX = (localX + scale * (xc - 0.5)) * imgScaleX;
         final srcY = (localY + scale * (yc - 0.5)) * imgScaleY;
         texCoords[vIdx * 2] = srcX.clamp(0.0, sourceImage.width.toDouble());
-        texCoords[vIdx * 2 + 1] = srcY.clamp(0.0, sourceImage.height.toDouble());
+        texCoords[vIdx * 2 + 1] = srcY.clamp(
+          0.0,
+          sourceImage.height.toDouble(),
+        );
       }
     }
 
@@ -279,10 +282,22 @@ abstract final class SvgFilterNoiseEngine {
       indices: indices,
     );
     final identity = Float64List.fromList(<double>[
-      1, 0, 0, 0,
-      0, 1, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
     ]);
     final paint = ui.Paint()
       ..shader = ui.ImageShader(

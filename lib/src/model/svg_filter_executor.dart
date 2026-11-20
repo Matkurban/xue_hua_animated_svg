@@ -376,19 +376,51 @@ abstract final class SvgFilterExecutor {
     switch (prim.type) {
       case SvgFeColorMatrixType.luminanceToAlpha:
         return const ui.ColorFilter.matrix(<double>[
-          0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0,
-          0.0, 0.0, 0.0, 0.0, 0.0,
-          0.2126, 0.7152, 0.0722, 0.0, 0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.2126,
+          0.7152,
+          0.0722,
+          0.0,
+          0.0,
         ]);
 
       case SvgFeColorMatrixType.saturate:
         final s = prim.values.isNotEmpty ? prim.values[0] : 1.0;
         return ui.ColorFilter.matrix(<double>[
-          0.213 + 0.787 * s, 0.715 - 0.715 * s, 0.072 - 0.072 * s, 0.0, 0.0,
-          0.213 - 0.213 * s, 0.715 + 0.285 * s, 0.072 - 0.072 * s, 0.0, 0.0,
-          0.213 - 0.213 * s, 0.715 - 0.715 * s, 0.072 + 0.928 * s, 0.0, 0.0,
-          0.0, 0.0, 0.0, 1.0, 0.0,
+          0.213 + 0.787 * s,
+          0.715 - 0.715 * s,
+          0.072 - 0.072 * s,
+          0.0,
+          0.0,
+          0.213 - 0.213 * s,
+          0.715 + 0.285 * s,
+          0.072 - 0.072 * s,
+          0.0,
+          0.0,
+          0.213 - 0.213 * s,
+          0.715 - 0.715 * s,
+          0.072 + 0.928 * s,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
         ]);
 
       case SvgFeColorMatrixType.hueRotate:
@@ -439,10 +471,26 @@ abstract final class SvgFilterExecutor {
     final (sb, bb) = prim.funcB?.toAffineRow() ?? (1.0, 0.0);
     final (sa, ba) = prim.funcA?.toAffineRow() ?? (1.0, 0.0);
     return ui.ColorFilter.matrix(<double>[
-      sr, 0.0, 0.0, 0.0, br,
-      0.0, sg, 0.0, 0.0, bg,
-      0.0, 0.0, sb, 0.0, bb,
-      0.0, 0.0, 0.0, sa, ba,
+      sr,
+      0.0,
+      0.0,
+      0.0,
+      br,
+      0.0,
+      sg,
+      0.0,
+      0.0,
+      bg,
+      0.0,
+      0.0,
+      sb,
+      0.0,
+      bb,
+      0.0,
+      0.0,
+      0.0,
+      sa,
+      ba,
     ]);
   }
 }

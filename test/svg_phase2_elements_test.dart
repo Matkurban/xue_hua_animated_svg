@@ -5,8 +5,10 @@ import 'package:xue_hua_animated_svg/xue_hua_animated_svg.dart';
 
 void main() {
   group('Phase 2 (P1): <mask>, <pattern>, <marker>, and <clipPath> full spec', () {
-    test('renders luminance <mask> (white visible, black hidden) and alpha <mask>', () async {
-      const svg = '''
+    test(
+      'renders luminance <mask> (white visible, black hidden) and alpha <mask>',
+      () async {
+        const svg = '''
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <mask id="lumMask" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
@@ -17,31 +19,32 @@ void main() {
   <rect id="maskedRect" x="0" y="0" width="100" height="100" fill="#FF0000" mask="url(#lumMask)" />
 </svg>
 ''';
-      final scene = SvgParser.compile(svg);
-      expect(scene.document.masksById['lumMask'], isA<SvgMaskNode>());
+        final scene = SvgParser.compile(svg);
+        expect(scene.document.masksById['lumMask'], isA<SvgMaskNode>());
 
-      final recorder = ui.PictureRecorder();
-      final canvas = ui.Canvas(recorder);
-      scene.document.paint(canvas, const ui.Size(100, 100));
-      final picture = recorder.endRecording();
-      final image = await picture.toImage(100, 100);
-      final bytes = (await image.toByteData(
-        format: ui.ImageByteFormat.rawRgba,
-      ))!.buffer.asUint8List();
+        final recorder = ui.PictureRecorder();
+        final canvas = ui.Canvas(recorder);
+        scene.document.paint(canvas, const ui.Size(100, 100));
+        final picture = recorder.endRecording();
+        final image = await picture.toImage(100, 100);
+        final bytes = (await image.toByteData(
+          format: ui.ImageByteFormat.rawRgba,
+        ))!.buffer.asUint8List();
 
-      // Left half (25, 50): under white mask -> visible red
-      final leftIdx = (50 * 100 + 25) * 4;
-      expect(bytes[leftIdx], greaterThan(200));
-      expect(bytes[leftIdx + 3], greaterThan(200));
+        // Left half (25, 50): under white mask -> visible red
+        final leftIdx = (50 * 100 + 25) * 4;
+        expect(bytes[leftIdx], greaterThan(200));
+        expect(bytes[leftIdx + 3], greaterThan(200));
 
-      // Right half (75, 50): under black mask -> transparent
-      final rightIdx = (50 * 100 + 75) * 4;
-      expect(bytes[rightIdx + 3], lessThan(10));
+        // Right half (75, 50): under black mask -> transparent
+        final rightIdx = (50 * 100 + 75) * 4;
+        expect(bytes[rightIdx + 3], lessThan(10));
 
-      image.dispose();
-      picture.dispose();
-      scene.dispose();
-    });
+        image.dispose();
+        picture.dispose();
+        scene.dispose();
+      },
+    );
 
     test('renders repeating <pattern> fill with userSpaceOnUse and patternTransform', () async {
       const svg = '''
@@ -110,7 +113,11 @@ void main() {
       for (final x in [20, 50, 80]) {
         final idx = (50 * 100 + x) * 4;
         expect(bytes[idx + 2], greaterThan(200), reason: 'blue marker at x=$x');
-        expect(bytes[idx + 3], greaterThan(200), reason: 'opaque marker at x=$x');
+        expect(
+          bytes[idx + 3],
+          greaterThan(200),
+          reason: 'opaque marker at x=$x',
+        );
       }
 
       image.dispose();

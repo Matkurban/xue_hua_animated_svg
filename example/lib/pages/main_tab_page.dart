@@ -18,10 +18,7 @@ class _MainTabPageState extends State<MainTabPage> {
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [
-          HomePage(),
-          FullSvgGalleryPage(),
-        ],
+        children: const [HomePage(), FullSvgGalleryPage()],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,

@@ -106,9 +106,7 @@ class SvgDocument {
   /// Waits for all embedded `<image>` Data URIs in this document to decode.
   Future<void> precacheImages() async {
     if (imageNodes.isEmpty) return;
-    await Future.wait([
-      for (final img in imageNodes) img.ensureDecoded(this),
-    ]);
+    await Future.wait([for (final img in imageNodes) img.ensureDecoded(this)]);
   }
 
   /// Initializes all node geometries, resolves gradient/pattern templates, and
@@ -152,11 +150,7 @@ class SvgDocument {
     if (canvasSize.isEmpty) return;
     final activeViewBox = resolveViewBox(viewId);
     final activeAspect = resolvePreserveAspectRatio(viewId);
-    activeAspect.computeMatrixInPlace(
-      activeViewBox,
-      canvasSize,
-      viewBoxMatrix,
-    );
+    activeAspect.computeMatrixInPlace(activeViewBox, canvasSize, viewBoxMatrix);
     canvas.save();
     if (rootGroup.style.baseOverflowVisible != true) {
       canvas.clipRect(

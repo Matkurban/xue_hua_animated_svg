@@ -1211,8 +1211,10 @@ class _SvgSceneCompiler {
           sigmaY: sy,
           floodColor:
               SvgCssParser.parseColor(fcRaw) ?? const ui.Color(0xFF000000),
-          floodOpacity:
-              (SvgCssParser.parseNumberOrPercent(foRaw) ?? 1.0).clamp(0.0, 1.0),
+          floodOpacity: (SvgCssParser.parseNumberOrPercent(foRaw) ?? 1.0).clamp(
+            0.0,
+            1.0,
+          ),
         );
 
       case 'feOffset':
@@ -1251,8 +1253,10 @@ class _SvgSceneCompiler {
           result: res,
           floodColor:
               SvgCssParser.parseColor(fcRaw) ?? const ui.Color(0xFF000000),
-          floodOpacity:
-              (SvgCssParser.parseNumberOrPercent(foRaw) ?? 1.0).clamp(0.0, 1.0),
+          floodOpacity: (SvgCssParser.parseNumberOrPercent(foRaw) ?? 1.0).clamp(
+            0.0,
+            1.0,
+          ),
         );
 
       case 'feBlend':

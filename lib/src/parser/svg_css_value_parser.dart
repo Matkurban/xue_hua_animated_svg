@@ -1044,10 +1044,26 @@ abstract final class SvgCssValueParser {
             SvgFeColorMatrix(
               type: SvgFeColorMatrixType.matrix,
               values: Float64List.fromList(<double>[
-                b, 0, 0, 0, 0,
-                0, b, 0, 0, 0,
-                0, 0, b, 0, 0,
-                0, 0, 0, 1, 0,
+                b,
+                0,
+                0,
+                0,
+                0,
+                0,
+                b,
+                0,
+                0,
+                0,
+                0,
+                0,
+                b,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
               ]),
             ),
           );
@@ -1058,10 +1074,26 @@ abstract final class SvgCssValueParser {
             SvgFeColorMatrix(
               type: SvgFeColorMatrixType.matrix,
               values: Float64List.fromList(<double>[
-                c, 0, 0, 0, t,
-                0, c, 0, 0, t,
-                0, 0, c, 0, t,
-                0, 0, 0, 1, 0,
+                c,
+                0,
+                0,
+                0,
+                t,
+                0,
+                c,
+                0,
+                0,
+                t,
+                0,
+                0,
+                c,
+                0,
+                t,
+                0,
+                0,
+                0,
+                1,
+                0,
               ]),
             ),
           );
@@ -1088,10 +1120,26 @@ abstract final class SvgCssValueParser {
             SvgFeColorMatrix(
               type: SvgFeColorMatrixType.matrix,
               values: Float64List.fromList(<double>[
-                0.393 + 0.607 * inv, 0.769 - 0.769 * inv, 0.189 - 0.189 * inv, 0, 0,
-                0.349 - 0.349 * inv, 0.686 + 0.314 * inv, 0.168 - 0.168 * inv, 0, 0,
-                0.272 - 0.272 * inv, 0.534 - 0.534 * inv, 0.131 + 0.869 * inv, 0, 0,
-                0, 0, 0, 1, 0,
+                0.393 + 0.607 * inv,
+                0.769 - 0.769 * inv,
+                0.189 - 0.189 * inv,
+                0,
+                0,
+                0.349 - 0.349 * inv,
+                0.686 + 0.314 * inv,
+                0.168 - 0.168 * inv,
+                0,
+                0,
+                0.272 - 0.272 * inv,
+                0.534 - 0.534 * inv,
+                0.131 + 0.869 * inv,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
               ]),
             ),
           );
@@ -1110,10 +1158,26 @@ abstract final class SvgCssValueParser {
             SvgFeColorMatrix(
               type: SvgFeColorMatrixType.matrix,
               values: Float64List.fromList(<double>[
-                s, 0, 0, 0, a,
-                0, s, 0, 0, a,
-                0, 0, s, 0, a,
-                0, 0, 0, 1, 0,
+                s,
+                0,
+                0,
+                0,
+                a,
+                0,
+                s,
+                0,
+                0,
+                a,
+                0,
+                0,
+                s,
+                0,
+                a,
+                0,
+                0,
+                0,
+                1,
+                0,
               ]),
             ),
           );
@@ -1123,10 +1187,26 @@ abstract final class SvgCssValueParser {
             SvgFeColorMatrix(
               type: SvgFeColorMatrixType.matrix,
               values: Float64List.fromList(<double>[
-                1, 0, 0, 0, 0,
-                0, 1, 0, 0, 0,
-                0, 0, 1, 0, 0,
-                0, 0, 0, a, 0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                a,
+                0,
               ]),
             ),
           );
@@ -1143,12 +1223,23 @@ abstract final class SvgCssValueParser {
     // Extract optional color function (rgb/rgba/hsl/hsla/hwb) first so spaces inside parens stay intact
     ui.Color? color;
     var remaining = args;
-    final fnColorMatch = RegExp(r'(?:rgba?|hsla?|hwb)\s*\([^)]*\)', caseSensitive: false).firstMatch(remaining);
+    final fnColorMatch = RegExp(
+      r'(?:rgba?|hsla?|hwb)\s*\([^)]*\)',
+      caseSensitive: false,
+    ).firstMatch(remaining);
     if (fnColorMatch != null) {
       color = parseColor(fnColorMatch.group(0));
-      remaining = remaining.replaceRange(fnColorMatch.start, fnColorMatch.end, ' ');
+      remaining = remaining.replaceRange(
+        fnColorMatch.start,
+        fnColorMatch.end,
+        ' ',
+      );
     }
-    final tokens = remaining.trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    final tokens = remaining
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
     final lengths = <double>[];
     for (final tok in tokens) {
       final c = color == null ? parseColor(tok) : null;

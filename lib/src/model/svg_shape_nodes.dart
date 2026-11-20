@@ -427,7 +427,12 @@ class SvgLineNode extends SvgGeometryNode {
   List<SvgMarkerVertex> extractMarkerVertices() {
     final angle = math.atan2(currentY2 - currentY1, currentX2 - currentX1);
     return [
-      SvgMarkerVertex(x: currentX1, y: currentY1, angleRad: angle, isStart: true),
+      SvgMarkerVertex(
+        x: currentX1,
+        y: currentY1,
+        angleRad: angle,
+        isStart: true,
+      ),
       SvgMarkerVertex(x: currentX2, y: currentY2, angleRad: angle, isEnd: true),
     ];
   }

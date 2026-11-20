@@ -222,7 +222,8 @@ abstract final class SvgTextLayoutEngine {
     bool prevEndedWithSpace = true; // strips leading whitespace on first run
 
     for (final run in runs) {
-      final preserve = run.owner.style.currentWhiteSpace == SvgWhiteSpace.preserve;
+      final preserve =
+          run.owner.style.currentWhiteSpace == SvgWhiteSpace.preserve;
       final buf = StringBuffer();
       final src = run.text;
 
@@ -565,7 +566,8 @@ abstract final class SvgTextLayoutEngine {
     if (glyphs.isEmpty) return;
 
     final totalPathLen = textPath.cachedTotalPathLength;
-    double startDist = textPath.startOffset?.resolve(
+    double startDist =
+        textPath.startOffset?.resolve(
           fontSize: textPath.style.currentFontSize,
           referenceExtent: totalPathLen,
         ) ??
@@ -603,10 +605,13 @@ abstract final class SvgTextLayoutEngine {
 
       final pos = tangent.position;
       final vec = tangent.vector;
-      final angle = math.atan2(vec.dy, vec.dx) +
-          (textPath.sideRight ? math.pi : 0.0);
+      final angle =
+          math.atan2(vec.dy, vec.dx) + (textPath.sideRight ? math.pi : 0.0);
 
-      final topLeft = ui.Offset(pos.dx - g.width * 0.5, pos.dy + g.baselineOffsetY);
+      final topLeft = ui.Offset(
+        pos.dx - g.width * 0.5,
+        pos.dy + g.baselineOffsetY,
+      );
       final localBounds = ui.Rect.fromCenter(
         center: pos,
         width: math.max(g.width, g.height),
@@ -738,7 +743,8 @@ abstract final class SvgTextLayoutEngine {
       case SvgDominantBaseline.textAfterEdge:
         offset = -m.height;
     }
-    return offset + style.currentBaselineShift.resolveOffsetY(style.currentFontSize);
+    return offset +
+        style.currentBaselineShift.resolveOffsetY(style.currentFontSize);
   }
 
   static painting.TextStyle _buildFlutterTextStyle({
@@ -810,7 +816,9 @@ abstract final class SvgTextLayoutEngine {
       } else {
         fillPaint.shader = null;
         final c = style.currentFillColor;
-        fillPaint.color = c.withValues(alpha: (c.a * fillAlpha).clamp(0.0, 1.0));
+        fillPaint.color = c.withValues(
+          alpha: (c.a * fillAlpha).clamp(0.0, 1.0),
+        );
       }
     }
 
@@ -952,10 +960,7 @@ class _TextChunk {
   final ui.TextDirection direction;
   final List<_TextPlacement> items = <_TextPlacement>[];
 
-  _TextChunk({
-    required this.anchor,
-    required this.direction,
-  });
+  _TextChunk({required this.anchor, required this.direction});
 }
 
 class _PathGlyph {

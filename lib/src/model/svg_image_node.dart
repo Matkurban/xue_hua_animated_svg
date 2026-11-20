@@ -103,10 +103,7 @@ class SvgImageNode extends SvgElement {
     }
   }
 
-  Future<void> _decodeRasterBytes(
-    Uint8List bytes,
-    SvgDocument document,
-  ) async {
+  Future<void> _decodeRasterBytes(Uint8List bytes, SvgDocument document) async {
     try {
       final codec = await ui.instantiateImageCodec(bytes);
       final frame = await codec.getNextFrame();

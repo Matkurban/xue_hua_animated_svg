@@ -373,9 +373,5 @@ class SvgViewNode {
   final ui.Rect? viewBox;
   final SvgPreserveAspectRatio? preserveAspectRatio;
 
-  const SvgViewNode({
-    required this.id,
-    this.viewBox,
-    this.preserveAspectRatio,
-  });
+  const SvgViewNode({required this.id, this.viewBox, this.preserveAspectRatio});
 }

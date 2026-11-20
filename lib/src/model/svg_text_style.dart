@@ -1,10 +1,6 @@
 /// Horizontal alignment of a text chunk relative to its anchor point
 /// (W3C SVG 1.1 §10.9.1 / SVG 2 `text-anchor`).
-enum SvgTextAnchor {
-  start,
-  middle,
-  end,
-}
+enum SvgTextAnchor { start, middle, end }
 
 /// Vertical baseline alignment of text relative to its Y coordinate
 /// (W3C SVG 1.1 §10.9.2 / SVG 2 `dominant-baseline` & `alignment-baseline`).
@@ -22,31 +18,16 @@ enum SvgDominantBaseline {
 
 /// How text is adjusted to fit an explicit `textLength`
 /// (W3C SVG 1.1 §10.4 / SVG 2 `lengthAdjust`).
-enum SvgLengthAdjust {
-  spacing,
-  spacingAndGlyphs,
-}
+enum SvgLengthAdjust { spacing, spacingAndGlyphs }
 
 /// Whitespace collapsing mode (`xml:space` / CSS `white-space`).
-enum SvgWhiteSpace {
-  normal,
-  preserve,
-}
+enum SvgWhiteSpace { normal, preserve }
 
 /// Rendering order of `fill` vs `stroke` (SVG 2 `paint-order`).
-enum SvgPaintOrder {
-  fillStroke,
-  strokeFill,
-}
+enum SvgPaintOrder { fillStroke, strokeFill }
 
 /// Kind of `baseline-shift` specification (W3C SVG 1.1 §10.9.2).
-enum SvgBaselineShiftKind {
-  baseline,
-  sub,
-  superScript,
-  length,
-  percentage,
-}
+enum SvgBaselineShiftKind { baseline, sub, superScript, length, percentage }
 
 /// Precompiled `baseline-shift` specification.
 class SvgBaselineShift {
@@ -85,12 +66,7 @@ class SvgBaselineShift {
 }
 
 /// Unit for an SVG text coordinate or font-size length value.
-enum SvgTextLengthUnit {
-  pixels,
-  em,
-  rem,
-  percent,
-}
+enum SvgTextLengthUnit { pixels, em, rem, percent }
 
 /// Precompiled SVG length value supporting user-space pixels, `em`, `rem`, and `%`.
 class SvgTextLength {
