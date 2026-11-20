@@ -34,6 +34,7 @@ enum SvgScalarTarget {
   y2,
   fx,
   fy,
+  fr,
   stopOffset,
   stopOpacity,
 }
@@ -122,6 +123,8 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
             t.currentX = isSum ? t.currentX + value : value;
           } else if (t is SvgNestedSvgNode) {
             t.currentX = isSum ? t.currentX + value : value;
+          } else if (t is SvgImageNode) {
+            t.currentX = isSum ? t.currentX + value : value;
           } else if (t is SvgTextNode) {
             t.animatedX = isSum ? (t.animatedX ?? 0.0) + value : value;
           } else if (t is SvgTextSpanNode) {
@@ -134,6 +137,8 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
           } else if (t is SvgUseNode) {
             t.currentY = isSum ? t.currentY + value : value;
           } else if (t is SvgNestedSvgNode) {
+            t.currentY = isSum ? t.currentY + value : value;
+          } else if (t is SvgImageNode) {
             t.currentY = isSum ? t.currentY + value : value;
           } else if (t is SvgTextNode) {
             t.animatedY = isSum ? (t.animatedY ?? 0.0) + value : value;
@@ -169,6 +174,11 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
               0.0,
               isSum ? (t.currentWidth ?? 0.0) + value : value,
             );
+          } else if (t is SvgImageNode) {
+            t.currentWidth = math.max(
+              0.0,
+              isSum ? t.currentWidth + value : value,
+            );
           }
         case SvgScalarTarget.height:
           if (t is SvgRectNode) {
@@ -186,6 +196,11 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
             t.currentHeight = math.max(
               0.0,
               isSum ? (t.currentHeight ?? 0.0) + value : value,
+            );
+          } else if (t is SvgImageNode) {
+            t.currentHeight = math.max(
+              0.0,
+              isSum ? t.currentHeight + value : value,
             );
           }
         case SvgScalarTarget.rx:
@@ -247,6 +262,7 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
           }
         case SvgScalarTarget.fx:
         case SvgScalarTarget.fy:
+        case SvgScalarTarget.fr:
         case SvgScalarTarget.stopOffset:
         case SvgScalarTarget.stopOpacity:
           break;
@@ -276,6 +292,8 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
           t.currentFx = isSum ? t.currentFx + value : value;
         case SvgScalarTarget.fy:
           t.currentFy = isSum ? t.currentFy + value : value;
+        case SvgScalarTarget.fr:
+          t.currentFr = math.max(0.0, isSum ? t.currentFr + value : value);
         default:
           break;
       }

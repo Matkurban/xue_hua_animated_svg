@@ -334,3 +334,17 @@ class SvgSymbolNode extends SvgGroupNode {
     canvas.restore();
   }
 }
+
+/// Named `<view>` specification defining an alternate `viewBox` and
+/// `preserveAspectRatio` for SVG sprite sheets and view anchors (W3C SVG 1.1 §17.3 / SVG 2).
+class SvgViewNode {
+  final String id;
+  final ui.Rect? viewBox;
+  final SvgPreserveAspectRatio? preserveAspectRatio;
+
+  const SvgViewNode({
+    required this.id,
+    this.viewBox,
+    this.preserveAspectRatio,
+  });
+}

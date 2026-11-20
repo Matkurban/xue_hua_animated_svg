@@ -51,6 +51,8 @@ class _SvgSceneCompiler {
   final Map<String, SvgMaskNode> masksById = <String, SvgMaskNode>{};
   final Map<String, SvgPatternNode> patternsById = <String, SvgPatternNode>{};
   final Map<String, SvgMarkerNode> markersById = <String, SvgMarkerNode>{};
+  final Map<String, SvgViewNode> viewsById = <String, SvgViewNode>{};
+  final List<SvgImageNode> imageNodes = <SvgImageNode>[];
 
   final List<SvgAnimationTrack> tracks = <SvgAnimationTrack>[];
   final Set<SvgElement> animatedElementsSet = <SvgElement>{};
@@ -145,6 +147,8 @@ class _SvgSceneCompiler {
       masksById: masksById,
       patternsById: patternsById,
       markersById: markersById,
+      viewsById: viewsById,
+      imageNodes: imageNodes,
     );
 
     // Resolve deferred <animateMotion> tracks now that all <path> nodes and <defs> exist
@@ -275,6 +279,20 @@ class _SvgSceneCompiler {
           final marker = _buildMarker(childXml, parentGroup.style);
           if (marker.id != null && marker.id!.isNotEmpty) {
             markersById[marker.id!] = marker;
+          }
+
+        case 'view':
+          final viewId = childXml.attr('id');
+          if (viewId != null && viewId.isNotEmpty) {
+            viewsById[viewId] = SvgViewNode(
+              id: viewId,
+              viewBox: _parseOptionalViewBox(childXml.attr('viewBox')),
+              preserveAspectRatio: childXml.attr('preserveAspectRatio') != null
+                  ? _parsePreserveAspectRatio(
+                      childXml.attr('preserveAspectRatio'),
+                    )
+                  : null,
+            );
           }
 
         case 'animate':
@@ -557,6 +575,44 @@ class _SvgSceneCompiler {
             referenceExtent: viewBox.height,
           ),
         );
+
+      case 'image':
+        final imageNode = SvgImageNode(
+          id: id,
+          classes: classes,
+          style: style,
+          baseTransformOps: baseTransformOps,
+          href: xml.attr('href') ?? xml.attr('xlink:href'),
+          baseX:
+              SvgCssParser.parseNumberOrPercent(
+                xml.attr('x'),
+                referenceExtent: viewBox.width,
+              ) ??
+              0.0,
+          baseY:
+              SvgCssParser.parseNumberOrPercent(
+                xml.attr('y'),
+                referenceExtent: viewBox.height,
+              ) ??
+              0.0,
+          baseWidth:
+              SvgCssParser.parseNumberOrPercent(
+                xml.attr('width'),
+                referenceExtent: viewBox.width,
+              ) ??
+              0.0,
+          baseHeight:
+              SvgCssParser.parseNumberOrPercent(
+                xml.attr('height'),
+                referenceExtent: viewBox.height,
+              ) ??
+              0.0,
+          preserveAspectRatio: _parsePreserveAspectRatio(
+            xml.attr('preserveAspectRatio'),
+          ),
+        );
+        imageNodes.add(imageNode);
+        node = imageNode;
 
       case 'path':
         final d = xml.attr('d') ?? '';
@@ -1091,6 +1147,7 @@ class _SvgSceneCompiler {
     final r = SvgCssParser.parseNumberOrPercent(xml.attr('r')) ?? 0.5;
     final fx = SvgCssParser.parseNumberOrPercent(xml.attr('fx'));
     final fy = SvgCssParser.parseNumberOrPercent(xml.attr('fy'));
+    final fr = SvgCssParser.parseNumberOrPercent(xml.attr('fr')) ?? 0.0;
 
     final grad = SvgRadialGradientNode(
       id: id,
@@ -1104,6 +1161,7 @@ class _SvgSceneCompiler {
       baseR: r,
       baseFx: fx,
       baseFy: fy,
+      baseFr: fr,
     );
 
     _smilCompiler.compileGradientAnimations(grad, xml);

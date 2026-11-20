@@ -5,14 +5,16 @@ import 'svg_container_nodes.dart';
 import 'svg_element.dart';
 import 'svg_geometry_node.dart';
 import 'svg_gradient.dart';
+import 'svg_image_node.dart';
 import 'svg_marker_node.dart';
 import 'svg_mask_node.dart';
 import 'svg_pattern_node.dart';
 import 'svg_preserve_aspect_ratio.dart';
 import 'svg_transform.dart';
+import 'svg_viewport_nodes.dart';
 
 /// Top-level precompiled `<svg>` document containing the scene graph, gradients,
-/// patterns, masks, markers, defs, clipPaths, and precompiled animation timeline.
+/// patterns, masks, markers, views, defs, clipPaths, and precompiled animation timeline.
 class SvgDocument {
   final double? width;
   final double? height;
@@ -28,6 +30,11 @@ class SvgDocument {
   final Map<String, SvgMaskNode> masksById;
   final Map<String, SvgPatternNode> patternsById;
   final Map<String, SvgMarkerNode> markersById;
+  final Map<String, SvgViewNode> viewsById;
+  final List<SvgImageNode> imageNodes;
+
+  /// Optional callback invoked when an asynchronous `<image>` finishes decoding.
+  ui.VoidCallback? onAsyncAssetLoaded;
 
   /// Pre-allocated viewBox transformation matrix buffer.
   final Float64List viewBoxMatrix = SvgMatrixMath.createIdentity();
@@ -46,11 +53,44 @@ class SvgDocument {
     this.masksById = const {},
     this.patternsById = const {},
     this.markersById = const {},
+    this.viewsById = const {},
+    this.imageNodes = const [],
   });
 
   /// Intrinsic size of the SVG document.
   ui.Size get intrinsicSize =>
       ui.Size(width ?? viewBox.width, height ?? viewBox.height);
+
+  /// Resolves the active `viewBox`, honoring an optional named `<view id="...">`.
+  ui.Rect resolveViewBox(String? viewId) {
+    if (viewId != null && viewId.isNotEmpty) {
+      final view = viewsById[viewId];
+      if (view?.viewBox != null) return view!.viewBox!;
+    }
+    return viewBox;
+  }
+
+  /// Resolves the active `preserveAspectRatio`, honoring an optional `<view>`.
+  SvgPreserveAspectRatio resolvePreserveAspectRatio(String? viewId) {
+    if (viewId != null && viewId.isNotEmpty) {
+      final view = viewsById[viewId];
+      if (view?.preserveAspectRatio != null) return view!.preserveAspectRatio!;
+    }
+    return preserveAspectRatio;
+  }
+
+  /// Notifies listeners (e.g. `AnimatedSvgPicture`) that an async `<image>` is ready.
+  void notifyAsyncAssetLoaded() {
+    onAsyncAssetLoaded?.call();
+  }
+
+  /// Waits for all embedded `<image>` Data URIs in this document to decode.
+  Future<void> precacheImages() async {
+    if (imageNodes.isEmpty) return;
+    await Future.wait([
+      for (final img in imageNodes) img.ensureDecoded(this),
+    ]);
+  }
 
   /// Initializes all node geometries, resolves gradient/pattern templates, and
   /// propagates `isAnimated` flags bottom-up through the AST.
@@ -85,10 +125,12 @@ class SvgDocument {
   }
 
   /// Paints the document at its current timeline state into [canvas] scaled to [canvasSize].
-  void paint(ui.Canvas canvas, ui.Size canvasSize) {
+  void paint(ui.Canvas canvas, ui.Size canvasSize, {String? viewId}) {
     if (canvasSize.isEmpty) return;
-    preserveAspectRatio.computeMatrixInPlace(
-      viewBox,
+    final activeViewBox = resolveViewBox(viewId);
+    final activeAspect = resolvePreserveAspectRatio(viewId);
+    activeAspect.computeMatrixInPlace(
+      activeViewBox,
       canvasSize,
       viewBoxMatrix,
     );
@@ -100,6 +142,7 @@ class SvgDocument {
 
   /// Releases any cached `ui.Picture` and `ui.Image` resources held by the document.
   void dispose() {
+    onAsyncAssetLoaded = null;
     rootGroup.dispose();
     for (final def in defsById.values) {
       def.dispose();

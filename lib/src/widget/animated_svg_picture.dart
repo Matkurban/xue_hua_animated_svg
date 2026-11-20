@@ -105,6 +105,9 @@ class AnimatedSvgPicture extends StatefulWidget {
   /// `<filter>` / `fe*` support (still Out-of-Scope).
   final ColorFilter? colorFilter;
 
+  /// Optional named `<view id="...">` identifier to override the active `viewBox`.
+  final String? viewId;
+
   /// Creates an [AnimatedSvgPicture] from an SVG XML string.
   const AnimatedSvgPicture.string(
     String svgXml, {
@@ -118,6 +121,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.fit = BoxFit.contain,
     this.alignment = Alignment.center,
     this.colorFilter,
+    this.viewId,
   }) : svgString = svgXml,
        assetName = null,
        bundle = null,
@@ -143,6 +147,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.fit = BoxFit.contain,
     this.alignment = Alignment.center,
     this.colorFilter,
+    this.viewId,
   }) : assetName = assetPath,
        svgString = null,
        file = null,
@@ -171,6 +176,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.fit = BoxFit.contain,
     this.alignment = Alignment.center,
     this.colorFilter,
+    this.viewId,
   }) : svgString = null,
        assetName = null,
        bundle = null,
@@ -198,6 +204,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.fit = BoxFit.contain,
     this.alignment = Alignment.center,
     this.colorFilter,
+    this.viewId,
   }) : networkUrl = url,
        svgString = null,
        assetName = null,
@@ -219,6 +226,7 @@ class AnimatedSvgPicture extends StatefulWidget {
     this.fit = BoxFit.contain,
     this.alignment = Alignment.center,
     this.colorFilter,
+    this.viewId,
   }) : compiledScene = scene,
        svgString = null,
        assetName = null,
@@ -237,6 +245,7 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
     with SingleTickerProviderStateMixin {
   CompiledSvgScene? _internalScene;
   AnimatedSvgController? _internalController;
+  final ValueNotifier<int> _assetRepaintNotifier = ValueNotifier<int>(0);
   Ticker? _ticker;
   int _loadGeneration = 0;
 
@@ -400,6 +409,11 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   void _bindControllerToScene() {
     final scene = _activeScene;
     if (scene == null) return;
+    scene.document.onAsyncAssetLoaded = () {
+      if (mounted) {
+        _assetRepaintNotifier.value++;
+      }
+    };
     _activeController.attachSceneDurations(
       cycleDuration: scene.timeline.cycleDuration,
       finiteDuration: scene.timeline.finiteDuration,
@@ -427,6 +441,7 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
   void dispose() {
     _loadGeneration++;
     _ticker?.dispose();
+    _assetRepaintNotifier.dispose();
     widget.controller?.removeListener(_syncTickerState);
     _internalController?.removeListener(_syncTickerState);
     _internalController?.dispose();
@@ -461,6 +476,8 @@ class _AnimatedSvgPictureState extends State<AnimatedSvgPicture>
         clipBehavior: widget.clipBehavior,
         fit: widget.fit,
         alignment: resolvedAlignment,
+        viewId: widget.viewId,
+        repaint: Listenable.merge([_activeController, _assetRepaintNotifier]),
       ),
     );
     final filter = widget.colorFilter;

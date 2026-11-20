@@ -174,6 +174,8 @@ class SvgSmilCompiler {
         return SvgScalarTarget.fx;
       case 'fy':
         return SvgScalarTarget.fy;
+      case 'fr':
+        return SvgScalarTarget.fr;
       default:
         return null;
     }

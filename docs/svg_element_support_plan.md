@@ -27,9 +27,9 @@
 | 7 | `<mask>` | 遮罩 | ✅ 已在 Phase 2 完成 | `canvas.saveLayer` + `BlendMode.dstIn` + Rec.709 亮度转 Alpha 矩阵与 `alpha` 模式 | P1 |
 | 8 | `<pattern>` | 图案画刷 | ✅ 已在 Phase 2 完成 | 离屏 `PictureRecorder` → 缓存 `ui.Image` + `ui.ImageShader(TileMode.repeated)` | P1 |
 | 9 | `<marker>` | 路径端点标记 | ✅ 已在 Phase 2 完成 | 提取 `<path>`/`<line>`/`<polyline>`/`<polygon>` 顶点与切线，支持 `auto`/`auto-start-reverse` | P1 |
-| 10 | `<image>` | 位图/嵌入图 | 未支持（被丢弃） | `ui.instantiateImageCodec` 解码 `data:` URI / 资源 / 字节流 + `canvas.drawImageRect` | P2 |
-| 11 | `<view>` | 命名视图 | 未支持（被丢弃） | 解析 `id` / `viewBox` / `preserveAspectRatio`，支持按视图 ID 切换视口 | P2 |
-| 12 | `<radialGradient fr>` | 渐变完善 | `focalRadius` 硬编码为 `0.0` | `ui.Gradient.radial` 原生支持 `focalRadius` 参数 | P2 |
+| 10 | `<image>` | 位图/嵌入图 | ✅ 已在 Phase 3 完成 | `ui.instantiateImageCodec` 解码内联 Base64 位图与嵌套 SVG Data URI，解码后自动重绘 | P2 |
+| 11 | `<view>` | 命名视图 | ✅ 已在 Phase 3 完成 | 解析 `id` / `viewBox` / `preserveAspectRatio`，支持 `AnimatedSvgPicture(viewId: ...)` 切换视口 | P2 |
+| 12 | `<radialGradient fr>` | 渐变完善 | ✅ 已在 Phase 3 完成 | 接入 `ui.Gradient.radial` 原生 `focalRadius` 参数并支持 SMIL `fr` 动画 | P2 |
 | 13 | `<filter>` 容器 | 滤镜管线 | 未支持（仅支持 CSS `blur()`） | 基于 `saveLayer` 与 `ui.ImageFilter` / `ui.ColorFilter` / `ui.BlendMode` 构建滤镜图 | P3 |
 | 14 | `<feGaussianBlur>` | 滤镜原语 | 未支持 | `ui.ImageFilter.blur(sigmaX, sigmaY)` | P3 |
 | 15 | `<feDropShadow>` | 滤镜原语 | 未支持 | 偏移 + 高斯模糊 + 颜色着色合成 | P3 |

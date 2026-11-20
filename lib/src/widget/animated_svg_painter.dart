@@ -13,6 +13,7 @@ class AnimatedSvgPainter extends CustomPainter {
   final Clip clipBehavior;
   final BoxFit fit;
   final Alignment alignment;
+  final String? viewId;
 
   AnimatedSvgPainter({
     required this.scene,
@@ -20,7 +21,9 @@ class AnimatedSvgPainter extends CustomPainter {
     this.clipBehavior = Clip.hardEdge,
     this.fit = BoxFit.contain,
     this.alignment = Alignment.center,
-  }) : super(repaint: controller);
+    this.viewId,
+    Listenable? repaint,
+  }) : super(repaint: repaint ?? controller);
 
   @override
   void paint(ui.Canvas canvas, ui.Size size) {
@@ -62,7 +65,7 @@ class AnimatedSvgPainter extends CustomPainter {
 
     // Paint into the intrinsic viewport; SVG preserveAspectRatio still applies
     // for viewBox → intrinsic. Widget [fit] then maps intrinsic → [size].
-    scene.document.paint(canvas, intrinsic);
+    scene.document.paint(canvas, intrinsic, viewId: viewId);
     canvas.restore();
   }
 
@@ -72,6 +75,7 @@ class AnimatedSvgPainter extends CustomPainter {
         oldDelegate.controller != controller ||
         oldDelegate.clipBehavior != clipBehavior ||
         oldDelegate.fit != fit ||
-        oldDelegate.alignment != alignment;
+        oldDelegate.alignment != alignment ||
+        oldDelegate.viewId != viewId;
   }
 }

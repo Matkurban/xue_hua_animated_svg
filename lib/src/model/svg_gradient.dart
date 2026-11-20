@@ -207,19 +207,21 @@ class SvgLinearGradientNode extends SvgGradientNode {
 }
 
 /// Precompiled `<radialGradient>` node with mutable center `(cx, cy)`, radius `r`,
-/// and focal point `(fx, fy)`.
+/// focal point `(fx, fy)`, and SVG 2 focal radius `fr`.
 class SvgRadialGradientNode extends SvgGradientNode {
   final double baseCx;
   final double baseCy;
   final double baseR;
   final double baseFx;
   final double baseFy;
+  final double baseFr;
 
   double currentCx;
   double currentCy;
   double currentR;
   double currentFx;
   double currentFy;
+  double currentFr;
 
   SvgRadialGradientNode({
     required super.id,
@@ -233,13 +235,15 @@ class SvgRadialGradientNode extends SvgGradientNode {
     this.baseR = 0.5,
     double? baseFx,
     double? baseFy,
+    this.baseFr = 0.0,
   }) : baseFx = baseFx ?? baseCx,
        baseFy = baseFy ?? baseCy,
        currentCx = baseCx,
        currentCy = baseCy,
        currentR = baseR,
        currentFx = baseFx ?? baseCx,
-       currentFy = baseFy ?? baseCy;
+       currentFy = baseFy ?? baseCy,
+       currentFr = baseFr;
 
   @override
   void resetToBase() {
@@ -249,6 +253,7 @@ class SvgRadialGradientNode extends SvgGradientNode {
     currentR = baseR;
     currentFx = baseFx;
     currentFy = baseFy;
+    currentFr = baseFr;
   }
 
   @override
@@ -257,6 +262,7 @@ class SvgRadialGradientNode extends SvgGradientNode {
     syncStopsToBuffers();
     final matrix = computeShaderMatrix(targetBounds);
     final hasFocal =
+        currentFr > 0.0 ||
         (currentFx - currentCx).abs() > 1e-5 ||
         (currentFy - currentCy).abs() > 1e-5;
     return ui.Gradient.radial(
@@ -267,7 +273,7 @@ class SvgRadialGradientNode extends SvgGradientNode {
       spreadMethod,
       matrix,
       hasFocal ? ui.Offset(currentFx, currentFy) : null,
-      0.0,
+      currentFr.clamp(0.0, double.infinity),
     );
   }
 }
