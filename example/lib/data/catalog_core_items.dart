@@ -124,4 +124,13 @@ final List<SvgCatalogItem> coreCatalogItems = [
     assetPath: 'assets/svgs/neon_equalizer.svg',
     iconName: 'equalizer',
   ),
+  const SvgCatalogItem(
+    id: ' text',
+    title: '文本显示',
+    subtitle: '文本',
+    tags: ['text'],
+    kind: SvgCatalogSourceKind.asset,
+    assetPath: 'assets/svgs/text_svg.svg',
+    iconName: 'equalizer',
+  ),
 ];
