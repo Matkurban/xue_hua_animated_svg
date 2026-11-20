@@ -1,27 +1,57 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-/// Precompiled SVG transform operation type.
+/// Precompiled SVG / CSS transform operation type.
+/// 预编译的 SVG / CSS 几何变换操作类型枚举。
 enum SvgTransformType {
+  /// 2D translation `translate(tx, ty)`. 二维平移。
   translate,
+
+  /// 2D scaling `scale(sx, sy)`. 二维缩放。
   scale,
+
+  /// 2D rotation around optional anchor `rotate(deg, cx, cy)`. 绕可选锚点的二维旋转。
   rotate,
+
+  /// Horizontal skew `skewX(deg)`. 水平错切。
   skewX,
+
+  /// Vertical skew `skewY(deg)`. 垂直错切。
   skewY,
+
+  /// 2D affine matrix `matrix(a, b, c, d, e, f)`. 二维仿射矩阵。
   matrix,
+
+  /// 3D X-axis rotation `rotateX(deg)`. 3D 绕 X 轴旋转。
   rotateX,
+
+  /// 3D Y-axis rotation `rotateY(deg)`. 3D 绕 Y 轴旋转。
   rotateY,
+
+  /// 3D Z-axis rotation `rotateZ(deg)`. 3D 绕 Z 轴旋转。
   rotateZ,
+
+  /// 3D perspective projection `perspective(d)`. 3D 透视投影。
   perspective,
 }
 
 /// Immutable precompiled transform instruction parsed during AST build phase.
+/// AST 构建阶段解析生成的不可变预编译变换指令。
 class SvgTransformOp {
+  /// Transform operation kind. 变换操作类型。
   final SvgTransformType type;
+
+  /// Packed numeric arguments for [type]. 与 [type] 对应的紧凑浮点参数数组。
   final Float64List values;
 
+  /// Creates an [SvgTransformOp] with [type] and [values].
+  /// 创建指定 [type] 与参数 [values] 的变换操作。
+  ///
+  /// - [type]: Operation type. 变换类型。
+  /// - [values]: Packed numeric parameters. 参数数组。
   const SvgTransformOp(this.type, this.values);
 
+  /// Creates a 2D translation op `(tx, ty)`. 创建二维平移操作 `(tx, ty)`。
   factory SvgTransformOp.translate(double tx, [double ty = 0.0]) {
     final list = Float64List(2);
     list[0] = tx;
@@ -29,6 +59,7 @@ class SvgTransformOp {
     return SvgTransformOp(SvgTransformType.translate, list);
   }
 
+  /// Creates a 2D scale op `(sx, sy)` (`sy` defaults to `sx`). 创建二维缩放操作 `(sx, sy)`。
   factory SvgTransformOp.scale(double sx, [double? sy]) {
     final list = Float64List(2);
     list[0] = sx;
@@ -36,6 +67,7 @@ class SvgTransformOp {
     return SvgTransformOp(SvgTransformType.scale, list);
   }
 
+  /// Creates a 2D rotation op of [angleDeg] degrees around `(cx, cy)`. 创建绕 `(cx, cy)` 的旋转操作。
   factory SvgTransformOp.rotate(
     double angleDeg, [
     double cx = 0.0,
@@ -48,18 +80,21 @@ class SvgTransformOp {
     return SvgTransformOp(SvgTransformType.rotate, list);
   }
 
+  /// Creates a horizontal skew op of [angleDeg] degrees. 创建水平错切操作。
   factory SvgTransformOp.skewX(double angleDeg) {
     final list = Float64List(1);
     list[0] = angleDeg;
     return SvgTransformOp(SvgTransformType.skewX, list);
   }
 
+  /// Creates a vertical skew op of [angleDeg] degrees. 创建垂直错切操作。
   factory SvgTransformOp.skewY(double angleDeg) {
     final list = Float64List(1);
     list[0] = angleDeg;
     return SvgTransformOp(SvgTransformType.skewY, list);
   }
 
+  /// Creates a 2D affine matrix op `[a, b, c, d, e, f]`. 创建二维仿射矩阵操作。
   factory SvgTransformOp.matrix(
     double a,
     double b,
@@ -78,24 +113,28 @@ class SvgTransformOp {
     return SvgTransformOp(SvgTransformType.matrix, list);
   }
 
+  /// Creates a 3D X-axis rotation op of [angleDeg] degrees. 创建 3D 绕 X 轴旋转操作。
   factory SvgTransformOp.rotateX(double angleDeg) {
     final list = Float64List(1);
     list[0] = angleDeg;
     return SvgTransformOp(SvgTransformType.rotateX, list);
   }
 
+  /// Creates a 3D Y-axis rotation op of [angleDeg] degrees. 创建 3D 绕 Y 轴旋转操作。
   factory SvgTransformOp.rotateY(double angleDeg) {
     final list = Float64List(1);
     list[0] = angleDeg;
     return SvgTransformOp(SvgTransformType.rotateY, list);
   }
 
+  /// Creates a 3D Z-axis rotation op of [angleDeg] degrees. 创建 3D 绕 Z 轴旋转操作。
   factory SvgTransformOp.rotateZ(double angleDeg) {
     final list = Float64List(1);
     list[0] = angleDeg;
     return SvgTransformOp(SvgTransformType.rotateZ, list);
   }
 
+  /// Creates a 3D perspective projection op with depth [distance]. 创建深度为 [distance] 的 3D 透视操作。
   factory SvgTransformOp.perspective(double distance) {
     final list = Float64List(1);
     list[0] = distance;
@@ -103,22 +142,15 @@ class SvgTransformOp {
   }
 }
 
-/// Zero-allocation 4x4 column-major matrix math utilities operating directly on
-/// [Float64List] of length 16 (compatible with `Canvas.transform` and `Matrix4`).
-///
-/// Layout of 4x4 column-major matrix `m`:
-/// ```
-/// [ m[0]  m[4]  m[8]   m[12] ]
-/// [ m[1]  m[5]  m[9]   m[13] ]
-/// [ m[2]  m[6]  m[10]  m[14] ]
-/// [ m[3]  m[7]  m[11]  m[15] ]
-/// ```
-/// For 2D affine transforms `[a, b, c, d, tx, ty]`:
-/// `m[0] = a`, `m[1] = b`, `m[4] = c`, `m[5] = d`, `m[12] = tx`, `m[13] = ty`.
+/// Zero-allocation 4×4 column-major matrix math utilities operating directly on
+/// 16-element [Float64List] buffers (compatible with `Canvas.transform` and `Matrix4`).
+/// 零堆分配的 4×4 列主序矩阵运算工具集，直接原地操作 16 元素 [Float64List]。
 abstract final class SvgMatrixMath {
+  /// Conversion factor from degrees to radians (`pi / 180`). 角度转弧度系数。
   static const double degToRad = math.pi / 180.0;
 
   /// Creates a new 16-element identity matrix buffer.
+  /// 创建一个新的 16 元素单位矩阵缓冲。
   static Float64List createIdentity() {
     final m = Float64List(16);
     resetToIdentity(m);

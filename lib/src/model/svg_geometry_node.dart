@@ -9,23 +9,29 @@ import 'svg_style.dart';
 
 /// Abstract base class for all geometric shape nodes (`<path>`, `<rect>`,
 /// `<circle>`, `<ellipse>`, `<line>`, `<polyline>`, `<polygon>`).
-///
-/// Precomputes and caches `basePath`, `cachedMetrics`, and `totalPathLength`.
+/// 所有几何图元节点的抽象基类，预计算并缓存基础路径、路径度量与总长度。
 abstract class SvgGeometryNode extends SvgElement {
-  /// Pre-allocated base geometric path.
+  /// Pre-allocated base geometric path. 预分配的基础几何路径。
   final ui.Path basePath = ui.Path();
 
-  /// Pre-allocated dashed/trimmed stroke path reused every frame when
-  /// `stroke-dasharray` is active.
+  /// Pre-allocated dashed/trimmed stroke path reused every frame when `stroke-dasharray` is active.
+  /// 启用 `stroke-dasharray` 时每帧复用的虚线描边路径缓冲。
   final ui.Path dashedStrokePath = ui.Path();
 
-  /// Cached `PathMetric` list computed once at initialization (or when geometry
-  /// morphs) if needed for `stroke-dasharray` or `<animateMotion>`.
+  /// Cached `PathMetric` list computed once at initialization (or on morph).
+  /// 缓存的路径度量列表（供虚线描边与 `<animateMotion>` 使用）。
   List<ui.PathMetric>? cachedMetrics;
+
+  /// Total arc length across all contours in [cachedMetrics]. 所有子轮廓的总路径长度。
   double totalPathLength = 0.0;
+
+  /// Whether [cachedMetrics] must be computed for dasharray or motion paths. 是否需要预计算路径度量。
   bool needsPathMetrics = false;
+
+  /// Dirty flag set when animated geometry parameters change. 动画修改几何属性时置位的脏标记。
   bool geometryDirty = false;
 
+  /// Creates an [SvgGeometryNode]. 创建一个 [SvgGeometryNode] 几何基类节点。
   SvgGeometryNode({
     required super.tagName,
     super.id,
@@ -37,7 +43,10 @@ abstract class SvgGeometryNode extends SvgElement {
   @override
   bool get shouldCacheStaticPicture => !isAnimated;
 
-  /// Populates [basePath] from the current geometric attributes.
+  /// Populates [outPath] from the current geometric attributes.
+  /// 根据当前几何属性填充目标路径 [outPath]。
+  ///
+  /// - [outPath]: Destination [ui.Path] buffer. 目标路径缓冲区。
   void buildPath(ui.Path outPath);
 
   @override
@@ -58,6 +67,7 @@ abstract class SvgGeometryNode extends SvgElement {
   }
 
   /// Computes and caches [cachedMetrics] and [totalPathLength] from [basePath].
+  /// 从 [basePath] 重新计算并缓存 [cachedMetrics] 与 [totalPathLength]。
   void recomputePathMetrics() {
     final metricsList = basePath.computeMetrics(forceClosed: false).toList();
     cachedMetrics = metricsList;
@@ -70,10 +80,13 @@ abstract class SvgGeometryNode extends SvgElement {
 
   /// Marks geometry as modified during an animation frame so [basePath] and
   /// [cachedMetrics] (if required) are refreshed once per frame.
+  /// 标记几何属性已被动画修改，本帧绘制前将按需重建一次路径与度量。
   void markGeometryDirty() {
     geometryDirty = true;
   }
 
+  /// Rebuilds [basePath], [cachedBounds], and [cachedMetrics] if [geometryDirty] is `true`.
+  /// 若 [geometryDirty] 为真则重建路径、包围盒与路径度量。
   void refreshGeometryIfNeeded() {
     if (!geometryDirty) return;
     geometryDirty = false;

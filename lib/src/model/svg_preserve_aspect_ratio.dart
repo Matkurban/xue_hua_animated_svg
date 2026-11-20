@@ -5,36 +5,79 @@ import 'dart:ui' as ui;
 import 'svg_transform.dart';
 
 /// Alignment mode for SVG `preserveAspectRatio`.
+/// SVG `preserveAspectRatio` 的对齐模式枚举。
 enum SvgAspectRatioAlign {
+  /// Non-uniform scaling stretching `viewBox` to fill the viewport (`none`). 非等比拉伸填满。
   none,
+
+  /// Aligns min-X and min-Y (`xMinYMin`). 左上角对齐。
   xMinYMin,
+
+  /// Aligns mid-X and min-Y (`xMidYMin`). 顶部居中对齐。
   xMidYMin,
+
+  /// Aligns max-X and min-Y (`xMaxYMin`). 右上角对齐。
   xMaxYMin,
+
+  /// Aligns min-X and mid-Y (`xMinYMid`). 左侧居中对齐。
   xMinYMid,
+
+  /// Aligns mid-X and mid-Y (`xMidYMid`, SVG default). 水平垂直居中对齐（默认）。
   xMidYMid,
+
+  /// Aligns max-X and mid-Y (`xMaxYMid`). 右侧居中对齐。
   xMaxYMid,
+
+  /// Aligns min-X and max-Y (`xMinYMax`). 左下角对齐。
   xMinYMax,
+
+  /// Aligns mid-X and max-Y (`xMidYMax`). 底部居中对齐。
   xMidYMax,
+
+  /// Aligns max-X and max-Y (`xMaxYMax`). 右下角对齐。
   xMaxYMax,
 }
 
 /// Meet or slice scaling mode for SVG `preserveAspectRatio`.
-enum SvgMeetOrSlice { meet, slice }
+/// SVG `preserveAspectRatio` 的等比缩放模式（包含或裁剪）。
+enum SvgMeetOrSlice {
+  /// Uniformly scales so the entire `viewBox` fits inside the viewport (`meet`). 完整包含（类似 contain）。
+  meet,
+
+  /// Uniformly scales so the viewport is completely covered (`slice`). 覆盖填满（类似 cover）。
+  slice,
+}
 
 /// Precompiled `preserveAspectRatio` configuration.
+/// 预编译的 SVG `preserveAspectRatio` 长宽比与对齐配置。
 class SvgPreserveAspectRatio {
+  /// Alignment rule within the viewport. 视口内的对齐规则。
   final SvgAspectRatioAlign align;
+
+  /// Scaling strategy (`meet` or `slice`). 缩放策略（`meet` 或 `slice`）。
   final SvgMeetOrSlice meetOrSlice;
 
+  /// Creates an [SvgPreserveAspectRatio].
+  /// 创建一个 [SvgPreserveAspectRatio] 配置对象。
+  ///
+  /// - [align]: Alignment mode (defaults to [SvgAspectRatioAlign.xMidYMid]). 对齐模式。
+  /// - [meetOrSlice]: Scaling strategy (defaults to [SvgMeetOrSlice.meet]). 缩放策略。
   const SvgPreserveAspectRatio({
     this.align = SvgAspectRatioAlign.xMidYMid,
     this.meetOrSlice = SvgMeetOrSlice.meet,
   });
 
+  /// Default SVG `preserveAspectRatio` (`xMidYMid meet`).
+  /// SVG 默认长宽比配置（`xMidYMid meet`）。
   static const SvgPreserveAspectRatio defaultValue = SvgPreserveAspectRatio();
 
-  /// Computes the 4x4 transformation matrix mapping [viewBox] into [viewportSize]
+  /// Computes the 4×4 transformation matrix mapping [viewBox] into [viewportSize]
   /// in-place into [outMatrix] without allocating memory.
+  /// 原地计算将 [viewBox] 映射到 [viewportSize] 的 4×4 变换矩阵并写入 [outMatrix]（零分配）。
+  ///
+  /// - [viewBox]: Source SVG `viewBox` rect. 源 `viewBox` 矩形。
+  /// - [viewportSize]: Destination viewport size. 目标视口尺寸。
+  /// - [outMatrix]: Pre-allocated 16-element column-major matrix buffer. 预分配 16 元素矩阵缓冲。
   void computeMatrixInPlace(
     ui.Rect viewBox,
     ui.Size viewportSize,

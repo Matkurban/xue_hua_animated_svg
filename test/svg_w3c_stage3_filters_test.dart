@@ -10,15 +10,12 @@ Future<List<int>> _renderRgba(
 ) async {
   final recorder = ui.PictureRecorder();
   final canvas = ui.Canvas(recorder);
-  scene.document.paint(
-    canvas,
-    ui.Size(width.toDouble(), height.toDouble()),
-  );
+  scene.document.paint(canvas, ui.Size(width.toDouble(), height.toDouble()));
   final picture = recorder.endRecording();
   final image = await picture.toImage(width, height);
-  final bytes = (await image.toByteData(
-    format: ui.ImageByteFormat.rawRgba,
-  ))!.buffer.asUint8List();
+  final bytes = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!
+      .buffer
+      .asUint8List();
   image.dispose();
   picture.dispose();
   return bytes;
@@ -26,8 +23,10 @@ Future<List<int>> _renderRgba(
 
 void main() {
   group('Stage 3: Filter Effects Level 1 remaining 5 primitives (feImage, feTile, feComposite arithmetic, feConvolveMatrix, feDiffuseLighting/feSpecularLighting)', () {
-    test('renders <feImage href="#id"> referencing an internal defs element', () async {
-      const svg = '''
+    test(
+      'renders <feImage href="#id"> referencing an internal defs element',
+      () async {
+        const svg = '''
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <rect id="srcShape" x="10" y="10" width="80" height="80" fill="#00FF00" />
@@ -38,16 +37,19 @@ void main() {
   <rect x="0" y="0" width="100" height="100" fill="#FF0000" filter="url(#imgFilter)" />
 </svg>
 ''';
-      final scene = SvgParser.compile(svg);
-      final bytes = await _renderRgba(scene, 100, 100);
-      final idx = (50 * 100 + 50) * 4;
-      expect(bytes[idx + 1], greaterThan(240)); // green from #srcShape
-      expect(bytes[idx], lessThan(15));
-      scene.dispose();
-    });
+        final scene = SvgParser.compile(svg);
+        final bytes = await _renderRgba(scene, 100, 100);
+        final idx = (50 * 100 + 50) * 4;
+        expect(bytes[idx + 1], greaterThan(240)); // green from #srcShape
+        expect(bytes[idx], lessThan(15));
+        scene.dispose();
+      },
+    );
 
-    test('renders <feTile> repeating a subregion tile across the filter region', () async {
-      const svg = '''
+    test(
+      'renders <feTile> repeating a subregion tile across the filter region',
+      () async {
+        const svg = '''
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <filter id="tileFilter" filterUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
@@ -57,14 +59,15 @@ void main() {
   <rect x="0" y="0" width="25" height="25" fill="#0000FF" filter="url(#tileFilter)" />
 </svg>
 ''';
-      final scene = SvgParser.compile(svg);
-      final bytes = await _renderRgba(scene, 100, 100);
-      // Tiled at (75, 75) far outside the original 25x25 rect -> blue
-      final idx = (75 * 100 + 75) * 4;
-      expect(bytes[idx + 2], greaterThan(220));
-      expect(bytes[idx + 3], greaterThan(220));
-      scene.dispose();
-    });
+        final scene = SvgParser.compile(svg);
+        final bytes = await _renderRgba(scene, 100, 100);
+        // Tiled at (75, 75) far outside the original 25x25 rect -> blue
+        final idx = (75 * 100 + 75) * 4;
+        expect(bytes[idx + 2], greaterThan(220));
+        expect(bytes[idx + 3], greaterThan(220));
+        scene.dispose();
+      },
+    );
 
     test('renders <feConvolveMatrix> and <feComposite operator="arithmetic"> over turbulence fields', () async {
       const svg = '''

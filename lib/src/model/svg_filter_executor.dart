@@ -8,6 +8,9 @@ import 'svg_transform.dart';
 /// GPU-accelerated executor for [SvgFilterNode] filter graphs using Flutter's
 /// native `ui.ImageFilter`, `ui.ColorFilter`, `ui.BlendMode`, `ui.Vertices`,
 /// and `ui.Picture`.
+///
+/// 基于 Flutter 原生 `ui.ImageFilter`、`ui.ColorFilter`、`ui.BlendMode`、
+/// `ui.Vertices` 和 `ui.Picture` 的 [SvgFilterNode] GPU 加速滤镜图执行器。
 abstract final class SvgFilterExecutor {
   static const ui.ColorFilter _sourceAlphaFilter = ui.ColorFilter.matrix(
     <double>[
@@ -18,10 +21,15 @@ abstract final class SvgFilterExecutor {
     ],
   );
 
-  /// Paints [paintSource] through [filter] onto [canvas].
+  /// Paints [paintSource] through [filter] onto [canvas] within [targetBounds],
+  /// optionally using [document] to resolve `<feImage href="#id">` references.
   ///
   /// Uses a zero-buffer `saveLayer` fast path for single-primitive filters and
   /// executes a full named-buffer `ui.Picture` graph for multi-step pipelines.
+  ///
+  /// 将 [paintSource] 绘制的内容经由 [filter] 滤镜管线渲染到 [canvas]（基于 [targetBounds]），
+  /// 并可选通过 [document] 解析 `<feImage href="#id">` 引用。单图元滤镜走零缓冲
+  /// `saveLayer` 快路径，多步管线执行完整的命名 `ui.Picture` 图。
   static void paintWithFilter({
     required ui.Canvas canvas,
     required SvgFilterNode filter,
@@ -192,7 +200,10 @@ abstract final class SvgFilterExecutor {
               // (e.g. srcIn) only clip against in2, never against main canvas siblings.
               c.saveLayer(primRegion, ui.Paint());
               c.drawPicture(in2);
-              c.saveLayer(primRegion, ui.Paint()..blendMode = prim.operatorMode);
+              c.saveLayer(
+                primRegion,
+                ui.Paint()..blendMode = prim.operatorMode,
+              );
               c.drawPicture(in1);
               c.restore();
               c.restore();
@@ -279,7 +290,8 @@ abstract final class SvgFilterExecutor {
             if (ref.startsWith('#')) {
               final targetId = ref.substring(1);
               final target =
-                  document.defsById[targetId] ?? document.elementsById[targetId];
+                  document.defsById[targetId] ??
+                  document.elementsById[targetId];
               if (target != null) {
                 c.save();
                 c.clipRect(primRegion);
@@ -308,7 +320,9 @@ abstract final class SvgFilterExecutor {
                 c.restore();
               });
             }
-            return recordPicture((c) => c.drawPicture(resolveInput(prim.inSource)));
+            return recordPicture(
+              (c) => c.drawPicture(resolveInput(prim.inSource)),
+            );
           }(),
           SvgFeDiffuseLighting() => () {
             final heightField = resolveField(prim.inSource);
@@ -475,7 +489,13 @@ abstract final class SvgFilterExecutor {
     canvas.restore();
   }
 
-  /// Builds a Flutter [ui.ColorFilter] for `<feColorMatrix>`.
+  /// Builds a Flutter [ui.ColorFilter] for `<feColorMatrix>` primitive [prim].
+  ///
+  /// Returns `null` if [prim] uses [SvgFeColorMatrixType.matrix] with fewer than
+  /// 20 matrix elements.
+  ///
+  /// 为 `<feColorMatrix>` 图元 [prim] 构建 Flutter [ui.ColorFilter]；若 `matrix`
+  /// 模式参数不足 20 个则返回 `null`。
   static ui.ColorFilter? buildColorMatrixFilter(SvgFeColorMatrix prim) {
     switch (prim.type) {
       case SvgFeColorMatrixType.luminanceToAlpha:
@@ -566,7 +586,9 @@ abstract final class SvgFilterExecutor {
     }
   }
 
-  /// Builds a Flutter [ui.ColorFilter] for `<feComponentTransfer>`.
+  /// Builds a Flutter [ui.ColorFilter] for `<feComponentTransfer>` primitive [prim].
+  ///
+  /// 为 `<feComponentTransfer>` 图元 [prim] 构建 Flutter [ui.ColorFilter]。
   static ui.ColorFilter buildComponentTransferFilter(
     SvgFeComponentTransfer prim,
   ) {

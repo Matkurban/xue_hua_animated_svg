@@ -10,10 +10,20 @@ import 'svg_transform.dart';
 import 'svg_viewport_nodes.dart';
 
 /// Container `<g>` or root `<svg>` group node.
+/// 容器分组节点（`<g>` 或根 `<svg>`）。
 class SvgGroupNode extends SvgElement {
+  /// Direct child elements in paint order. 按绘制顺序排列的直接子元素列表。
   @override
   final List<SvgElement> children;
 
+  /// Creates an [SvgGroupNode]. 创建一个 [SvgGroupNode] 分组节点。
+  ///
+  /// - [tagName]: Tag name (defaults to `'g'`). 标签名。
+  /// - [id]: Optional `id`. 可选 `id`。
+  /// - [classes]: CSS class list. CSS 类名列表。
+  /// - [style]: Node style. 节点样式。
+  /// - [baseTransformOps]: Static transform ops. 静态变换指令。
+  /// - [children]: Optional initial child list. 可选初始子节点列表。
   SvgGroupNode({
     super.tagName = 'g',
     super.id,
@@ -93,7 +103,9 @@ class SvgGroupNode extends SvgElement {
 }
 
 /// `<defs>` container node (not rendered directly; children are referenced by ID).
+/// `<defs>` 定义容器节点（不直接绘制，仅通过 ID 被引用）。
 class SvgDefsNode extends SvgGroupNode {
+  /// Creates an [SvgDefsNode]. 创建一个 [SvgDefsNode] 定义容器。
   SvgDefsNode({super.id, required super.style, super.children})
     : super(tagName: 'defs');
 
@@ -108,11 +120,22 @@ class SvgDefsNode extends SvgGroupNode {
 
 /// `<clipPath>` node supporting `userSpaceOnUse`, `objectBoundingBox`, `<use>`
 /// children, and dynamically animated clipping geometry.
+/// `<clipPath>` 裁剪路径节点，支持坐标单位、`<use>` 子节点及动态动画裁剪。
 class SvgClipPathNode extends SvgGroupNode {
+  /// Coordinate space unit (`userSpaceOnUse` or `objectBoundingBox`). 裁剪坐标空间单位。
   final SvgGradientUnits clipPathUnits;
+
+  /// Precompiled union clip [ui.Path]. 预编译合并后的裁剪路径。
   final ui.Path clipPath = ui.Path();
+
   final Float64List _bboxMatrix = SvgMatrixMath.createIdentity();
 
+  /// Creates an [SvgClipPathNode]. 创建一个 [SvgClipPathNode] 裁剪路径节点。
+  ///
+  /// - [id]: Clip path `id`. 裁剪路径 ID。
+  /// - [style]: Node style. 节点样式。
+  /// - [children]: Clipping geometry children. 裁剪几何子节点。
+  /// - [clipPathUnits]: Coordinate units (`userSpaceOnUse` by default). 坐标单位。
   SvgClipPathNode({
     super.id,
     required super.style,
@@ -195,20 +218,45 @@ class SvgClipPathNode extends SvgGroupNode {
 
 /// `<use>` node that references a `<defs>` or scene element by `href` / `xlink:href`
 /// with `(x, y)` offset, optional `(width, height)` viewport sizing, and cycle protection.
+/// `<use>` 引用实例化节点，支持偏移、视口缩放、深层样式隔离与循环引用保护。
 class SvgUseNode extends SvgElement {
   static const int _maxUseDepth = 16;
   static int _activeUseDepth = 0;
 
+  /// Referenced target element `id` (without `#`). 被引用目标元素的 ID（不含 `#`）。
   final String? hrefId;
+
+  /// Static base X offset. 静态基础 X 偏移。
   final double baseX;
+
+  /// Static base Y offset. 静态基础 Y 偏移。
   final double baseY;
+
+  /// Optional static width override. 可选静态宽度覆盖。
   final double? baseWidth;
+
+  /// Optional static height override. 可选静态高度覆盖。
   final double? baseHeight;
+
+  /// Active runtime X offset. 运行时活跃 X 偏移。
   double currentX;
+
+  /// Active runtime Y offset. 运行时活跃 Y 偏移。
   double currentY;
+
+  /// Active runtime width override. 运行时活跃宽度覆盖。
   double? currentWidth;
+
+  /// Active runtime height override. 运行时活跃高度覆盖。
   double? currentHeight;
 
+  /// Creates an [SvgUseNode]. 创建一个 [SvgUseNode] 引用节点。
+  ///
+  /// - [hrefId]: Target element `id`. 目标元素 ID。
+  /// - [baseX]: Base X offset. 基础 X 偏移。
+  /// - [baseY]: Base Y offset. 基础 Y 偏移。
+  /// - [baseWidth]: Optional width override. 可选宽度。
+  /// - [baseHeight]: Optional height override. 可选高度。
   SvgUseNode({
     super.id,
     super.classes,

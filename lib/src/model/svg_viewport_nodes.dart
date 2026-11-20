@@ -8,10 +8,15 @@ import 'svg_preserve_aspect_ratio.dart';
 import 'svg_transform.dart';
 
 /// Graphic-level hyperlink container `<a>` node (W3C SVG 1.1 / SVG 2).
+/// 图形级超链接容器 `<a>` 节点。
 class SvgAnchorNode extends SvgGroupNode {
+  /// Target link URL (`href` / `xlink:href`). 链接目标地址。
   final String? href;
+
+  /// Optional link browsing context (`target`). 可选链接打开目标。
   final String? target;
 
+  /// Creates an [SvgAnchorNode]. 创建一个 [SvgAnchorNode] 超链接容器节点。
   SvgAnchorNode({
     super.id,
     super.classes,
@@ -24,11 +29,18 @@ class SvgAnchorNode extends SvgGroupNode {
 }
 
 /// Conditional processing attributes attached to a direct child of `<switch>`.
+/// 挂载在 `<switch>` 直接子元素上的条件处理属性集合。
 class SvgConditionalAttrs {
+  /// `requiredExtensions` attribute (unsupported extensions reject the branch). 扩展要求属性。
   final String? requiredExtensions;
+
+  /// Legacy `requiredFeatures` attribute. 传统特性要求属性。
   final String? requiredFeatures;
+
+  /// BCP-47 language tags from `systemLanguage`. `systemLanguage` 语言标签列表。
   final List<String> systemLanguages;
 
+  /// Creates an [SvgConditionalAttrs]. 创建一个 [SvgConditionalAttrs] 条件属性对象。
   const SvgConditionalAttrs({
     this.requiredExtensions,
     this.requiredFeatures,
@@ -36,6 +48,10 @@ class SvgConditionalAttrs {
   });
 
   /// Evaluates whether this child satisfies W3C SVG conditional processing rules.
+  /// 评估当前子元素是否满足 W3C SVG 条件处理规则。
+  ///
+  /// - [activeLanguageTag]: Optional BCP-47 language override (defaults to platform locale).
+  ///   可选语言标签覆盖（默认读取系统语言）。
   bool matches({String? activeLanguageTag}) {
     if (requiredExtensions != null && requiredExtensions!.trim().isNotEmpty) {
       return false;
@@ -70,15 +86,17 @@ class SvgConditionalAttrs {
 }
 
 /// Conditional `<switch>` container node (W3C SVG 1.1 §5.8.1 / SVG 2).
-///
-/// Evaluates child elements in document order and renders only the **first**
-/// child whose conditional processing attributes (`requiredExtensions`,
-/// `systemLanguage`) match the current environment.
+/// 条件分支 `<switch>` 容器节点，按文档顺序仅渲染首个满足条件属性的子元素。
 class SvgSwitchNode extends SvgGroupNode {
+  /// Conditional attributes aligned by index with [children]. 与子元素一一对应的条件属性列表。
   final List<SvgConditionalAttrs> childConditions;
+
+  /// Optional BCP-47 language override for testing/locale switching. 可选语言覆盖标签。
   final String? languageOverride;
+
   SvgElement? _selectedChild;
 
+  /// Creates an [SvgSwitchNode]. 创建一个 [SvgSwitchNode] 条件容器节点。
   SvgSwitchNode({
     super.id,
     super.classes,
@@ -146,21 +164,41 @@ class SvgSwitchNode extends SvgGroupNode {
 /// Nested `<svg>` viewport container establishing a new coordinate system,
 /// optional `viewBox` + `preserveAspectRatio` mapping, and `overflow: hidden`
 /// viewport clipping per W3C SVG 1.1 §5.1 / SVG 2.
+/// 嵌套 `<svg>` 视口容器节点，建立局部坐标系、可选 `viewBox` 映射及默认视口裁剪。
 class SvgNestedSvgNode extends SvgGroupNode {
+  /// Base X coordinate. 基础 X 坐标。
   final double baseX;
+
+  /// Base Y coordinate. 基础 Y 坐标。
   final double baseY;
+
+  /// Optional base viewport width. 可选基础视口宽度。
   final double? baseWidth;
+
+  /// Optional base viewport height. 可选基础视口高度。
   final double? baseHeight;
+
+  /// Optional inner `viewBox` rect. 可选内部 `viewBox` 矩形。
   final ui.Rect? innerViewBox;
+
+  /// Aspect ratio rule for [innerViewBox]. 内部视口长宽比规则。
   final SvgPreserveAspectRatio preserveAspectRatio;
 
+  /// Active runtime X coordinate. 运行时 X 坐标。
   double currentX;
+
+  /// Active runtime Y coordinate. 运行时 Y 坐标。
   double currentY;
+
+  /// Active runtime width. 运行时宽度。
   double? currentWidth;
+
+  /// Active runtime height. 运行时高度。
   double? currentHeight;
 
   final Float64List _innerViewBoxMatrix = SvgMatrixMath.createIdentity();
 
+  /// Creates an [SvgNestedSvgNode]. 创建一个 [SvgNestedSvgNode] 嵌套视口节点。
   SvgNestedSvgNode({
     super.id,
     super.classes,
@@ -256,17 +294,30 @@ class SvgNestedSvgNode extends SvgGroupNode {
 }
 
 /// Reusable `<symbol>` template node (W3C SVG 1.1 §5.5 / SVG 2).
-///
-/// Never rendered directly in the scene tree; instantiated solely via `<use>`,
-/// mapping its `viewBox` into the `<use>` element's `(width, height)` viewport.
+/// 可复用 `<symbol>` 模板节点（不直接绘制，仅通过 `<use>` 实例化并映射 `viewBox`）。
 class SvgSymbolNode extends SvgGroupNode {
+  /// Base X offset. 基础 X 偏移。
   final double baseX;
+
+  /// Base Y offset. 基础 Y 偏移。
   final double baseY;
+
+  /// Optional intrinsic width. 可选固有宽度。
   final double? baseWidth;
+
+  /// Optional intrinsic height. 可选固有高度。
   final double? baseHeight;
+
+  /// SVG 2 reference anchor X (`refX`). SVG 2 参考锚点 X。
   final double refX;
+
+  /// SVG 2 reference anchor Y (`refY`). SVG 2 参考锚点 Y。
   final double refY;
+
+  /// Optional symbol `viewBox`. 可选符号 `viewBox`。
   final ui.Rect? innerViewBox;
+
+  /// Aspect ratio mapping rule. 长宽比映射规则。
   final SvgPreserveAspectRatio preserveAspectRatio;
 
   final Float64List _symbolMatrix = SvgMatrixMath.createIdentity();
@@ -368,10 +419,17 @@ class SvgSymbolNode extends SvgGroupNode {
 
 /// Named `<view>` specification defining an alternate `viewBox` and
 /// `preserveAspectRatio` for SVG sprite sheets and view anchors (W3C SVG 1.1 §17.3 / SVG 2).
+/// 命名 `<view>` 视口定义节点，用于通过 `viewId` 切换备用 `viewBox` 与长宽比规则。
 class SvgViewNode {
+  /// Unique XML `id` of this `<view>`. `<view>` 唯一标识。
   final String id;
+
+  /// Optional alternate `viewBox`. 可选替换 `viewBox`。
   final ui.Rect? viewBox;
+
+  /// Optional alternate `preserveAspectRatio`. 可选替换长宽比规则。
   final SvgPreserveAspectRatio? preserveAspectRatio;
 
+  /// Creates an [SvgViewNode]. 创建一个 [SvgViewNode] 命名视图对象。
   const SvgViewNode({required this.id, this.viewBox, this.preserveAspectRatio});
 }

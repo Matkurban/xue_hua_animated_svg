@@ -3,13 +3,18 @@ import 'dart:typed_data';
 import '../model/svg_node.dart';
 
 /// Precompiles SVG `d` path strings into strongly-typed [PrecompiledSvgPath]
-/// command + coordinate buffers during the XML AST build phase.
+/// command and coordinate buffers during the XML AST build phase.
+/// 在 XML AST 构建阶段将 SVG 路径字符串 `d` 预编译为强类型 [PrecompiledSvgPath] 指令与坐标缓冲。
 ///
 /// Normalizes shorthand commands (`H`, `V`, `S`, `T`) into canonical absolute
 /// commands (`M`, `L`, `C`, `Q`, `A`, `Z`) so that paths using shorthand curves
 /// or horizontal/vertical segments remain isomorphic for Path Morphing.
+/// 将简写指令归一化为规范绝对指令，以保证路径形变（Path Morphing）的同构性。
 abstract final class SvgPathParser {
-  /// Parses an SVG path data string `d` into a [PrecompiledSvgPath].
+  /// Parses an SVG path data string [d] into a [PrecompiledSvgPath].
+  /// 将 SVG 路径数据字符串 [d] 解析为 [PrecompiledSvgPath]。
+  ///
+  /// - [d]: Raw SVG path `d` attribute string. 原始 SVG `d` 属性字符串。
   static PrecompiledSvgPath parse(String d) {
     final commands = <SvgPathCmdType>[];
     final coords = <double>[];

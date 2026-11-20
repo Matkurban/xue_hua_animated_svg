@@ -17,11 +17,26 @@ import 'svg_xml_tokenizer.dart';
 
 /// Deferred `<animateMotion>` descriptor resolved after all `<path>` elements
 /// (including `<mpath>` targets) have been registered in `geometryById`.
+/// 延迟解析的 `<animateMotion>` 描述对象，待文档中全部 `<path>` 注册后再绑定 `<mpath>`。
 class SvgPendingMotionTrack {
+  /// Scene element driven by this `<animateMotion>` element.
+  /// 受该 `<animateMotion>` 驱动的目标场景元素。
   final SvgElement target;
+
+  /// Source XML element of `<animateMotion>`.
+  /// `<animateMotion>` 对应的源 XML 元素。
   final SvgXmlElement xmlNode;
+
+  /// Precompiled animation timing configuration.
+  /// 预编译的时间轴配置。
   final SvgAnimationTiming timing;
 
+  /// Creates an [SvgPendingMotionTrack].
+  /// 创建一个 [SvgPendingMotionTrack] 实例。
+  ///
+  /// - [target]: Target element to move. 目标移动元素。
+  /// - [xmlNode]: `<animateMotion>` XML element. `<animateMotion>` XML 节点。
+  /// - [timing]: Precompiled timing configuration. 预编译时间轴配置。
   const SvgPendingMotionTrack({
     required this.target,
     required this.xmlNode,
@@ -29,16 +44,39 @@ class SvgPendingMotionTrack {
   });
 }
 
-/// Compiles SMIL `<animate>`, `<animateTransform>`, and `<animateMotion>` XML
-/// elements into precompiled [SvgAnimationTrack] instances.
+/// Compiles SMIL `<animate>`, `<animateColor>`, `<set>`, `<animateTransform>`,
+/// and `<animateMotion>` XML elements into precompiled [SvgAnimationTrack] instances.
+/// 将 SMIL 动画 XML 元素编译为预编译 [SvgAnimationTrack] 轨道的编译器。
 class SvgSmilCompiler {
+  /// Root SVG `viewBox` used for resolving relative transform origins.
+  /// 根 SVG `viewBox`，用于解析相对 `transform-origin`。
   final ui.Rect viewBox;
+
+  /// Output list collecting all compiled animation tracks.
+  /// 收集全部已编译动画轨道的输出列表。
   final List<SvgAnimationTrack> tracks;
+
+  /// Set of elements that have at least one attached animation track.
+  /// 包含至少一条动画轨道的元素集合。
   final Set<SvgElement> animatedElementsSet;
+
+  /// Set of gradients that have at least one attached animation track.
+  /// 包含至少一条动画轨道的渐变集合。
   final Set<SvgGradientNode> animatedGradientsSet;
+
+  /// Deferred `<animateMotion>` descriptors resolved after tree construction.
+  /// 树构建完成后再解析的延迟 `<animateMotion>` 列表。
   final List<SvgPendingMotionTrack> pendingMotions = <SvgPendingMotionTrack>[];
+
   final SvgSmilSyncbaseResolver _syncbaseResolver = SvgSmilSyncbaseResolver();
 
+  /// Creates an [SvgSmilCompiler].
+  /// 创建一个 [SvgSmilCompiler] 实例。
+  ///
+  /// - [viewBox]: Root document `viewBox`. 根文档 `viewBox`。
+  /// - [tracks]: Mutable list receiving compiled tracks. 接收已编译轨道的列表。
+  /// - [animatedElementsSet]: Mutable set tracking animated elements. 记录动画元素的集合。
+  /// - [animatedGradientsSet]: Mutable set tracking animated gradients. 记录动画渐变的集合。
   SvgSmilCompiler({
     required this.viewBox,
     required this.tracks,
@@ -46,6 +84,11 @@ class SvgSmilCompiler {
     required this.animatedGradientsSet,
   });
 
+  /// Compiles an `<animate>` / `<animateColor>` attached to a gradient [stop].
+  /// 编译挂载在渐变色标 [stop] 上的 `<animate>` / `<animateColor>` 动画。
+  ///
+  /// - [stop]: Target gradient stop. 目标渐变色标。
+  /// - [animXml]: Animation XML element. 动画 XML 节点。
   void compileStopAnimate(SvgGradientStop stop, SvgXmlElement animXml) {
     final attrName = animXml.attr('attributeName')?.trim() ?? '';
     final rawKeyframes = extractRawKeyframes(
@@ -104,6 +147,11 @@ class SvgSmilCompiler {
     }
   }
 
+  /// Compiles `<animate>` and `<animateTransform>` children attached to [grad].
+  /// 编译挂载在渐变节点 [grad] 上的 `<animate>` 与 `<animateTransform>` 子动画。
+  ///
+  /// - [grad]: Target gradient node. 目标渐变节点。
+  /// - [gradXml]: Source gradient XML element. 源渐变 XML 节点。
   void compileGradientAnimations(SvgGradientNode grad, SvgXmlElement gradXml) {
     for (final stop in grad.stops) {
       if (stop.isAnimated) {
@@ -183,6 +231,11 @@ class SvgSmilCompiler {
     }
   }
 
+  /// Compiles an `<animate>` or `<animateColor>` element targeting [element].
+  /// 编译作用于 [element] 的 `<animate>` 或 `<animateColor>` 动画元素。
+  ///
+  /// - [element]: Target scene element. 目标场景元素。
+  /// - [animXml]: Animation XML element. 动画 XML 节点。
   void compileSmilAnimateOnElement(SvgElement element, SvgXmlElement animXml) {
     final attrName = animXml.attr('attributeName')?.trim() ?? '';
     if (attrName.isEmpty) return;
@@ -551,6 +604,11 @@ class SvgSmilCompiler {
     return timing;
   }
 
+  /// Compiles an `<animateTransform>` child element targeting [element].
+  /// 编译作用于 [element] 的 `<animateTransform>` 变换动画。
+  ///
+  /// - [element]: Target scene element. 目标场景元素。
+  /// - [animXml]: `<animateTransform>` XML node. `<animateTransform>` XML 节点。
   void compileSmilAnimateTransformOnElement(
     SvgElement element,
     SvgXmlElement animXml,
@@ -566,6 +624,12 @@ class SvgSmilCompiler {
     }
   }
 
+  /// Builds an [SvgTransformAnimationTrack] for either [targetElement] or [targetGradient].
+  /// 为元素 [targetElement] 或渐变 [targetGradient] 构建 [SvgTransformAnimationTrack] 轨道。
+  ///
+  /// - [animXml]: `<animateTransform>` XML node. `<animateTransform>` XML 节点。
+  /// - [targetElement]: Optional target element. 可选目标元素。
+  /// - [targetGradient]: Optional target gradient. 可选目标渐变。
   SvgTransformAnimationTrack? buildSmilTransformTrack({
     required SvgXmlElement animXml,
     SvgElement? targetElement,
@@ -666,6 +730,11 @@ class SvgSmilCompiler {
     );
   }
 
+  /// Queues an `<animateMotion>` element on [element] for deferred resolution.
+  /// 将 [element] 上的 `<animateMotion>` 加入延迟解析队列，待全部 `<path>` 就绪后绑定。
+  ///
+  /// - [element]: Target element to move. 目标运动元素。
+  /// - [animXml]: `<animateMotion>` XML node. `<animateMotion>` XML 节点。
   void deferSmilAnimateMotionOnElement(
     SvgElement element,
     SvgXmlElement animXml,
@@ -685,6 +754,14 @@ class SvgSmilCompiler {
     );
   }
 
+  /// Resolves all queued `<animateMotion>` tracks once document geometry IDs exist.
+  /// 在文档几何节点 ID 表构建完成后，解析全部延迟 `<animateMotion>` 轨道。
+  ///
+  /// - [elementsById]: Global elements map by `id`. 全局元素 ID 映射表。
+  /// - [defsById]: `<defs>` elements map by `id`. `<defs>` 定义映射表。
+  /// - [gradientsById]: Gradients map by `id`. 渐变映射表。
+  /// - [clipPathsById]: Clip paths map by `id`. 裁剪路径映射表。
+  /// - [geometryById]: Geometry nodes map by `id` for `<mpath>` lookup. 几何节点映射表。
   void resolvePendingMotions({
     required Map<String, SvgElement> elementsById,
     required Map<String, SvgElement> defsById,
@@ -814,6 +891,11 @@ class SvgSmilCompiler {
     );
   }
 
+  /// Extracts raw keyframe string values from `values`, `from`/`to`, or `from`/`by`.
+  /// 从 `values`、`from`/`to` 或 `from`/`by` 属性中提取原始关键帧字符串列表。
+  ///
+  /// - [animXml]: Animation XML element. 动画 XML 节点。
+  /// - [fallbackFrom]: Optional fallback start value when `from` is omitted. 省略 `from` 时的回退初值。
   List<String> extractRawKeyframes(
     SvgXmlElement animXml, {
     String? fallbackFrom,
@@ -851,6 +933,14 @@ class SvgSmilCompiler {
     return const [];
   }
 
+  /// Parses SMIL timing attributes (`dur`, `begin`, `end`, `repeatCount`, `fill`,
+  /// `additive`, `accumulate`, `calcMode`, `keyTimes`, `keySplines`) into [SvgAnimationTiming].
+  /// 解析 SMIL 时间轴与缓动属性并构建 [SvgAnimationTiming]。
+  ///
+  /// - [animXml]: Animation XML element. 动画 XML 节点。
+  /// - [keyframeCount]: Total number of keyframes. 关键帧总数。
+  /// - [numericValues]: Optional numeric keyframes used for `calcMode='paced'`.
+  ///   可选数值关键帧数组，供 `calcMode='paced'` 等速插值计算距离。
   SvgAnimationTiming? parseSmilTiming(
     SvgXmlElement animXml,
     int keyframeCount, {

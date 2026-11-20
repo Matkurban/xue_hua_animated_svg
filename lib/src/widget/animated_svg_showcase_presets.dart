@@ -1,14 +1,17 @@
 /// Built-in composite SVG showcase presets demonstrating:
+/// 内置复合 SVG 演示预设集合，展示：
+///
 /// 1. **3D CSS Perspective Rotation + Shimmering Gradient + Stroke Dash Growth + Motion Path + Path Morphing**
+///    3D CSS 透视旋转 + 流光渐变 + 描边虚线生长 + 路径轨迹运动 + 同构路径形变
 /// 2. **Static Subtree Picture Caching vs Dynamic Animated Layers**
+///    静态子树 `ui.Picture` 缓存与动态动画图层的协同渲染
 abstract final class AnimatedSvgShowcasePresets {
-  /// Composite showcase SVG combining:
-  /// - **3D Rotation (`@keyframes` with `perspective`, `rotateY`, `rotateZ` and `transform-origin: 50% 50%`)**
-  /// - **Streaming Gradient (`<linearGradient>` with animated `<stop>` colors/offsets & `<animateTransform>`)**
-  /// - **Stroke Dash Growth (`stroke-dasharray` + `stroke-dashoffset` with `pathLength="100"` & `keySplines` cubic bezier)**
-  /// - **Isomorphic Path Morphing (`<animate attributeName="d" />`)**
-  /// - **Tangent-Aligned `<animateMotion rotate="auto">` along `<mpath>`**
-  /// - **Static Subtree (`isAnimated == false`) recorded once into `ui.Picture`**
+  /// Composite showcase SVG string combining 3D CSS transforms, animated gradients,
+  /// stroke-dash growth, isomorphic path morphing, `<animateMotion>` along `<mpath>`,
+  /// and a statically cached background subtree.
+  ///
+  /// 综合演示 SVG 字符串，包含 CSS 3D 变换、动态渐变、描边生长、同构路径形变、
+  /// 沿 `<mpath>` 切线运动的 `<animateMotion>` 以及静态缓存背景子树。
   static const String cyberCoreCompositeSvg = '''
 <svg viewBox="0 0 240 240" width="240" height="240" xmlns="http://www.w3.org/2000/svg">
   <defs>

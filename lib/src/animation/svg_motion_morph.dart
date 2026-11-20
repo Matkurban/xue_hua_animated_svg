@@ -7,29 +7,44 @@ import '../model/svg_transform.dart';
 import 'svg_timeline.dart';
 
 /// Rotation mode for `<animateMotion rotate="...">`.
+/// `<animateMotion rotate="...">` 的路径朝向旋转模式。
 enum SvgMotionRotateMode {
   /// Fixed rotation angle in degrees (default `0.0`).
+  /// 固定旋转角度（单位：度，默认 `0.0`）。
   fixedAngle,
 
   /// Rotates along the path tangent direction (`rotate="auto"`).
+  /// 沿路径切线方向自动旋转（`rotate="auto"`）。
   auto,
 
   /// Rotates along the path tangent direction + 180 degrees (`rotate="auto-reverse"`).
+  /// 沿路径切线反方向（加 180°）自动旋转（`rotate="auto-reverse"`）。
   autoReverse,
 }
 
 /// Precompiled `<animateMotion>` track.
+/// 预编译的 `<animateMotion>` 路径运动动画轨道。
 ///
 /// Caches `List<ui.PathMetric>` at initialization (either from an inline `path`
 /// attribute, `values`/`from`/`to` coordinates, or an `<mpath>` referencing a
 /// `<path>` node in the document) and updates `target.motionMatrix` in-place
-/// each frame using `PathMetric.getPosTanForOffset()`.
+/// each frame using `PathMetric.getTangentForOffset()`.
+/// 初始化阶段缓存路径度量列表，每帧原地更新 `target.motionMatrix`。
 class SvgMotionAnimationTrack extends SvgAnimationTrack {
+  /// Scene element moved along the motion path.
+  /// 沿运动路径移动的目标场景元素。
   final SvgElement target;
+
+  /// Rotation mode applied along the path tangent.
+  /// 沿路径切线应用的旋转模式。
   final SvgMotionRotateMode rotateMode;
+
+  /// Fixed rotation angle in degrees when [rotateMode] is [SvgMotionRotateMode.fixedAngle].
+  /// 当 [rotateMode] 为 [SvgMotionRotateMode.fixedAngle] 时的固定角度（度）。
   final double fixedAngleDeg;
 
   /// Optional `keyPoints` remapping (`[0.0 .. 1.0]` distances along the motion path).
+  /// 可选的 `keyPoints` 路径归一化距离重映射数组（`[0.0 .. 1.0]`）。
   final Float64List? keyPoints;
 
   final List<ui.PathMetric> _metrics;
@@ -49,6 +64,15 @@ class SvgMotionAnimationTrack extends SvgAnimationTrack {
 
   /// Creates a precompiled `<animateMotion>` track from a [motionPath] (or
   /// pre-cached [existingMetrics] from an `<mpath>` target node).
+  /// 从 [motionPath]（或 `<mpath>` 目标节点已缓存的 [existingMetrics]）创建预编译运动轨道。
+  ///
+  /// - [timing]: Timing and easing evaluator. 时间轴与缓动求值器。
+  /// - [target]: Target element to move. 目标运动元素。
+  /// - [motionPath]: Path geometry describing the trajectory. 运动轨迹路径。
+  /// - [existingMetrics]: Optional precomputed `PathMetric` list to reuse. 可选复用的路径度量缓存。
+  /// - [rotateMode]: Tangent rotation mode. 切线旋转模式。
+  /// - [fixedAngleDeg]: Fixed angle in degrees when using fixed rotation. 固定旋转角度（度）。
+  /// - [keyPoints]: Optional normalized `keyPoints` list. 可选归一化 `keyPoints` 列表。
   factory SvgMotionAnimationTrack.fromPath({
     required SvgAnimationTiming timing,
     required SvgElement target,
@@ -79,6 +103,10 @@ class SvgMotionAnimationTrack extends SvgAnimationTrack {
     );
   }
 
+  /// Updates [target]'s motion transform matrix in-place at [elapsedUs].
+  /// 在微秒时间点 [elapsedUs] 处原地更新 [target] 的运动变换矩阵。
+  ///
+  /// - [elapsedUs]: Virtual timeline timestamp in microseconds. 虚拟时间轴微秒时间戳。
   @override
   void applyAt(int elapsedUs) {
     if (_metrics.isEmpty || _totalLength <= 0.0) return;
@@ -149,21 +177,37 @@ class SvgMotionAnimationTrack extends SvgAnimationTrack {
 }
 
 /// Precompiled isomorphic Path Morphing (`<animate attributeName="d" />`) track.
+/// 预编译的同构路径形变（`<animate attributeName="d" />`）动画轨道。
 ///
 /// All keyframes are validated at parse time to have identical command sequences
-/// (`List<SvgPathCmdType>`) and coordinate buffer lengths (`Float64List`).
-/// During `applyAt(elapsedUs)`, control points are linearly or cubic-spline
-/// interpolated in-place into `target.morphedCoords` with zero heap allocations.
+/// and coordinate buffer lengths. During [applyAt], control points are interpolated
+/// in-place into `target.morphedCoords` with zero heap allocations.
+/// 所有关键帧在解析期已校验同构，运行期零分配原地插值控制点。
 class SvgPathMorphAnimationTrack extends SvgAnimationTrack {
+  /// Target `<path>` node whose geometry coordinates are morphed.
+  /// 被执行路径形变的目标 `<path>` 节点。
   final SvgPathNode target;
+
+  /// Precompiled flattened coordinate arrays for each isomorphic keyframe.
+  /// 每个同构关键帧对应的扁平坐标数组列表。
   final List<Float64List> keyframeCoords;
 
+  /// Creates an [SvgPathMorphAnimationTrack].
+  /// 创建一个 [SvgPathMorphAnimationTrack] 路径形变轨道。
+  ///
+  /// - [timing]: Timing and easing evaluator. 时间轴与缓动求值器。
+  /// - [target]: Target `<path>` node. 目标路径节点。
+  /// - [keyframeCoords]: Equal-length coordinate buffers for each keyframe. 各关键帧等长坐标缓冲。
   SvgPathMorphAnimationTrack({
     required super.timing,
     required this.target,
     required this.keyframeCoords,
   });
 
+  /// Interpolates [keyframeCoords] into [target]'s morphed coordinate buffer at [elapsedUs].
+  /// 在微秒时间点 [elapsedUs] 处插值 [keyframeCoords] 并写入 [target] 的形变坐标缓冲区。
+  ///
+  /// - [elapsedUs]: Virtual timeline timestamp in microseconds. 虚拟时间轴微秒时间戳。
   @override
   void applyAt(int elapsedUs) {
     if (keyframeCoords.isEmpty) return;

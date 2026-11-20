@@ -1,27 +1,61 @@
 /// Ordered mixed-content node inside an [SvgXmlElement].
+/// [SvgXmlElement] 内部的有序混合内容节点基类。
 ///
 /// Either a character data segment ([SvgXmlTextContent]) or a child element
 /// ([SvgXmlElement]). Preserving document order is required by W3C SVG `<text>`
 /// mixed content such as `<text>Hello <tspan>World</tspan>!</text>`.
+/// 可为文本片段（[SvgXmlTextContent]）或子元素（[SvgXmlElement]），用于保留 `<text>` 混合内容顺序。
 sealed class SvgXmlNode {
+  /// Creates an [SvgXmlNode].
+  /// 创建一个 [SvgXmlNode] 节点。
   const SvgXmlNode();
 }
 
 /// Character data segment inside an [SvgXmlElement].
+/// [SvgXmlElement] 内部的字符数据文本片段节点。
 final class SvgXmlTextContent extends SvgXmlNode {
+  /// Decoded text payload of this character data segment.
+  /// 解码后的字符文本内容。
   final String text;
 
+  /// Creates an [SvgXmlTextContent] holding [text].
+  /// 创建一个包含 [text] 的文本片段节点。
+  ///
+  /// - [text]: Decoded character data. 解码后的字符数据。
   const SvgXmlTextContent(this.text);
 }
 
 /// Lightweight, zero-dependency XML element node built specifically for SVG AST construction.
+/// 专为 SVG AST 构建设计的轻量、零依赖 XML 元素节点。
 final class SvgXmlElement extends SvgXmlNode {
+  /// Local tag name with any XML namespace prefix stripped (e.g., `'path'`, `'g'`).
+  /// 去除命名空间前缀后的标签名（如 `'path'`、`'g'`）。
   final String name;
+
+  /// Map of decoded XML attribute names to values.
+  /// 解码后的 XML 属性名值映射表。
   final Map<String, String> attributes;
+
+  /// Direct child elements in document order.
+  /// 按文档顺序排列的直接子元素列表。
   final List<SvgXmlElement> children;
+
+  /// Ordered mixed-content child nodes (interleaved text segments and elements).
+  /// 按文档顺序排列的混合内容节点列表（交错包含文本片段与子元素）。
   final List<SvgXmlNode> contentNodes;
+
+  /// Concatenated text content of all direct text/CDATA segments inside this element.
+  /// 当前元素内所有直接文本与 CDATA 片段拼接后的纯文本内容。
   final String textContent;
 
+  /// Creates an [SvgXmlElement].
+  /// 创建一个 [SvgXmlElement] 实例。
+  ///
+  /// - [name]: Local XML tag name. 标签名。
+  /// - [attributes]: Parsed attribute map. 属性映射表。
+  /// - [children]: Direct child elements. 直接子元素列表。
+  /// - [contentNodes]: Ordered mixed-content nodes. 有序混合内容节点列表。
+  /// - [textContent]: Concatenated direct text content. 拼接后的直接文本内容。
   const SvgXmlElement({
     required this.name,
     required this.attributes,
@@ -30,9 +64,14 @@ final class SvgXmlElement extends SvgXmlNode {
     this.textContent = '',
   });
 
+  /// Returns the attribute value for [key], or `null` if absent.
+  /// 返回属性 [key] 对应的值；若不存在则返回 `null`。
+  ///
+  /// - [key]: XML attribute name to look up. 要查询的 XML 属性名。
   String? attr(String key) => attributes[key];
 
   /// Resolves `href` or `xlink:href` without a leading `#`.
+  /// 解析 `href` 或 `xlink:href` 属性，并去除前导 `#`。
   String? get hrefId {
     final raw = attributes['href'] ?? attributes['xlink:href'];
     if (raw == null || raw.isEmpty) return null;
@@ -42,7 +81,12 @@ final class SvgXmlElement extends SvgXmlNode {
 }
 
 /// Fast, zero-dependency XML tokenizer and tree parser for SVG documents.
+/// 高速、零依赖的 SVG 文档 XML 词法与树解析器。
 abstract final class SvgXmlTokenizer {
+  /// Parses [xmlSource] and returns its root [SvgXmlElement] (typically `<svg>`).
+  /// 解析 [xmlSource] 字符串并返回其根 [SvgXmlElement]（通常为 `<svg>`）。
+  ///
+  /// - [xmlSource]: Raw SVG XML source string. 原始 SVG XML 源码字符串。
   static SvgXmlElement parseRoot(String xmlSource) {
     final parser = _XmlScanner(xmlSource);
     return parser.parseRootSvg();

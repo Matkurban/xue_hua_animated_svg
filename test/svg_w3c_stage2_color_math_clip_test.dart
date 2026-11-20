@@ -10,15 +10,12 @@ Future<List<int>> _renderRgba(
 ) async {
   final recorder = ui.PictureRecorder();
   final canvas = ui.Canvas(recorder);
-  scene.document.paint(
-    canvas,
-    ui.Size(width.toDouble(), height.toDouble()),
-  );
+  scene.document.paint(canvas, ui.Size(width.toDouble(), height.toDouble()));
   final picture = recorder.endRecording();
   final image = await picture.toImage(width, height);
-  final bytes = (await image.toByteData(
-    format: ui.ImageByteFormat.rawRgba,
-  ))!.buffer.asUint8List();
+  final bytes = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!
+      .buffer
+      .asUint8List();
   image.dispose();
   picture.dispose();
   return bytes;
@@ -63,41 +60,50 @@ void main() {
       expect((purple.b * 255).round(), inInclusiveRange(126, 129));
     });
 
-    test('evaluates calc(), min(), max(), and clamp() lengths & percentages', () {
-      expect(
-        SvgCssParser.parseNumberOrPercent('calc(50% + 10px)', referenceExtent: 200),
-        closeTo(110.0, 1e-6),
-      );
-      expect(
-        SvgCssParser.parseLength('min(40px, 20px + 5px)'),
-        closeTo(25.0, 1e-6),
-      );
-      expect(
-        SvgCssParser.parseLength('max(10px, 30px * 2)'),
-        closeTo(60.0, 1e-6),
-      );
-      expect(
-        SvgCssParser.parseLength('clamp(10px, 50px, 30px)'),
-        closeTo(30.0, 1e-6),
-      );
-    });
+    test(
+      'evaluates calc(), min(), max(), and clamp() lengths & percentages',
+      () {
+        expect(
+          SvgCssParser.parseNumberOrPercent(
+            'calc(50% + 10px)',
+            referenceExtent: 200,
+          ),
+          closeTo(110.0, 1e-6),
+        );
+        expect(
+          SvgCssParser.parseLength('min(40px, 20px + 5px)'),
+          closeTo(25.0, 1e-6),
+        );
+        expect(
+          SvgCssParser.parseLength('max(10px, 30px * 2)'),
+          closeTo(60.0, 1e-6),
+        );
+        expect(
+          SvgCssParser.parseLength('clamp(10px, 50px, 30px)'),
+          closeTo(30.0, 1e-6),
+        );
+      },
+    );
 
-    test('clips elements with CSS clip-path basic shapes (circle, inset, polygon)', () async {
-      const svg = '''
+    test(
+      'clips elements with CSS clip-path basic shapes (circle, inset, polygon)',
+      () async {
+        const svg = '''
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <rect x="0" y="0" width="100" height="100" fill="#FF0000"
     style="clip-path: circle(25px at 50% 50%)" />
 </svg>
 ''';
-      final scene = SvgParser.compile(svg);
-      final bytes = await _renderRgba(scene, 100, 100);
+        final scene = SvgParser.compile(svg);
+        final bytes = await _renderRgba(scene, 100, 100);
 
-      // Center (50, 50) inside circle -> red
-      expect(bytes[(50 * 100 + 50) * 4], greaterThan(240));
-      // Corner (5, 5) outside circle -> clipped transparent
-      expect(bytes[(5 * 100 + 5) * 4 + 3], equals(0));
-      scene.dispose();
-    });
+        // Center (50, 50) inside circle -> red
+        expect(bytes[(50 * 100 + 50) * 4], greaterThan(240));
+        // Corner (5, 5) outside circle -> clipped transparent
+        expect(bytes[(5 * 100 + 5) * 4 + 3], equals(0));
+        scene.dispose();
+      },
+    );
 
     test('uses Paint Server fallback color when url(#missing) is absent and supports chained gradient href', () async {
       const svg = '''
@@ -124,8 +130,10 @@ void main() {
       scene.dispose();
     });
 
-    test('supports vector-effect="non-scaling-stroke" and 3-layer paint-order', () async {
-      const svg = '''
+    test(
+      'supports vector-effect="non-scaling-stroke" and 3-layer paint-order',
+      () async {
+        const svg = '''
 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <g transform="scale(5)">
     <line x1="2" y1="10" x2="18" y2="10" stroke="#FF0000" stroke-width="2"
@@ -133,14 +141,15 @@ void main() {
   </g>
 </svg>
 ''';
-      final scene = SvgParser.compile(svg);
-      final bytes = await _renderRgba(scene, 100, 100);
+        final scene = SvgParser.compile(svg);
+        final bytes = await _renderRgba(scene, 100, 100);
 
-      // Line is at y=50 (10*5) with non-scaling stroke-width=2px (y=49..51),
-      // NOT scaled to 10px (y=45..55).
-      expect(bytes[(50 * 100 + 50) * 4], greaterThan(200));
-      expect(bytes[(46 * 100 + 50) * 4 + 3], equals(0));
-      scene.dispose();
-    });
+        // Line is at y=50 (10*5) with non-scaling stroke-width=2px (y=49..51),
+        // NOT scaled to 10px (y=45..55).
+        expect(bytes[(50 * 100 + 50) * 4], greaterThan(200));
+        expect(bytes[(46 * 100 + 50) * 4 + 3], equals(0));
+        scene.dispose();
+      },
+    );
   });
 }

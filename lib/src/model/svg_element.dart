@@ -10,51 +10,74 @@ import 'svg_style.dart';
 import 'svg_transform.dart';
 
 /// Base class for all nodes in the precompiled SVG AST scene graph.
-///
-/// Holds pre-allocated `Paint` and `Float64List` matrix buffers to guarantee a
-/// zero-allocation `paint()` loop at 60/120fps.
+/// 预编译 SVG AST 场景图中全部节点的抽象基类，预分配画笔与矩阵缓冲以保障零分配绘制。
 abstract class SvgElement {
+  /// Local XML tag name (e.g., `'path'`, `'g'`, `'rect'`). XML 标签名。
   final String tagName;
+
+  /// Optional XML `id` attribute. 可选 XML `id` 属性。
   final String? id;
+
+  /// Parsed CSS class list. 解析后的 CSS 类名列表。
   final List<String> classes;
+
+  /// Precompiled style state for this element. 该元素的预编译样式对象。
   final SvgStyle style;
+
+  /// Static XML `transform` operations parsed at compile time. 编译期解析的静态变换操作列表。
   final List<SvgTransformOp> baseTransformOps;
+
+  /// Parent element in the scene graph (`null` for root `<svg>`). 场景图中的父节点。
   SvgElement? parent;
 
-  /// Pre-allocated paint instances reused across every frame.
+  /// Pre-allocated fill [ui.Paint] reused across every frame. 每帧复用的预分配填充画笔。
   final ui.Paint cachedFillPaint = ui.Paint()
     ..style = ui.PaintingStyle.fill
     ..isAntiAlias = true;
 
+  /// Pre-allocated stroke [ui.Paint] reused across every frame. 每帧复用的预分配描边画笔。
   final ui.Paint cachedStrokePaint = ui.Paint()
     ..style = ui.PaintingStyle.stroke
     ..isAntiAlias = true;
 
+  /// Pre-allocated layer [ui.Paint] for `saveLayer` opacity/blend passes. 图层合成预分配画笔。
   final ui.Paint cachedLayerPaint = ui.Paint();
 
-  /// Pre-allocated 16-element column-major transformation matrices.
+  /// Immutable base 4×4 transform matrix computed at initialization. 初始化计算的基础 4×4 变换矩阵。
   final Float64List baseTransformMatrix = SvgMatrixMath.createIdentity();
+
+  /// Active runtime 4×4 transform matrix mutated in-place by animations. 动画每帧原地更新的活跃变换矩阵。
   final Float64List transformMatrix = SvgMatrixMath.createIdentity();
+
+  /// Active runtime 4×4 motion matrix updated by `<animateMotion>`. `<animateMotion>` 更新的运动矩阵。
   final Float64List motionMatrix = SvgMatrixMath.createIdentity();
 
-  /// Whether this node or any of its descendants (or referenced gradients/defs)
-  /// are animated. Static subtrees (`isAnimated == false`) are recorded into a
-  /// `ui.Picture` on their first draw and replayed via `canvas.drawPicture`.
+  /// Whether this node, its descendants, or referenced paint servers are animated.
+  /// 当前节点、其子树或引用的画刷/遮罩/裁剪是否包含动画。
   bool isAnimated = false;
+
+  /// Whether this node directly owns an animation track. 节点自身是否直接挂载了动画轨道。
   bool hasSelfAnimation = false;
+
+  /// Whether this node is driven by `<animateMotion>`. 节点是否挂载了路径运动动画。
   bool hasMotionAnimation = false;
 
-  /// Cached static picture when `isAnimated == false`.
+  /// Cached static [ui.Picture] recorded when `isAnimated == false`. 静态子树缓存的 `ui.Picture`。
   ui.Picture? cachedPicture;
 
-  /// Cached local bounding box (computed once during AST finalization or updated
-  /// when geometry morphs).
+  /// Cached local bounding box computed during AST initialization or geometry morphs. 局部包围盒缓存。
   ui.Rect cachedBounds = ui.Rect.zero;
 
-  /// Cached blur filter when `blurSigma > 0` to avoid recreating if unchanged.
   double _lastBlurSigma = 0.0;
   ui.MaskFilter? _cachedMaskFilter;
 
+  /// Creates an [SvgElement]. 创建一个 [SvgElement] 节点基类实例。
+  ///
+  /// - [tagName]: XML tag name. XML 标签名。
+  /// - [id]: Optional `id`. 可选 `id`。
+  /// - [classes]: CSS classes. CSS 类名列表。
+  /// - [style]: Resolved node style. 节点样式。
+  /// - [baseTransformOps]: Static transform ops. 静态变换指令列表。
   SvgElement({
     required this.tagName,
     this.id,
@@ -63,10 +86,13 @@ abstract class SvgElement {
     this.baseTransformOps = const [],
   });
 
-  /// Returns child elements if this node is a container.
+  /// Returns child elements if this node is a container. 若为容器节点则返回子元素列表。
   List<SvgElement> get children => const [];
 
-  /// Computes and caches the node's local geometry and bounding box.
+  /// Computes and caches the node's local geometry and bounding box within [document].
+  /// 在文档 [document] 中初始化并缓存当前节点的局部几何与包围盒。
+  ///
+  /// - [document]: Owning [SvgDocument]. 所属 SVG 文档。
   void initializeGeometry(SvgDocument document);
 
   /// Recomputes [baseTransformMatrix] incorporating `transform-origin`,
@@ -367,7 +393,8 @@ abstract class SvgElement {
       if (!SvgMatrixMath.isIdentity(cur.transformMatrix)) {
         scale *= _matrix2dScale(cur.transformMatrix);
       }
-      if (cur.hasMotionAnimation && !SvgMatrixMath.isIdentity(cur.motionMatrix)) {
+      if (cur.hasMotionAnimation &&
+          !SvgMatrixMath.isIdentity(cur.motionMatrix)) {
         scale *= _matrix2dScale(cur.motionMatrix);
       }
       cur = cur.parent;

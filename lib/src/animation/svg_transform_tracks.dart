@@ -7,17 +7,32 @@ import '../model/svg_node.dart';
 import '../model/svg_transform.dart';
 import 'svg_animation_timing.dart';
 
-/// Precompiled `<animateTransform>` or CSS `@keyframes transform` track.
+/// Precompiled `<animateTransform>` or single-op transform track.
+/// 预编译的 `<animateTransform>` 或单操作变换动画轨道。
 ///
-/// Mutates `target.transformMatrix` (or `gradient.currentGradientMatrix`) in-place
-/// without allocating temporary `Matrix4` objects.
+/// Mutates `targetElement.transformMatrix` (or `targetGradient.currentGradientMatrix`)
+/// in-place without allocating temporary `Matrix4` objects.
+/// 原地修改目标元素或渐变的 4×4 变换矩阵，避免每帧分配临时矩阵对象。
 class SvgTransformAnimationTrack extends SvgAnimationTrack {
+  /// Target scene element when animating an element's `transform` (mutually exclusive with [targetGradient]).
+  /// 驱动元素 `transform` 时的目标场景元素（与 [targetGradient] 二选一）。
   final SvgElement? targetElement;
+
+  /// Target gradient node when animating `gradientTransform` (mutually exclusive with [targetElement]).
+  /// 驱动渐变 `gradientTransform` 时的目标渐变节点（与 [targetElement] 二选一）。
   final SvgGradientNode? targetGradient;
+
+  /// Kind of geometric transform operation animated by this track.
+  /// 本轨道所驱动的几何变换操作类型。
   final SvgTransformType transformType;
+
+  /// Root document `viewBox` used for resolving `transform-origin` percentages.
+  /// 根文档 `viewBox`，用于解析百分比形式的 `transform-origin`。
   final ui.Rect documentViewBox;
 
   /// Flattened keyframe parameter array (`stride = 3` per keyframe: `[v0, v1, v2]`).
+  /// 扁平化关键帧参数数组（每帧步长为 3：`[v0, v1, v2]`）。
+  ///
   /// - `translate`: `[tx, ty, 0]`
   /// - `scale`: `[sx, sy, 0]`
   /// - `rotate`: `[angleDeg, cx, cy]`
@@ -25,8 +40,20 @@ class SvgTransformAnimationTrack extends SvgAnimationTrack {
   final Float64List keyframeValues;
 
   /// Whether `(cx, cy)` in `rotate(angle, cx, cy)` was explicitly provided.
+  /// `rotate(angle, cx, cy)` 中是否显式指定了旋转锚点 `(cx, cy)`。
   final bool hasExplicitRotateAnchor;
 
+  /// Creates an [SvgTransformAnimationTrack].
+  /// 创建一个 [SvgTransformAnimationTrack] 变换动画轨道。
+  ///
+  /// - [timing]: Timing and easing evaluator. 时间轴与缓动求值器。
+  /// - [targetElement]: Optional target element. 可选目标元素。
+  /// - [targetGradient]: Optional target gradient node. 可选目标渐变节点。
+  /// - [transformType]: Transform operation type. 变换操作类型。
+  /// - [keyframeValues]: Flattened stride-3 keyframe parameters. 步长为 3 的扁平关键帧参数。
+  /// - [documentViewBox]: Root SVG `viewBox`. 根 SVG `viewBox`。
+  /// - [hasExplicitRotateAnchor]: Whether rotation keyframes include explicit `(cx, cy)`.
+  ///   旋转关键帧是否包含显式 `(cx, cy)` 锚点。
   SvgTransformAnimationTrack({
     required super.timing,
     this.targetElement,
@@ -37,6 +64,11 @@ class SvgTransformAnimationTrack extends SvgAnimationTrack {
     this.hasExplicitRotateAnchor = false,
   });
 
+  /// Evaluates the transform at [elapsedUs] (honoring `additive="sum"` and
+  /// `accumulate="sum"`) and writes it in-place onto the target matrix.
+  /// 在微秒时间点 [elapsedUs] 处计算变换（支持 `additive="sum"` 与 `accumulate="sum"`）并原地写入目标矩阵。
+  ///
+  /// - [elapsedUs]: Virtual timeline timestamp in microseconds. 虚拟时间轴微秒时间戳。
   @override
   void applyAt(int elapsedUs) {
     final keyframeCount = keyframeValues.length ~/ 3;
@@ -152,11 +184,27 @@ class SvgTransformAnimationTrack extends SvgAnimationTrack {
 
 /// Precompiled multi-operation CSS `@keyframes` transform track where each keyframe
 /// contains a sequence of [SvgTransformOp] instructions (e.g., `perspective(400px) rotateY(180deg) scale(1.1)`).
+/// 预编译的多操作 CSS `@keyframes` 变换轨道，每个关键帧可包含多条有序 [SvgTransformOp] 指令。
 class SvgCssMultiTransformTrack extends SvgAnimationTrack {
+  /// Target scene element receiving the interpolated transform matrix.
+  /// 接收插值变换矩阵的目标场景元素。
   final SvgElement target;
+
+  /// Ordered transform operation lists for each keyframe stop.
+  /// 每个关键帧对应的有序变换操作列表。
   final List<List<SvgTransformOp>> keyframeOps;
+
+  /// Root document `viewBox` used for resolving `transform-origin`.
+  /// 根文档 `viewBox`，用于解析 `transform-origin`。
   final ui.Rect documentViewBox;
 
+  /// Creates an [SvgCssMultiTransformTrack].
+  /// 创建一个 [SvgCssMultiTransformTrack] 多操作 CSS 变换轨道。
+  ///
+  /// - [timing]: Timing and easing evaluator. 时间轴与缓动求值器。
+  /// - [target]: Target element. 目标元素。
+  /// - [keyframeOps]: Per-keyframe transform operation lists. 逐关键帧变换操作列表。
+  /// - [documentViewBox]: Root SVG `viewBox`. 根 SVG `viewBox`。
   SvgCssMultiTransformTrack({
     required super.timing,
     required this.target,
@@ -164,6 +212,10 @@ class SvgCssMultiTransformTrack extends SvgAnimationTrack {
     required this.documentViewBox,
   });
 
+  /// Interpolates and composes [keyframeOps] onto [target]'s matrix at [elapsedUs].
+  /// 在微秒时间点 [elapsedUs] 处插值并合成 [keyframeOps] 到 [target] 的变换矩阵。
+  ///
+  /// - [elapsedUs]: Virtual timeline timestamp in microseconds. 虚拟时间轴微秒时间戳。
   @override
   void applyAt(int elapsedUs) {
     if (keyframeOps.isEmpty) return;

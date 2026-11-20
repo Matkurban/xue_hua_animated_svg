@@ -15,22 +15,41 @@ export 'svg_xml_tokenizer.dart';
 
 /// Complete compiled output from [SvgParser] containing the [SvgDocument] scene
 /// graph and its [SvgTimelineEngine].
+/// [SvgParser] 编译输出的完整场景对象，包含 [SvgDocument] 场景图与 [SvgTimelineEngine] 时间轴引擎。
 class CompiledSvgScene {
+  /// Precompiled SVG document scene graph ready for painting.
+  /// 已预编译、可直接绘制的 SVG 文档场景图。
   final SvgDocument document;
+
+  /// Precompiled SMIL and CSS animation timeline engine for [document].
+  /// 驱动 [document] 的预编译 SMIL 与 CSS 动画时间轴引擎。
   final SvgTimelineEngine timeline;
 
+  /// Creates a [CompiledSvgScene].
+  /// 创建一个 [CompiledSvgScene] 实例。
+  ///
+  /// - [document]: Compiled SVG document scene graph. 已编译的 SVG 文档场景图。
+  /// - [timeline]: Compiled animation timeline engine. 已编译的动画时间轴引擎。
   const CompiledSvgScene({required this.document, required this.timeline});
 
+  /// Releases all GPU resources (cached `ui.Picture`s and decoded `ui.Image`s) owned by [document].
+  /// 释放 [document] 持有的全部 GPU 资源（静态 `ui.Picture` 缓存与已解码位图）。
   void dispose() {
     document.dispose();
   }
 }
 
 /// Precompiles an SVG XML string into a zero-allocation [CompiledSvgScene].
+/// 将 SVG XML 字符串一次性预编译为零堆分配的 [CompiledSvgScene]。
 ///
-/// All string parsing, regex matching, hex color decoding, path `d` compilation,
-/// CSS selector matching, and `@keyframes` / SMIL track building happen once here.
+/// All string parsing, selector matching, color decoding, path `d` compilation,
+/// and `@keyframes` / SMIL track building happen once here.
+/// 所有字符串解析、选择器匹配、色彩解码、路径编译与动画轨道构建均在此阶段完成。
 abstract final class SvgParser {
+  /// Compiles [svgXml] into a ready-to-paint [CompiledSvgScene].
+  /// 将原始 [svgXml] 字符串编译为可直接渲染的 [CompiledSvgScene]。
+  ///
+  /// - [svgXml]: Raw SVG XML document string. 原始 SVG XML 文档字符串。
   static CompiledSvgScene compile(String svgXml) {
     final rootXml = SvgXmlTokenizer.parseRoot(svgXml);
     final builder = _SvgSceneCompiler(rootXml);
@@ -1530,7 +1549,8 @@ class _SvgSceneCompiler {
           targetX: int.tryParse((xml.attr('targetX') ?? '').trim()),
           targetY: int.tryParse((xml.attr('targetY') ?? '').trim()),
           edgeMode: edgeMode,
-          preserveAlpha: xml.attr('preserveAlpha')?.trim().toLowerCase() == 'true',
+          preserveAlpha:
+              xml.attr('preserveAlpha')?.trim().toLowerCase() == 'true',
         );
 
       case 'feDiffuseLighting':
@@ -1543,7 +1563,8 @@ class _SvgSceneCompiler {
           y: py,
           width: pw,
           height: ph,
-          surfaceScale: SvgCssParser.parseLength(xml.attr('surfaceScale')) ?? 1.0,
+          surfaceScale:
+              SvgCssParser.parseLength(xml.attr('surfaceScale')) ?? 1.0,
           diffuseConstant:
               SvgCssParser.parseLength(xml.attr('diffuseConstant')) ?? 1.0,
           lightingColor:
@@ -1561,7 +1582,8 @@ class _SvgSceneCompiler {
           y: py,
           width: pw,
           height: ph,
-          surfaceScale: SvgCssParser.parseLength(xml.attr('surfaceScale')) ?? 1.0,
+          surfaceScale:
+              SvgCssParser.parseLength(xml.attr('surfaceScale')) ?? 1.0,
           specularConstant:
               SvgCssParser.parseLength(xml.attr('specularConstant')) ?? 1.0,
           specularExponent:
@@ -1601,8 +1623,9 @@ class _SvgSceneCompiler {
             pointsAtZ: SvgCssParser.parseLength(child.attr('pointsAtZ')) ?? 0.0,
             specularExponent:
                 SvgCssParser.parseLength(child.attr('specularExponent')) ?? 1.0,
-            limitingConeAngleDeg:
-                SvgCssParser.parseLength(child.attr('limitingConeAngle')),
+            limitingConeAngleDeg: SvgCssParser.parseLength(
+              child.attr('limitingConeAngle'),
+            ),
           );
       }
     }

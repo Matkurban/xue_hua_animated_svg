@@ -7,14 +7,22 @@ import 'svg_marker_node.dart';
 import 'svg_precompiled_path.dart';
 
 /// `<path>` node supporting static path caching and isomorphic `d` path morphing.
+/// `<path>` 路径图元节点，支持静态路径缓存与同构 `d` 路径形变。
 class SvgPathNode extends SvgGeometryNode {
+  /// Precompiled canonical path commands and base coordinates. 预编译规范路径指令与基础坐标。
   final PrecompiledSvgPath precompiledPath;
+
+  /// Optional raw XML `d` attribute string retained as fallback for SMIL `from`. 原始 `d` 属性字符串。
   final String? xmlBaseD;
 
   /// Pre-allocated coordinate buffer used when `<animate attributeName="d">` morphs this path.
+  /// 路径形变动画使用的预分配插值坐标缓冲。
   late final Float64List morphedCoords;
+
+  /// Whether [morphedCoords] currently holds interpolated morph coordinates. 当前是否处于形变状态。
   bool isMorphed = false;
 
+  /// Creates an [SvgPathNode]. 创建一个 [SvgPathNode] 路径节点。
   SvgPathNode({
     super.id,
     super.classes,
@@ -196,21 +204,45 @@ class SvgPathNode extends SvgGeometryNode {
 }
 
 /// `<rect>` node with animatable `x`, `y`, `width`, `height`, `rx`, `ry`.
+/// `<rect>` 矩形/圆角矩形图元节点，支持几何属性动画。
 class SvgRectNode extends SvgGeometryNode {
+  /// Base X coordinate. 基础 X 坐标。
   final double baseX;
+
+  /// Base Y coordinate. 基础 Y 坐标。
   final double baseY;
+
+  /// Base width. 基础宽度。
   final double baseWidth;
+
+  /// Base height. 基础高度。
   final double baseHeight;
+
+  /// Base horizontal corner radius `rx`. 基础水平圆角半径。
   final double baseRx;
+
+  /// Base vertical corner radius `ry`. 基础垂直圆角半径。
   final double baseRy;
 
+  /// Active runtime X coordinate. 运行时 X 坐标。
   double currentX;
+
+  /// Active runtime Y coordinate. 运行时 Y 坐标。
   double currentY;
+
+  /// Active runtime width. 运行时宽度。
   double currentWidth;
+
+  /// Active runtime height. 运行时高度。
   double currentHeight;
+
+  /// Active runtime horizontal corner radius. 运行时水平圆角半径。
   double currentRx;
+
+  /// Active runtime vertical corner radius. 运行时垂直圆角半径。
   double currentRy;
 
+  /// Creates an [SvgRectNode]. 创建一个 [SvgRectNode] 矩形节点。
   SvgRectNode({
     super.id,
     super.classes,
@@ -275,15 +307,27 @@ class SvgRectNode extends SvgGeometryNode {
 }
 
 /// `<circle>` node with animatable `cx`, `cy`, `r`.
+/// `<circle>` 圆形图元节点，支持圆心与半径动画。
 class SvgCircleNode extends SvgGeometryNode {
+  /// Base center X (`cx`). 基础圆心 X。
   final double baseCx;
+
+  /// Base center Y (`cy`). 基础圆心 Y。
   final double baseCy;
+
+  /// Base radius (`r`). 基础半径。
   final double baseR;
 
+  /// Active runtime center X. 运行时圆心 X。
   double currentCx;
+
+  /// Active runtime center Y. 运行时圆心 Y。
   double currentCy;
+
+  /// Active runtime radius. 运行时半径。
   double currentR;
 
+  /// Creates an [SvgCircleNode]. 创建一个 [SvgCircleNode] 圆形节点。
   SvgCircleNode({
     super.id,
     super.classes,
@@ -321,17 +365,33 @@ class SvgCircleNode extends SvgGeometryNode {
 }
 
 /// `<ellipse>` node with animatable `cx`, `cy`, `rx`, `ry`.
+/// `<ellipse>` 椭圆图元节点，支持中心与半轴动画。
 class SvgEllipseNode extends SvgGeometryNode {
+  /// Base center X (`cx`). 基础中心 X。
   final double baseCx;
+
+  /// Base center Y (`cy`). 基础中心 Y。
   final double baseCy;
+
+  /// Base horizontal radius (`rx`). 基础水平半轴。
   final double baseRx;
+
+  /// Base vertical radius (`ry`). 基础垂直半轴。
   final double baseRy;
 
+  /// Active runtime center X. 运行时中心 X。
   double currentCx;
+
+  /// Active runtime center Y. 运行时中心 Y。
   double currentCy;
+
+  /// Active runtime horizontal radius. 运行时水平半轴。
   double currentRx;
+
+  /// Active runtime vertical radius. 运行时垂直半轴。
   double currentRy;
 
+  /// Creates an [SvgEllipseNode]. 创建一个 [SvgEllipseNode] 椭圆节点。
   SvgEllipseNode({
     super.id,
     super.classes,
@@ -376,17 +436,33 @@ class SvgEllipseNode extends SvgGeometryNode {
 }
 
 /// `<line>` node with animatable `x1`, `y1`, `x2`, `y2`.
+/// `<line>` 线段图元节点，支持起止端点坐标动画。
 class SvgLineNode extends SvgGeometryNode {
+  /// Base start X (`x1`). 基础起点 X。
   final double baseX1;
+
+  /// Base start Y (`y1`). 基础起点 Y。
   final double baseY1;
+
+  /// Base end X (`x2`). 基础终点 X。
   final double baseX2;
+
+  /// Base end Y (`y2`). 基础终点 Y。
   final double baseY2;
 
+  /// Active runtime start X. 运行时起点 X。
   double currentX1;
+
+  /// Active runtime start Y. 运行时起点 Y。
   double currentY1;
+
+  /// Active runtime end X. 运行时终点 X。
   double currentX2;
+
+  /// Active runtime end Y. 运行时终点 Y。
   double currentY2;
 
+  /// Creates an [SvgLineNode]. 创建一个 [SvgLineNode] 线段节点。
   SvgLineNode({
     super.id,
     super.classes,
@@ -439,10 +515,15 @@ class SvgLineNode extends SvgGeometryNode {
 }
 
 /// `<polyline>` or `<polygon>` node with precompiled coordinate list.
+/// `<polyline>` 折线或 `<polygon>` 多边形图元节点。
 class SvgPolyNode extends SvgGeometryNode {
+  /// Interleaved `(x, y)` vertex coordinate array. 交替排列的 `(x, y)` 顶点坐标数组。
   final Float64List points;
+
+  /// Whether to close the path (`true` for `<polygon>`, `false` for `<polyline>`). 是否闭合路径。
   final bool closePath;
 
+  /// Creates an [SvgPolyNode]. 创建一个 [SvgPolyNode] 折线/多边形节点。
   SvgPolyNode({
     required super.tagName,
     super.id,

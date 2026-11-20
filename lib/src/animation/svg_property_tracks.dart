@@ -7,44 +7,116 @@ import '../model/svg_node.dart';
 import '../model/svg_style.dart';
 import 'svg_animation_timing.dart';
 
-/// Target scalar attribute for `<animate>`.
+/// Target scalar numeric attribute for SMIL `<animate>` or CSS `@keyframes`.
+/// SMIL `<animate>` 或 CSS `@keyframes` 驱动的目标标量数值属性枚举。
 enum SvgScalarTarget {
+  /// Element overall `opacity`. 元素整体不透明度 `opacity`。
   opacity,
+
+  /// Element `fill-opacity`. 填充不透明度 `fill-opacity`。
   fillOpacity,
+
+  /// Element `stroke-opacity`. 描边不透明度 `stroke-opacity`。
   strokeOpacity,
+
+  /// Element `stroke-width`. 描边线宽 `stroke-width`。
   strokeWidth,
+
+  /// Element `stroke-dashoffset`. 虚线偏移量 `stroke-dashoffset`。
   strokeDashoffset,
+
+  /// CSS `filter: blur(...)` Gaussian sigma. CSS 模糊滤镜标准差 `blurSigma`。
   blurSigma,
+
+  /// Text `font-size`. 文本字号 `font-size`。
   fontSize,
+
+  /// Text `letter-spacing`. 文本字间距 `letter-spacing`。
   letterSpacing,
+
+  /// Element horizontal coordinate `x`. 元素横坐标 `x`。
   x,
+
+  /// Element vertical coordinate `y`. 元素纵坐标 `y`。
   y,
+
+  /// Text relative horizontal shift `dx`. 文本相对水平偏移 `dx`。
   dx,
+
+  /// Text relative vertical shift `dy`. 文本相对垂直偏移 `dy`。
   dy,
+
+  /// Element `width`. 元素宽度 `width`。
   width,
+
+  /// Element `height`. 元素高度 `height`。
   height,
+
+  /// Corner or ellipse X radius `rx`. 圆角或椭圆水平半径 `rx`。
   rx,
+
+  /// Corner or ellipse Y radius `ry`. 圆角或椭圆垂直半径 `ry`。
   ry,
+
+  /// Circle, ellipse, or radial gradient center X `cx`. 中心横坐标 `cx`。
   cx,
+
+  /// Circle, ellipse, or radial gradient center Y `cy`. 中心纵坐标 `cy`。
   cy,
+
+  /// Circle or radial gradient radius `r`. 半径 `r`。
   r,
+
+  /// Line or linear gradient start X `x1`. 起点横坐标 `x1`。
   x1,
+
+  /// Line or linear gradient start Y `y1`. 起点纵坐标 `y1`。
   y1,
+
+  /// Line or linear gradient end X `x2`. 终点横坐标 `x2`。
   x2,
+
+  /// Line or linear gradient end Y `y2`. 终点纵坐标 `y2`。
   y2,
+
+  /// Radial gradient focal point X `fx`. 径向渐变焦点横坐标 `fx`。
   fx,
+
+  /// Radial gradient focal point Y `fy`. 径向渐变焦点纵坐标 `fy`。
   fy,
+
+  /// SVG 2 radial gradient focal radius `fr`. SVG 2 径向渐变焦点半径 `fr`。
   fr,
+
+  /// Gradient `<stop>` `offset`. 渐变色标位置 `offset`。
   stopOffset,
+
+  /// Gradient `<stop>` `stop-opacity`. 渐变色标不透明度 `stop-opacity`。
   stopOpacity,
 }
 
 /// Precompiled scalar (`double`) animation track (`<animate>` on numeric attributes).
+/// 预编译的标量数值（`double`）动画轨道，驱动元素、渐变或色标的数值属性。
 class SvgScalarAnimationTrack extends SvgAnimationTrack {
-  final Object target; // SvgElement, SvgGradientNode, or SvgGradientStop
+  /// Animated target (`SvgElement`, `SvgGradientNode`, or `SvgGradientStop`).
+  /// 动画目标对象（可为 `SvgElement`、`SvgGradientNode` 或 `SvgGradientStop`）。
+  final Object target;
+
+  /// Target numeric property updated by this track.
+  /// 本轨道更新的目标数值属性枚举。
   final SvgScalarTarget property;
+
+  /// Precompiled numeric keyframe values.
+  /// 预编译的数值关键帧数组。
   final Float64List keyframes;
 
+  /// Creates an [SvgScalarAnimationTrack].
+  /// 创建一个 [SvgScalarAnimationTrack] 标量动画轨道。
+  ///
+  /// - [timing]: Timing and easing evaluator. 时间轴与缓动求值器。
+  /// - [target]: Target element, gradient, or stop. 目标元素、渐变或色标。
+  /// - [property]: Target scalar property. 目标标量属性。
+  /// - [keyframes]: Numeric keyframe array. 数值关键帧数组。
   SvgScalarAnimationTrack({
     required super.timing,
     required this.target,
@@ -52,6 +124,11 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
     required this.keyframes,
   });
 
+  /// Evaluates the scalar value at [elapsedUs] (honoring `accumulate="sum"` and
+  /// `additive="sum"`) and writes it in-place onto [target].
+  /// 在微秒时间点 [elapsedUs] 处求值标量（支持 `accumulate="sum"` 与 `additive="sum"`）并原地写入 [target]。
+  ///
+  /// - [elapsedUs]: Virtual timeline timestamp in microseconds. 虚拟时间轴微秒时间戳。
   @override
   void applyAt(int elapsedUs) {
     if (keyframes.isEmpty) return;
@@ -323,15 +400,41 @@ class SvgScalarAnimationTrack extends SvgAnimationTrack {
   }
 }
 
-/// Target color attribute for `<animate>`.
-enum SvgColorTarget { fill, stroke, stopColor }
+/// Target color attribute for `<animate>` / `<animateColor>` / CSS `@keyframes`.
+/// `<animate>`、`<animateColor>` 或 CSS `@keyframes` 驱动的目标颜色属性枚举。
+enum SvgColorTarget {
+  /// Element `fill` color. 元素填充颜色 `fill`。
+  fill,
+
+  /// Element `stroke` color. 元素描边颜色 `stroke`。
+  stroke,
+
+  /// Gradient `<stop>` `stop-color`. 渐变色标颜色 `stop-color`。
+  stopColor,
+}
 
 /// Precompiled color animation track (`fill`, `stroke`, `stop-color`).
+/// 预编译的颜色插值动画轨道（支持 `fill`、`stroke`、`stop-color`）。
 class SvgColorAnimationTrack extends SvgAnimationTrack {
-  final Object target; // SvgElement or SvgGradientStop
+  /// Target `SvgElement` or `SvgGradientStop`.
+  /// 目标 `SvgElement` 或 `SvgGradientStop`。
+  final Object target;
+
+  /// Target color property.
+  /// 目标颜色属性枚举。
   final SvgColorTarget property;
+
+  /// Precompiled keyframe colors.
+  /// 预编译的颜色关键帧列表。
   final List<ui.Color> keyframes;
 
+  /// Creates an [SvgColorAnimationTrack].
+  /// 创建一个 [SvgColorAnimationTrack] 颜色动画轨道。
+  ///
+  /// - [timing]: Timing and easing evaluator. 时间轴与缓动求值器。
+  /// - [target]: Target element or gradient stop. 目标元素或渐变色标。
+  /// - [property]: Target color property. 目标颜色属性。
+  /// - [keyframes]: List of keyframe colors. 关键帧颜色列表。
   SvgColorAnimationTrack({
     required super.timing,
     required this.target,
@@ -339,6 +442,10 @@ class SvgColorAnimationTrack extends SvgAnimationTrack {
     required this.keyframes,
   });
 
+  /// Interpolates [keyframes] at [elapsedUs] and writes the color onto [target].
+  /// 在微秒时间点 [elapsedUs] 处插值 [keyframes] 并将颜色写入 [target]。
+  ///
+  /// - [elapsedUs]: Virtual timeline timestamp in microseconds. 虚拟时间轴微秒时间戳。
   @override
   void applyAt(int elapsedUs) {
     if (keyframes.isEmpty) return;
@@ -373,11 +480,24 @@ class SvgColorAnimationTrack extends SvgAnimationTrack {
 
 /// Precompiled `stroke-dasharray` animation track with pre-normalized equal-length
 /// `Float64List` keyframes for zero-allocation in-place interpolation.
+/// 预编译的 `stroke-dasharray` 虚线数组动画轨道，预先归一化至等长缓冲实现零分配原地插值。
 class SvgDashArrayAnimationTrack extends SvgAnimationTrack {
+  /// Target element whose stroke dash pattern is animated.
+  /// 被驱动虚线样式的目标元素。
   final SvgElement target;
+
+  /// Pre-normalized equal-length dash array keyframes.
+  /// 已归一化为等长 `Float64List` 的虚线关键帧列表。
   final List<Float64List> keyframes;
+
   late final Float64List _interpolatedBuffer;
 
+  /// Creates an [SvgDashArrayAnimationTrack].
+  /// 创建一个 [SvgDashArrayAnimationTrack] 虚线数组动画轨道。
+  ///
+  /// - [timing]: Timing and easing evaluator. 时间轴与缓动求值器。
+  /// - [target]: Target element. 目标元素。
+  /// - [keyframes]: Normalized equal-length dash array keyframes. 等长虚线关键帧列表。
   SvgDashArrayAnimationTrack({
     required super.timing,
     required this.target,
@@ -386,6 +506,10 @@ class SvgDashArrayAnimationTrack extends SvgAnimationTrack {
          keyframes.isEmpty ? 0 : keyframes[0].length,
        );
 
+  /// Interpolates [keyframes] in-place at [elapsedUs] and assigns them to [target].
+  /// 在微秒时间点 [elapsedUs] 处原地插值虚线数组并更新至 [target]。
+  ///
+  /// - [elapsedUs]: Virtual timeline timestamp in microseconds. 虚拟时间轴微秒时间戳。
   @override
   void applyAt(int elapsedUs) {
     if (keyframes.isEmpty || _interpolatedBuffer.isEmpty) return;
@@ -411,16 +535,48 @@ class SvgDashArrayAnimationTrack extends SvgAnimationTrack {
 }
 
 /// Target discrete property kind for SMIL `<set>`.
-enum SvgSetTargetKind { displayNone, visibilityHidden, fillPaint, strokePaint }
+/// SMIL `<set>` 离散状态切换的目标属性类型枚举。
+enum SvgSetTargetKind {
+  /// Toggles `display: none`. 切换 `display: none` 显隐。
+  displayNone,
+
+  /// Toggles `visibility: hidden`. 切换 `visibility: hidden` 可见性。
+  visibilityHidden,
+
+  /// Replaces the `fill` paint server. 替换 `fill` 填充画刷。
+  fillPaint,
+
+  /// Replaces the `stroke` paint server. 替换 `stroke` 描边画刷。
+  strokePaint,
+}
 
 /// Precompiled SMIL `<set>` discrete state-switching track (`display`,
 /// `visibility`, `fill`, `stroke`).
+/// 预编译的 SMIL `<set>` 离散状态切换轨道（支持 `display`、`visibility`、`fill`、`stroke`）。
 class SvgSetAnimationTrack extends SvgAnimationTrack {
+  /// Target element modified while this `<set>` track is active.
+  /// 该 `<set>` 轨道激活期间修改的目标元素。
   final SvgElement target;
+
+  /// Kind of discrete property switched by this track.
+  /// 离散切换的属性类型。
   final SvgSetTargetKind kind;
+
+  /// Boolean payload used for [SvgSetTargetKind.displayNone] and [SvgSetTargetKind.visibilityHidden].
+  /// 用于 `displayNone` / `visibilityHidden` 的布尔值载荷。
   final bool boolValue;
+
+  /// Paint server payload used for [SvgSetTargetKind.fillPaint] and [SvgSetTargetKind.strokePaint].
+  /// 用于 `fillPaint` / `strokePaint` 的画刷载荷。
   final SvgPaintServer? paintValue;
 
+  /// Creates a boolean `<set>` track for `display` or `visibility`.
+  /// 创建一个用于 `display` 或 `visibility` 的布尔型 `<set>` 轨道。
+  ///
+  /// - [timing]: Timing evaluator. 时间轴求值器。
+  /// - [target]: Target element. 目标元素。
+  /// - [kind]: Boolean target kind. 布尔目标属性类型。
+  /// - [boolValue]: Value applied while active. 激活期间应用的布尔值。
   SvgSetAnimationTrack.boolean({
     required super.timing,
     required this.target,
@@ -428,6 +584,13 @@ class SvgSetAnimationTrack extends SvgAnimationTrack {
     required this.boolValue,
   }) : paintValue = null;
 
+  /// Creates a paint `<set>` track for `fill` or `stroke`.
+  /// 创建一个用于 `fill` 或 `stroke` 的画刷型 `<set>` 轨道。
+  ///
+  /// - [timing]: Timing evaluator. 时间轴求值器。
+  /// - [target]: Target element. 目标元素。
+  /// - [kind]: Paint target kind. 画刷目标属性类型。
+  /// - [paintValue]: Paint server applied while active. 激活期间应用的画刷。
   SvgSetAnimationTrack.paint({
     required super.timing,
     required this.target,
@@ -435,6 +598,10 @@ class SvgSetAnimationTrack extends SvgAnimationTrack {
     required SvgPaintServer this.paintValue,
   }) : boolValue = false;
 
+  /// Applies the discrete target state when this track is active at [elapsedUs].
+  /// 当轨道在微秒时间点 [elapsedUs] 处于活跃状态时应用目标离散值。
+  ///
+  /// - [elapsedUs]: Virtual timeline timestamp in microseconds. 虚拟时间轴微秒时间戳。
   @override
   void applyAt(int elapsedUs) {
     final progress = timing.evaluateSimpleProgress(elapsedUs);

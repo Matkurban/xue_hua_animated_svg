@@ -12,17 +12,36 @@ import 'svg_transform.dart';
 /// (`data:image/png;base64,...`, `jpeg`, `webp`, `gif`) and embedded SVG Data
 /// URIs (`data:image/svg+xml,...`), positioned with `x`/`y`/`width`/`height`
 /// and `preserveAspectRatio` (W3C SVG 1.1 §5.7 / SVG 2).
+/// `<image>` 图像元素节点，支持内嵌光栅位图与 SVG Data URI 的解码、缩放与渲染。
 class SvgImageNode extends SvgElement {
+  /// Raw `href` / `xlink:href` Data URI. 原始图像 Data URI。
   final String? href;
+
+  /// Base X coordinate. 基础 X 坐标。
   final double baseX;
+
+  /// Base Y coordinate. 基础 Y 坐标。
   final double baseY;
+
+  /// Base width. 基础宽度。
   final double baseWidth;
+
+  /// Base height. 基础高度。
   final double baseHeight;
+
+  /// Aspect ratio scaling and alignment rule. 长宽比缩放与对齐规则。
   final SvgPreserveAspectRatio preserveAspectRatio;
 
+  /// Active runtime X coordinate. 运行时 X 坐标。
   double currentX;
+
+  /// Active runtime Y coordinate. 运行时 Y 坐标。
   double currentY;
+
+  /// Active runtime width. 运行时宽度。
   double currentWidth;
+
+  /// Active runtime height. 运行时高度。
   double currentHeight;
 
   ui.Image? _decodedImage;
@@ -32,6 +51,7 @@ class SvgImageNode extends SvgElement {
 
   final Float64List _aspectMatrix = SvgMatrixMath.createIdentity();
 
+  /// Creates an [SvgImageNode]. 创建一个 [SvgImageNode] 内嵌图像节点。
   SvgImageNode({
     super.id,
     super.classes,
@@ -53,6 +73,7 @@ class SvgImageNode extends SvgElement {
   bool get shouldCacheStaticPicture => false;
 
   /// Whether a raster image or embedded SVG scene is ready to paint.
+  /// 位图或内嵌 SVG 场景是否已解码就绪。
   bool get isLoaded => _decodedImage != null || _nestedSvgScene != null;
 
   @override
@@ -62,7 +83,10 @@ class SvgImageNode extends SvgElement {
     _startDecodeIfNeeded(document);
   }
 
-  /// Ensures any embedded raster Data URI has finished decoding.
+  /// Ensures any embedded raster Data URI has finished decoding within [document].
+  /// 确保内嵌光栅 Data URI 在 [document] 中完成异步解码。
+  ///
+  /// - [document]: Owning [SvgDocument] notified upon decode completion. 所属 SVG 文档。
   Future<void> ensureDecoded(SvgDocument document) {
     _startDecodeIfNeeded(document);
     return _decodeFuture ?? Future<void>.value();

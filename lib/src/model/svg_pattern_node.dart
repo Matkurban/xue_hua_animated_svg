@@ -8,19 +8,36 @@ import 'svg_preserve_aspect_ratio.dart';
 import 'svg_transform.dart';
 
 /// `<pattern>` paint server node (W3C SVG 1.1 §13.3 / SVG 2).
-///
-/// Rasterizes one tile offscreen into a cached `ui.Image` and returns a
-/// repeating `ui.ImageShader` for both `fill="url(#...)"` and `stroke="url(#...)"`.
+/// `<pattern>` 图案画刷节点：离屏光栅化单个平铺瓦片并缓存为重复 `ui.ImageShader`。
 class SvgPatternNode extends SvgGroupNode {
+  /// Optional template pattern `id` referenced via `href` / `xlink:href`. 模板继承引用 ID。
   final String? hrefId;
+
+  /// Coordinate units for tile rect (`patternUnits`). 瓦片区域坐标单位。
   final SvgGradientUnits patternUnits;
+
+  /// Coordinate units for tile content (`patternContentUnits`). 瓦片内容坐标单位。
   final SvgGradientUnits patternContentUnits;
+
+  /// Tile origin X coordinate. 瓦片原点 X。
   final double x;
+
+  /// Tile origin Y coordinate. 瓦片原点 Y。
   final double y;
+
+  /// Tile width. 瓦片宽度。
   final double width;
+
+  /// Tile height. 瓦片高度。
   final double height;
+
+  /// Optional tile `viewBox`. 可选瓦片 `viewBox`。
   final ui.Rect? innerViewBox;
+
+  /// Aspect ratio rule for [innerViewBox]. 瓦片 `viewBox` 长宽比规则。
   final SvgPreserveAspectRatio preserveAspectRatio;
+
+  /// Static `patternTransform` operations. 静态 `patternTransform` 变换操作列表。
   final List<SvgTransformOp> basePatternTransformOps;
 
   final Float64List _patternTransformMatrix = SvgMatrixMath.createIdentity();
@@ -31,6 +48,7 @@ class SvgPatternNode extends SvgGroupNode {
   int _cachedPxWidth = 0;
   int _cachedPxHeight = 0;
 
+  /// Creates an [SvgPatternNode]. 创建一个 [SvgPatternNode] 图案填充节点。
   SvgPatternNode({
     super.id,
     super.classes,
@@ -58,7 +76,10 @@ class SvgPatternNode extends SvgGroupNode {
   @override
   bool get shouldCacheStaticPicture => false;
 
-  /// Resolves inherited children from an `href`/`xlink:href` template `<pattern>`.
+  /// Resolves inherited children from an `href`/`xlink:href` template `<pattern>` in [patternsById].
+  /// 从 [patternsById] 解析并继承模板 `<pattern>` 的子节点。
+  ///
+  /// - [patternsById]: Document patterns registry. 文档图案注册表。
   void resolveTemplate(Map<String, SvgPatternNode> patternsById) {
     if (children.isEmpty && hrefId != null) {
       final template = patternsById[hrefId!];
@@ -73,7 +94,11 @@ class SvgPatternNode extends SvgGroupNode {
     // <pattern> is a paint server and never painted directly.
   }
 
-  /// Creates a repeating [ui.ImageShader] for [targetBounds].
+  /// Creates a repeating [ui.ImageShader] for [targetBounds] using [document].
+  /// 为目标包围盒 [targetBounds] 构建循环平铺的 [ui.ImageShader]。
+  ///
+  /// - [targetBounds]: Target geometry local bounding box. 目标几何局部包围盒。
+  /// - [document]: Owning [SvgDocument]. 所属 SVG 文档。
   ui.Shader? createShader(ui.Rect targetBounds, SvgDocument document) {
     final double tileX;
     final double tileY;

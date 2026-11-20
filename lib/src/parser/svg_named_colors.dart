@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
-/// Standard SVG 1.1 / CSS3 named color lookup table.
+/// Standard SVG 1.1 / CSS3 named color lookup table mapping lowercase names to [ui.Color].
+/// 标准 SVG 1.1 / CSS3 命名颜色查找表（小写颜色名映射至 [ui.Color]）。
 const Map<String, ui.Color> svgNamedColors = {
   'black': ui.Color(0xFF000000),
   'white': ui.Color(0xFFFFFFFF),

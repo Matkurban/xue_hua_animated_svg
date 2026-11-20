@@ -11,25 +11,31 @@ import 'svg_text_node.dart';
 import 'svg_text_style.dart';
 
 /// W3C SVG 1.1 / SVG 2 compliant text layout and rendering engine.
+/// 遵循 W3C SVG 1.1 / SVG 2 规范的纯 Dart 文本排版与渲染引擎。
 ///
-/// Implements:
-/// - Whitespace collapsing (`xml:space` / `white-space`) across mixed content
-/// - Text chunk splitting on explicit absolute `x`/`y` coordinates
-/// - Per-chunk `text-anchor` (`start`, `middle`, `end`) with LTR/RTL support
-/// - `dominant-baseline`, `alignment-baseline`, and `baseline-shift` alignment
-/// - Cumulative `dx`/`dy` offsets and per-glyph `x`/`y`/`dx`/`dy`/`rotate` lists
-/// - `textLength` + `lengthAdjust` (`spacing` and `spacingAndGlyphs`)
-/// - `<textPath>` glyph placement along arbitrary `<path>` / geometry curves
-/// - Fill, stroke, gradient shaders, blur mask filters, and `paint-order`
+/// Supports whitespace collapsing, `text-transform`, vertical `writing-mode`,
+/// text chunks, `text-anchor`, baselines, `dx`/`dy`/`rotate` lists, `textLength`,
+/// `<textPath>`, gradients/patterns, and `paint-order`.
+/// 支持空白折叠、大小写变换、竖排书写、文本分块、锚点与基线对齐、逐字偏移旋转、路径文本与画刷渲染。
 abstract final class SvgTextLayoutEngine {
-  /// Computes the local bounding box of [textNode] before its own `transform`
-  /// is applied (used for `transform-origin` percentages and gradient shaders).
+  /// Computes the local bounding box of [textNode] within [document] before its
+  /// own `transform` is applied.
+  /// 计算 [textNode] 在应用自身 `transform` 之前的局部包围盒（供 `transform-origin` 与渐变着色器使用）。
+  ///
+  /// - [textNode]: Target `<text>` node. 目标 `<text>` 节点。
+  /// - [document]: Owning [SvgDocument]. 所属 SVG 文档。
   static ui.Rect computeBounds(SvgTextNode textNode, SvgDocument document) {
     final layout = _buildLayout(textNode, document);
     return layout.bounds;
   }
 
-  /// Renders [textNode] onto [canvas] with [effectiveOpacity].
+  /// Renders [textNode] onto [canvas] within [document] using [effectiveOpacity].
+  /// 使用有效不透明度 [effectiveOpacity] 将 [textNode] 绘制到 [canvas] 上。
+  ///
+  /// - [canvas]: Target Flutter canvas. 目标画布。
+  /// - [textNode]: Target `<text>` node. 目标 `<text>` 节点。
+  /// - [document]: Owning [SvgDocument]. 所属 SVG 文档。
+  /// - [effectiveOpacity]: Combined inherited opacity in `[0.0 .. 1.0]`. 合成后的有效不透明度。
   static void paint(
     ui.Canvas canvas,
     SvgTextNode textNode,
@@ -338,7 +344,8 @@ abstract final class SvgTextLayoutEngine {
       final fontSize = style.currentFontSize;
       if (fontSize <= 0.0 || run.text.isEmpty) continue;
 
-      final isVertical = style.currentWritingMode != SvgWritingMode.horizontalTb;
+      final isVertical =
+          style.currentWritingMode != SvgWritingMode.horizontalTb;
       final needsPerChar =
           isVertical ||
           run.xList.length > 1 ||

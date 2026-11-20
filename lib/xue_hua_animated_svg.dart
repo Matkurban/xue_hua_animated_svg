@@ -1,4 +1,6 @@
 /// High-performance, zero-native-dependency 100% pure Dart dynamic SVG rendering engine.
+///
+/// 高性能、零原生依赖的 100% 纯 Dart 动态 SVG 渲染引擎库入口。
 library;
 
 export 'src/animation/svg_motion_morph.dart';

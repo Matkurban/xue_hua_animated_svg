@@ -2,8 +2,12 @@ import 'dart:math' as math;
 
 /// Pure-Dart evaluator for W3C CSS Values & Units Level 4 math functions:
 /// `calc()`, `min()`, `max()`, and `clamp()`.
+/// 纯 Dart 实现的 W3C CSS Values & Units Level 4 数学函数求值器（`calc`/`min`/`max`/`clamp`）。
 abstract final class SvgCssMath {
-  /// Returns true if [raw] starts with a supported CSS math function.
+  /// Returns `true` if [raw] starts with a supported CSS math function.
+  /// 判断 [raw] 是否以受支持的 CSS 数学函数开头。
+  ///
+  /// - [raw]: Raw CSS value string. 原始 CSS 属性值字符串。
   static bool isMathFunction(String raw) {
     final s = raw.trim().toLowerCase();
     return s.startsWith('calc(') ||
@@ -12,8 +16,13 @@ abstract final class SvgCssMath {
         s.startsWith('clamp(');
   }
 
-  /// Evaluates a CSS math expression into pixels / unitless double, resolving
-  /// `%` against [referenceExtent] (or `[0..1]` if omitted).
+  /// Evaluates a CSS math expression [raw] into pixels or a unitless `double`,
+  /// resolving `%` against [referenceExtent] (or `[0..1]` if omitted).
+  /// 计算 CSS 数学表达式 [raw] 的数值结果，百分比按 [referenceExtent] 解析（未传入时归一化到 `[0..1]`）。
+  ///
+  /// - [raw]: CSS math expression string. CSS 数学表达式字符串。
+  /// - [referenceExtent]: Optional reference extent for resolving `%` units.
+  ///   可选百分比参考基准尺寸。
   static double? evaluate(String raw, {double? referenceExtent}) {
     final s = raw.trim();
     if (s.isEmpty) return null;

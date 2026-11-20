@@ -3,16 +3,38 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 /// Channel selector for `<feDisplacementMap>`.
-enum SvgChannelSelector { r, g, b, a }
+/// `<feDisplacementMap>` 置换贴图采样通道枚举。
+enum SvgChannelSelector {
+  /// Red channel (`R`). 红色通道。
+  r,
 
-/// Rasterized RGBA field in Dart memory for synchronous `<feTurbulence>` and
-/// `<feDisplacementMap>` GPU mesh rendering.
+  /// Green channel (`G`). 绿色通道。
+  g,
+
+  /// Blue channel (`B`). 蓝色通道。
+  b,
+
+  /// Alpha channel (`A`). 透明度通道。
+  a,
+}
+
+/// Rasterized RGBA field in Dart memory for synchronous `<feTurbulence>`,
+/// `<feDisplacementMap>`, convolution, and lighting GPU mesh rendering.
+/// 内存 RGBA 像素网格场，供噪点、置换、卷积与光照滤镜同步生成 GPU 网格。
 class SvgFilterPixelField {
+  /// Horizontal grid sample count. 水平网格采样数。
   final int width;
+
+  /// Vertical grid sample count. 垂直网格采样数。
   final int height;
+
+  /// User-space bounding rect covered by this field. 该像素场覆盖的用户空间矩形区域。
   final ui.Rect region;
+
+  /// Packed RGBA8888 bytes (`width * height * 4`). 紧凑 RGBA8888 字节数组。
   final Uint8List rgba;
 
+  /// Creates an [SvgFilterPixelField]. 创建一个 [SvgFilterPixelField] 像素网格场。
   const SvgFilterPixelField({
     required this.width,
     required this.height,
@@ -20,7 +42,12 @@ class SvgFilterPixelField {
     required this.rgba,
   });
 
-  /// Samples normalized channel value `[0.0 .. 1.0]` at grid cell `(gx, gy)`.
+  /// Samples normalized [channel] value in `[0.0 .. 1.0]` at grid cell `(gx, gy)`.
+  /// 在网格单元 `(gx, gy)` 处采样归一化通道值（`[0.0 .. 1.0]`）。
+  ///
+  /// - [gx]: Grid X index. 网格 X 索引。
+  /// - [gy]: Grid Y index. 网格 Y 索引。
+  /// - [channel]: Target RGBA channel. 目标通道。
   double sampleChannel(int gx, int gy, SvgChannelSelector channel) {
     final cx = gx.clamp(0, width - 1);
     final cy = gy.clamp(0, height - 1);
@@ -102,8 +129,8 @@ class SvgFilterPixelField {
 }
 
 /// Pure-Dart W3C Filter Effects Level 1 §9.22 Perlin gradient noise generator
-/// and synchronous GPU `ui.Vertices` builder for `<feTurbulence>` and
-/// `<feDisplacementMap>`.
+/// and synchronous GPU `ui.Vertices` builder for `<feTurbulence>` and `<feDisplacementMap>`.
+/// 纯 Dart 实现的 W3C Perlin 梯度噪点生成器与同步 GPU 顶点网格绘制引擎。
 abstract final class SvgFilterNoiseEngine {
   static const int _bSize = 0x100;
   static const int _bm = 0xff;
@@ -113,6 +140,7 @@ abstract final class SvgFilterNoiseEngine {
   static const int _randR = 2836;
 
   /// Generates a deterministic W3C `<feTurbulence>` RGBA pixel field over [region].
+  /// 在 [region] 内生成确定性的 W3C `<feTurbulence>` 噪点 RGBA 像素场。
   static SvgFilterPixelField generateTurbulenceField({
     required ui.Rect region,
     required bool isFractalNoise,

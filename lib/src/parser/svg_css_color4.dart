@@ -3,11 +3,14 @@ import 'dart:ui' as ui;
 
 /// Pure-Dart W3C CSS Color Level 4 modern color space conversions and mixing:
 /// `oklab()`, `oklch()`, `lab()`, `lch()`, and `color-mix()`.
+/// 纯 Dart 实现的 W3C CSS Color Level 4 现代色彩空间转换与混色解析器。
 abstract final class SvgCssColor4 {
   /// Attempts to parse `oklab()`, `oklch()`, `lab()`, `lch()`, or `color-mix()`.
+  /// 尝试解析 `oklab()`、`oklch()`、`lab()`、`lch()` 或 `color-mix()` 色彩表达式。
   ///
-  /// [parseBaseColor] is a callback to parse nested sRGB / named / hex colors
-  /// inside `color-mix()`.
+  /// - [rawLower]: Lowercase trimmed CSS color string. 小写且去空白的 CSS 颜色字符串。
+  /// - [parseBaseColor]: Callback used to parse nested sRGB / hex / named colors
+  ///   inside `color-mix()`. 用于解析 `color-mix()` 内部嵌套颜色的回调函数。
   static ui.Color? parse(
     String rawLower, {
     required ui.Color? Function(String) parseBaseColor,
@@ -255,14 +258,32 @@ abstract final class SvgCssColor4 {
     final z50 = zr * d50Z;
 
     // Bradford chromatic adaptation D50 -> D65
-    final x65 = 0.9554734527042182 * x50 - 0.023098536874261423 * y50 + 0.0632593086610217 * z50;
-    final y65 = -0.028369706963208136 * x50 + 1.0099954580058226 * y50 + 0.021041398966943008 * z50;
-    final z65 = 0.012314001688319899 * x50 - 0.020507696433477912 * y50 + 1.3303659366080753 * z50;
+    final x65 =
+        0.9554734527042182 * x50 -
+        0.023098536874261423 * y50 +
+        0.0632593086610217 * z50;
+    final y65 =
+        -0.028369706963208136 * x50 +
+        1.0099954580058226 * y50 +
+        0.021041398966943008 * z50;
+    final z65 =
+        0.012314001688319899 * x50 -
+        0.020507696433477912 * y50 +
+        1.3303659366080753 * z50;
 
     // XYZ D65 -> linear sRGB
-    final lr = 3.2409699419045226 * x65 - 1.537383177570094 * y65 - 0.4986107602930034 * z65;
-    final lg = -0.9692436362808796 * x65 + 1.8759675015077202 * y65 + 0.04155505740717559 * z65;
-    final lb = 0.05563007969699366 * x65 - 0.20397695888897652 * y65 + 1.0569715142428786 * z65;
+    final lr =
+        3.2409699419045226 * x65 -
+        1.537383177570094 * y65 -
+        0.4986107602930034 * z65;
+    final lg =
+        -0.9692436362808796 * x65 +
+        1.8759675015077202 * y65 +
+        0.04155505740717559 * z65;
+    final lb =
+        0.05563007969699366 * x65 -
+        0.20397695888897652 * y65 +
+        1.0569715142428786 * z65;
 
     return _fromFloats(
       _linearToSrgb(lr),
@@ -272,9 +293,8 @@ abstract final class SvgCssColor4 {
     );
   }
 
-  static double _srgbToLinear(double c) => c <= 0.04045
-      ? c / 12.92
-      : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
+  static double _srgbToLinear(double c) =>
+      c <= 0.04045 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
 
   static double _linearToSrgb(double c) {
     final clamped = c.clamp(0.0, 1.0);
@@ -283,8 +303,9 @@ abstract final class SvgCssColor4 {
         : 1.055 * math.pow(clamped, 1.0 / 2.4).toDouble() - 0.055;
   }
 
-  static double _cbrt(double x) =>
-      x < 0 ? -math.pow(-x, 1.0 / 3.0).toDouble() : math.pow(x, 1.0 / 3.0).toDouble();
+  static double _cbrt(double x) => x < 0
+      ? -math.pow(-x, 1.0 / 3.0).toDouble()
+      : math.pow(x, 1.0 / 3.0).toDouble();
 
   static ui.Color _fromFloats(double r, double g, double b, double a) {
     return ui.Color.fromARGB(
@@ -306,7 +327,10 @@ abstract final class SvgCssColor4 {
         .toList();
   }
 
-  static double? _parsePercentOrNumber(String raw, {required double percentScale}) {
+  static double? _parsePercentOrNumber(
+    String raw, {
+    required double percentScale,
+  }) {
     final t = raw.trim();
     if (t == 'none') return 0.0;
     if (t.endsWith('%')) {

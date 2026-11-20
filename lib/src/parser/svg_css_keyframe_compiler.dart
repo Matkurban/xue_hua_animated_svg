@@ -12,9 +12,17 @@ import 'svg_css_value_parser.dart';
 import 'svg_path_parser.dart';
 
 /// Compiles CSS `@keyframes` rules and `animation` configs into [SvgAnimationTrack]s.
+/// 将 CSS `@keyframes` 规则与 `animation` 配置编译为 [SvgAnimationTrack] 轨道的编译器。
 abstract final class SvgCssKeyframeCompiler {
   /// Compiles a matched [SvgCssAnimationConfig] and `@keyframes` stop list into
   /// internal [SvgAnimationTrack] instances on [target].
+  /// 将匹配的 [config] 与 `@keyframes` 关键帧列表 [stops] 编译为作用于 [target] 的动画轨道列表。
+  ///
+  /// - [target]: Target scene element driven by the CSS animation. 受 CSS 动画驱动的目标元素。
+  /// - [config]: Parsed CSS `animation` configuration. 解析后的 CSS 动画配置。
+  /// - [stops]: Sorted `@keyframes` stop list. 排序后的 `@keyframes` 关键帧节点列表。
+  /// - [documentViewBox]: Root SVG `viewBox` for resolving `transform-origin`.
+  ///   根 SVG `viewBox`，用于解析 `transform-origin`。
   static List<SvgAnimationTrack> compileKeyframesForElement({
     required SvgElement target,
     required SvgCssAnimationConfig config,

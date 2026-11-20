@@ -1,3 +1,7 @@
+/// Barrel export for all precompiled SVG scene graph node and document models.
+/// 预编译 SVG 场景图节点与文档模型的统一导出入口。
+library;
+
 export 'svg_container_nodes.dart';
 export 'svg_document.dart';
 export 'svg_element.dart';

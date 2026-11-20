@@ -13,16 +13,25 @@ import 'svg_css_math.dart';
 import 'svg_named_colors.dart';
 
 /// Stateless value parsers for CSS / SVG lengths, angles, colors, paint servers,
-/// transforms, and clock values.
+/// transforms, typography, filters, and clock values.
+/// 无状态 CSS / SVG 属性值解析器集合，覆盖长度、角度、色彩、画刷、变换、排版、滤镜与时钟值。
 abstract final class SvgCssValueParser {
-  // Standard easing curves
+  /// Standard CSS `ease` curve (`cubic-bezier(0.25, 0.1, 0.25, 1.0)`). 标准 CSS `ease` 曲线。
   static const Cubic ease = Cubic(0.25, 0.1, 0.25, 1.0);
+
+  /// Standard CSS `ease-in` curve (`cubic-bezier(0.42, 0.0, 1.0, 1.0)`). 标准 CSS `ease-in` 曲线。
   static const Cubic easeIn = Cubic(0.42, 0.0, 1.0, 1.0);
+
+  /// Standard CSS `ease-out` curve (`cubic-bezier(0.0, 0.0, 0.58, 1.0)`). 标准 CSS `ease-out` 曲线。
   static const Cubic easeOut = Cubic(0.0, 0.0, 0.58, 1.0);
+
+  /// Standard CSS `ease-in-out` curve (`cubic-bezier(0.42, 0.0, 0.58, 1.0)`). 标准 CSS `ease-in-out` 曲线。
   static const Cubic easeInOut = Cubic(0.42, 0.0, 0.58, 1.0);
 
-  /// Normalizes a list of `stroke-dasharray` keyframe arrays to their least
-  /// common multiple (LCM) length so they can be interpolated element-by-element.
+  /// Normalizes a list of `stroke-dasharray` keyframe [arrays] to their LCM length for interpolation.
+  /// 将 `stroke-dasharray` 关键帧数组列表 [arrays] 归一化至最小公倍数长度以便逐项插值。
+  ///
+  /// - [arrays]: Raw dasharray keyframe buffers. 原始虚线关键帧数组列表。
   static List<Float64List> normalizeDashArrayKeyframes(
     List<Float64List> arrays,
   ) {
@@ -58,8 +67,10 @@ abstract final class SvgCssValueParser {
   static int _lcm(int a, int b) =>
       (a == 0 || b == 0) ? 0 : (a * b) ~/ _gcd(a, b);
 
-  /// Parses `transform-origin` supporting pixel lengths, percentages (`50% 50%`),
-  /// and keywords (`center`, `left`, `right`, `top`, `bottom`).
+  /// Parses `transform-origin` [raw] supporting pixel lengths, percentages, and keywords.
+  /// 解析支持像素、百分比（`50% 50%`）及关键字的 `transform-origin` 字符串 [raw]。
+  ///
+  /// - [raw]: Raw `transform-origin` value. 原始 `transform-origin` 值。
   static SvgTransformOrigin parseTransformOrigin(String raw) {
     final tokens = raw
         .trim()
@@ -105,7 +116,10 @@ abstract final class SvgCssValueParser {
     }
   }
 
-  /// Parses an SVG or CSS `transform` string into a list of [SvgTransformOp].
+  /// Parses an SVG or CSS `transform` string [raw] into a list of [SvgTransformOp].
+  /// 将 SVG/CSS `transform` 字符串 [raw] 解析为 [SvgTransformOp] 操作列表。
+  ///
+  /// - [raw]: Raw transform list string. 原始变换函数列表字符串。
   static List<SvgTransformOp> parseTransformOps(String raw) {
     final ops = <SvgTransformOp>[];
     final matches = RegExp(r'([a-zA-Z0-9]+)\s*\(([^)]*)\)').allMatches(raw);
@@ -178,7 +192,10 @@ abstract final class SvgCssValueParser {
     return ops;
   }
 
-  /// Parses an angle (`deg`, `rad`, `turn`, `grad`) or length into degrees / pixels.
+  /// Parses an angle (`deg`, `rad`, `turn`, `grad`) or length [raw] into degrees or pixels.
+  /// 将角度（`deg`/`rad`/`turn`/`grad`）或长度 [raw] 解析为度数或像素值。
+  ///
+  /// - [raw]: Raw angle or length token. 原始角度或长度标记。
   static double? parseAngleOrLength(String raw) {
     final s = raw.trim().toLowerCase();
     if (s.endsWith('deg')) {
@@ -199,7 +216,10 @@ abstract final class SvgCssValueParser {
     return parseLength(s);
   }
 
-  /// Parses an SVG/CSS clock duration (`500ms`, `2.5s`, `02:30`, `1.5h`) into microseconds.
+  /// Parses an SVG/CSS clock duration [raw] (`500ms`, `2.5s`, `-0.5s`, `02:30`, `1.5h`) into microseconds.
+  /// 将 SVG/CSS 时钟时长 [raw] 解析为微秒整数（支持负延迟）。
+  ///
+  /// - [raw]: Raw clock duration string. 原始时钟时长字符串。
   static int? parseClockMicroseconds(String? raw) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
@@ -238,8 +258,10 @@ abstract final class SvgCssValueParser {
     return secVal != null ? (secVal * 1000000.0).round() : null;
   }
 
-  /// Parses a CSS timing function (`ease`, `linear`, `ease-in`, `ease-out`,
-  /// `ease-in-out`, `cubic-bezier(x1, y1, x2, y2)`) into a Flutter [Cubic].
+  /// Parses a CSS cubic timing function [raw] (`ease`, `linear`, `cubic-bezier(...)`) into a [Cubic].
+  /// 将 CSS 三次贝塞尔缓动函数 [raw] 解析为 Flutter [Cubic] 曲线。
+  ///
+  /// - [raw]: Raw timing function string. 原始缓动函数字符串。
   static Cubic? parseTimingCubic(String raw) {
     final s = raw.trim().toLowerCase();
     switch (s) {
@@ -265,7 +287,10 @@ abstract final class SvgCssValueParser {
     }
   }
 
-  /// Parses `blur(...)` filter value into sigma pixels.
+  /// Parses a `blur(...)` filter string [val] into Gaussian sigma pixels.
+  /// 从 `blur(...)` 滤镜字符串 [val] 中提取高斯模糊标准差像素值。
+  ///
+  /// - [val]: Raw CSS filter string. 原始 CSS 滤镜字符串。
   static double? parseBlurFilter(String val) {
     final m = RegExp(r'blur\s*\(\s*([^)]+)\s*\)').firstMatch(val);
     if (m != null) {
@@ -274,12 +299,10 @@ abstract final class SvgCssValueParser {
     return null;
   }
 
-  /// Extracts `id` from `url(#id)`, or from a bare `#id` that is not a color.
+  /// Extracts `id` from `url(#id)` or a non-hex bare `#id` in [raw].
+  /// 从 [raw] 中的 `url(#id)` 或非十六进制颜色的 `#id` 提取目标引用 ID。
   ///
-  /// `url(#ffffff)` still returns `ffffff`. A bare hex color (`#rgb`, `#rgba`,
-  /// `#rrggbb`, `#rrggbbaa`) returns null so fill and stroke can stay solid
-  /// colors. Non-hex bare references such as `#clip1` still resolve for
-  /// `clip-path` and href-style uses.
+  /// - [raw]: Raw URL or ID reference string. 原始引用字符串。
   static String? extractUrlId(String raw) {
     final s = raw.trim();
     if (s.startsWith('url(') && s.endsWith(')')) {
@@ -316,11 +339,10 @@ abstract final class SvgCssValueParser {
     return true;
   }
 
-  /// Parses an SVG `fill` or `stroke` value into an [SvgPaintServer].
+  /// Parses an SVG `fill` or `stroke` value [raw] into an [SvgPaintServer].
+  /// 将 SVG `fill` 或 `stroke` 属性值 [raw] 解析为 [SvgPaintServer]（支持颜色、`url(#id) <fallback>`、`currentColor`、`none`）。
   ///
-  /// Solid colors (hex, `rgb()` / `rgba()`, `hsl()` / `hsla()`, `hwb()`, named)
-  /// are resolved before `url(#id)` paint servers. Bare `#rrggbb` is never a
-  /// gradient id. `currentColor`, `none`, and `transparent` are handled cleanly.
+  /// - [raw]: Raw paint attribute string. 原始画刷属性字符串。
   static SvgPaintServer? parsePaintServer(String raw) {
     final s = raw.trim();
     if (s.isEmpty) return null;
@@ -356,8 +378,11 @@ abstract final class SvgCssValueParser {
     return null;
   }
 
-  /// Parses hex (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`), `rgb()` / `rgba()`,
-  /// `hsl()` / `hsla()`, `hwb()`, and standard SVG named colors into a [ui.Color].
+  /// Parses hex, `rgb()`, `hsl()`, `hwb()`, CSS Color 4 (`oklab`/`oklch`/`lab`/`lch`/`color-mix`),
+  /// and standard SVG named colors from [raw] into a [ui.Color].
+  /// 解析十六进制、`rgb()`、`hsl()`、`hwb()`、CSS Color 4 与标准命名颜色 [raw] 为 [ui.Color]。
+  ///
+  /// - [raw]: Raw CSS/SVG color string. 原始颜色字符串。
   static ui.Color? parseColor(String? raw) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
@@ -583,7 +608,11 @@ abstract final class SvgCssValueParser {
     return v != null ? v / 100.0 : null;
   }
 
-  /// Parses a number, percentage (`50%` -> `0.5`), or CSS math expression.
+  /// Parses a number, percentage (`50%` -> `0.5`), or CSS math expression [raw].
+  /// 解析数值、百分比或 CSS 数学表达式 [raw]，可选按 [referenceExtent] 换算百分比。
+  ///
+  /// - [raw]: Raw numeric/percentage/math string. 原始数值/百分比/数学表达式。
+  /// - [referenceExtent]: Optional reference extent for `%`. 可选百分比参考基准。
   static double? parseNumberOrPercent(String? raw, {double? referenceExtent}) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
@@ -600,7 +629,10 @@ abstract final class SvgCssValueParser {
     return parseLength(s);
   }
 
-  /// Parses an SVG length (`px`, `pt`, `pc`, `mm`, `cm`, `in`, `calc()`, or unitless).
+  /// Parses an SVG length [raw] (`px`, `pt`, `pc`, `mm`, `cm`, `in`, `calc()`, or unitless).
+  /// 解析 SVG 长度字符串 [raw]（支持绝对单位、`calc()` 与无单位数值）。
+  ///
+  /// - [raw]: Raw length string. 原始长度字符串。
   static double? parseLength(String? raw) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
@@ -638,7 +670,10 @@ abstract final class SvgCssValueParser {
     return double.tryParse(s);
   }
 
-  /// Parses a whitespace- or comma-separated list of numbers/lengths into a [Float64List].
+  /// Parses a whitespace- or comma-separated list of numbers/lengths [raw] into a [Float64List].
+  /// 将空白或逗号分隔的数值/长度列表 [raw] 解析为 [Float64List]。
+  ///
+  /// - [raw]: Raw number list string. 原始数值列表字符串。
   static Float64List parseNumberList(String? raw) {
     if (raw == null || raw.isEmpty) return Float64List(0);
     final tokens = raw
@@ -654,7 +689,10 @@ abstract final class SvgCssValueParser {
     return Float64List.fromList(values);
   }
 
-  /// Parses an SVG text length (`px`, `pt`, `pc`, `mm`, `cm`, `in`, `em`, `rem`, `%`, or unitless).
+  /// Parses an SVG text length [raw] (`px`, `pt`, `pc`, `mm`, `cm`, `in`, `em`, `rem`, `%`, or unitless).
+  /// 解析支持 `em`/`rem`/`%` 及绝对单位的 SVG 文本长度 [raw]。
+  ///
+  /// - [raw]: Raw text length string. 原始文本长度字符串。
   static SvgTextLength? parseTextLength(String? raw) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
@@ -677,7 +715,10 @@ abstract final class SvgCssValueParser {
     return px != null ? SvgTextLength(px, SvgTextLengthUnit.pixels) : null;
   }
 
-  /// Parses a whitespace- or comma-separated list of [SvgTextLength] values (`x`, `y`, `dx`, `dy`).
+  /// Parses a whitespace- or comma-separated list of [SvgTextLength] values (`x`, `y`, `dx`, `dy`) from [raw].
+  /// 将 `x`/`y`/`dx`/`dy` 列表字符串 [raw] 解析为 [SvgTextLength] 列表。
+  ///
+  /// - [raw]: Raw coordinate list string. 原始坐标列表字符串。
   static List<SvgTextLength> parseTextLengthList(String? raw) {
     if (raw == null || raw.trim().isEmpty) return const [];
     final tokens = raw
@@ -692,7 +733,10 @@ abstract final class SvgCssValueParser {
     return result;
   }
 
-  /// Parses `font-size` supporting absolute/relative lengths, percentages, and CSS keywords.
+  /// Parses `font-size` [raw] supporting lengths, percentages, and CSS keywords.
+  /// 解析支持绝对/相对长度、百分比与 CSS 关键字的字号 [raw]。
+  ///
+  /// - [raw]: Raw `font-size` string. 原始 `font-size` 字符串。
   static SvgTextLength? parseFontSize(String? raw) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
@@ -723,7 +767,10 @@ abstract final class SvgCssValueParser {
     }
   }
 
-  /// Parses `font-family` into a primary family name and cross-platform fallback list.
+  /// Parses `font-family` [raw] into `(primaryFamily, fallbackFamilies)`.
+  /// 将 `font-family` 字符串 [raw] 解析为主字体名与跨平台回退字体列表元组。
+  ///
+  /// - [raw]: Raw `font-family` declaration. 原始 `font-family` 声明。
   static (String?, List<String>?) parseFontFamily(String? raw) {
     if (raw == null || raw.trim().isEmpty) return (null, null);
     final parts = raw.split(',');
@@ -781,7 +828,10 @@ abstract final class SvgCssValueParser {
     );
   }
 
-  /// Parses `font-weight` (`normal`, `bold`, `bolder`, `lighter`, `100`..`900`).
+  /// Parses `font-weight` [raw] (`normal`, `bold`, `bolder`, `lighter`, `100`..`900`).
+  /// 解析字重字符串 [raw] 为 [ui.FontWeight]。
+  ///
+  /// - [raw]: Raw `font-weight` token. 原始字重标记。
   static ui.FontWeight? parseFontWeight(String? raw) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
@@ -809,7 +859,10 @@ abstract final class SvgCssValueParser {
     }
   }
 
-  /// Parses `font-style` (`normal`, `italic`, `oblique`).
+  /// Parses `font-style` [raw] (`normal`, `italic`, `oblique`).
+  /// 解析字体样式 [raw] 为 [ui.FontStyle]。
+  ///
+  /// - [raw]: Raw `font-style` token. 原始字体样式标记。
   static ui.FontStyle? parseFontStyle(String? raw) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
@@ -820,7 +873,11 @@ abstract final class SvgCssValueParser {
     return null;
   }
 
-  /// Parses CSS `font` shorthand (e.g., `italic bold 30px/1.2 'Helvetica', sans-serif`).
+  /// Parses CSS `font` shorthand [raw] and writes font properties onto [style].
+  /// 解析 CSS `font` 简写字符串 [raw] 并将字形、字重、字号与字体族写入 [style]。
+  ///
+  /// - [raw]: Raw CSS `font` shorthand value. 原始 CSS `font` 简写值。
+  /// - [style]: Target style object. 目标样式对象。
   static void applyFontShorthand(String raw, SvgStyle style) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return;
@@ -894,7 +951,10 @@ abstract final class SvgCssValueParser {
     }
   }
 
-  /// Parses `text-anchor` (`start`, `middle`, `end`).
+  /// Parses `text-anchor` [raw] (`start`, `middle`, `end`).
+  /// 解析文本锚点 [raw] 为 [SvgTextAnchor]。
+  ///
+  /// - [raw]: Raw `text-anchor` token. 原始 `text-anchor` 标记。
   static SvgTextAnchor? parseTextAnchor(String? raw) {
     switch (raw?.trim().toLowerCase()) {
       case 'start':
@@ -908,7 +968,10 @@ abstract final class SvgCssValueParser {
     }
   }
 
-  /// Parses `dominant-baseline` or `alignment-baseline`.
+  /// Parses `dominant-baseline` or `alignment-baseline` [raw].
+  /// 解析主基线或对齐基线 [raw] 为 [SvgDominantBaseline]。
+  ///
+  /// - [raw]: Raw baseline keyword. 原始基线关键字。
   static SvgDominantBaseline? parseDominantBaseline(String? raw) {
     switch (raw?.trim().toLowerCase()) {
       case 'auto':
@@ -942,7 +1005,10 @@ abstract final class SvgCssValueParser {
     }
   }
 
-  /// Parses `baseline-shift` (`baseline`, `sub`, `super`, `<length>`, `<percentage>`).
+  /// Parses `baseline-shift` [raw] (`baseline`, `sub`, `super`, `<length>`, `<percentage>`).
+  /// 解析基线偏移 [raw] 为 [SvgBaselineShift]。
+  ///
+  /// - [raw]: Raw `baseline-shift` value. 原始基线偏移值。
   static SvgBaselineShift? parseBaselineShift(String? raw) {
     if (raw == null) return null;
     final s = raw.trim().toLowerCase();
@@ -968,7 +1034,10 @@ abstract final class SvgCssValueParser {
     }
   }
 
-  /// Parses `text-decoration` (`none`, `underline`, `overline`, `line-through`).
+  /// Parses `text-decoration` [raw] (`none`, `underline`, `overline`, `line-through`).
+  /// 解析文本装饰线 [raw] 为 [ui.TextDecoration]。
+  ///
+  /// - [raw]: Raw `text-decoration` value. 原始文本装饰线值。
   static ui.TextDecoration? parseTextDecoration(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
     final tokens = raw.trim().toLowerCase().split(RegExp(r'\s+'));
@@ -988,7 +1057,10 @@ abstract final class SvgCssValueParser {
     return ui.TextDecoration.combine(decos);
   }
 
-  /// Parses `text-transform` (`none`, `uppercase`, `lowercase`, `capitalize`).
+  /// Parses `text-transform` [raw] (`none`, `uppercase`, `lowercase`, `capitalize`).
+  /// 解析文本大小写变换 [raw] 为 [SvgTextTransform]。
+  ///
+  /// - [raw]: Raw `text-transform` value. 原始 `text-transform` 值。
   static SvgTextTransform? parseTextTransform(String? raw) {
     switch (raw?.trim().toLowerCase()) {
       case 'none':
@@ -1004,8 +1076,11 @@ abstract final class SvgCssValueParser {
     }
   }
 
-  /// Parses `writing-mode` (`horizontal-tb`, `vertical-rl`, `vertical-lr`,
+  /// Parses `writing-mode` [raw] (`horizontal-tb`, `vertical-rl`, `vertical-lr`,
   /// and SVG 1.1 legacy `lr`/`lr-tb`/`rl`/`rl-tb`/`tb`/`tb-rl`).
+  /// 解析书写方向 [raw] 为 [SvgWritingMode]。
+  ///
+  /// - [raw]: Raw `writing-mode` value. 原始 `writing-mode` 值。
   static SvgWritingMode? parseWritingMode(String? raw) {
     switch (raw?.trim().toLowerCase()) {
       case 'horizontal-tb':
@@ -1025,7 +1100,10 @@ abstract final class SvgCssValueParser {
     }
   }
 
-  /// Parses `paint-order` (SVG 2: `normal`, `stroke`, `stroke fill`, `fill stroke`, etc.).
+  /// Parses `paint-order` [raw] (SVG 2: `normal`, `stroke`, `stroke fill`, `fill stroke`, etc.).
+  /// 解析绘制顺序 [raw] 为简化的填充/描边顺序 [SvgPaintOrder]。
+  ///
+  /// - [raw]: Raw `paint-order` string. 原始 `paint-order` 字符串。
   static SvgPaintOrder? parsePaintOrder(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
     final tokens = raw.trim().toLowerCase().split(RegExp(r'\s+'));
@@ -1036,12 +1114,19 @@ abstract final class SvgCssValueParser {
     return null;
   }
 
-  /// Parses full 3-layer W3C SVG 2 `paint-order` permutation (`fill`, `stroke`, `markers`).
+  /// Parses full 3-layer W3C SVG 2 `paint-order` permutation [raw] (`fill`, `stroke`, `markers`).
+  /// 解析完整三层 W3C SVG 2 `paint-order` 排列 [raw]（`fill`/`stroke`/`markers`）。
+  ///
+  /// - [raw]: Raw `paint-order` string. 原始 `paint-order` 字符串。
   static List<SvgPaintLayer>? parsePaintOrderLayers(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
     final tokens = raw.trim().toLowerCase().split(RegExp(r'\s+'));
     if (tokens.contains('normal')) {
-      return const [SvgPaintLayer.fill, SvgPaintLayer.stroke, SvgPaintLayer.markers];
+      return const [
+        SvgPaintLayer.fill,
+        SvgPaintLayer.stroke,
+        SvgPaintLayer.markers,
+      ];
     }
     final layers = <SvgPaintLayer>[];
     for (final tok in tokens) {
@@ -1066,7 +1151,10 @@ abstract final class SvgCssValueParser {
     return List<SvgPaintLayer>.unmodifiable(layers);
   }
 
-  /// Parses W3C CSS Compositing & Blending `mix-blend-mode` / `<feBlend mode>`.
+  /// Parses W3C CSS Compositing & Blending `mix-blend-mode` / `<feBlend mode>` [raw].
+  /// 解析混合模式字符串 [raw] 为 Flutter [ui.BlendMode]。
+  ///
+  /// - [raw]: Raw blend mode keyword. 原始混合模式关键字。
   static ui.BlendMode? parseBlendMode(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
     switch (raw.trim().toLowerCase()) {
@@ -1107,9 +1195,11 @@ abstract final class SvgCssValueParser {
     }
   }
 
-  /// Parses a CSS `filter` function chain (`blur()`, `drop-shadow()`,
-  /// `brightness()`, `contrast()`, `grayscale()`, `saturate()`, `sepia()`,
-  /// `hue-rotate()`, `invert()`, `opacity()`) into [SvgFilterPrimitive] nodes.
+  /// Parses a CSS `filter` function chain [raw] (all 10 W3C CSS filter functions)
+  /// into [SvgFilterPrimitive] nodes.
+  /// 将 CSS `filter` 函数链 [raw]（支持全部 10 个标准 CSS 滤镜函数）解析为 [SvgFilterPrimitive] 列表。
+  ///
+  /// - [raw]: Raw CSS `filter` declaration value. 原始 CSS `filter` 属性值。
   static List<SvgFilterPrimitive> parseCssFilterChain(String raw) {
     final primitives = <SvgFilterPrimitive>[];
     final matches = RegExp(r'([a-zA-Z-]+)\s*\(([^)]*)\)').allMatches(raw);

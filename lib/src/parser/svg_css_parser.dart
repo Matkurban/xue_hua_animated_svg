@@ -18,14 +18,28 @@ export 'svg_css_value_parser.dart';
 
 /// Precompiles `<style>` blocks, inline `style="..."` attributes, `@keyframes`,
 /// colors, numbers, transforms, and `transform-origin` during the XML build phase.
+/// 在 XML 构建阶段预编译 `<style>` 样式块、内联 `style`、`@keyframes` 与各类 CSS 属性值的解析器。
 abstract final class SvgCssParser {
-  // Standard easing curves
+  /// Standard CSS `ease` cubic-bezier curve (`cubic-bezier(0.25, 0.1, 0.25, 1.0)`).
+  /// 标准 CSS `ease` 三次贝塞尔缓动曲线。
   static const Cubic ease = SvgCssValueParser.ease;
+
+  /// Standard CSS `ease-in` cubic-bezier curve (`cubic-bezier(0.42, 0.0, 1.0, 1.0)`).
+  /// 标准 CSS `ease-in` 三次贝塞尔缓动曲线。
   static const Cubic easeIn = SvgCssValueParser.easeIn;
+
+  /// Standard CSS `ease-out` cubic-bezier curve (`cubic-bezier(0.0, 0.0, 0.58, 1.0)`).
+  /// 标准 CSS `ease-out` 三次贝塞尔缓动曲线。
   static const Cubic easeOut = SvgCssValueParser.easeOut;
+
+  /// Standard CSS `ease-in-out` cubic-bezier curve (`cubic-bezier(0.42, 0.0, 0.58, 1.0)`).
+  /// 标准 CSS `ease-in-out` 三次贝塞尔缓动曲线。
   static const Cubic easeInOut = SvgCssValueParser.easeInOut;
 
-  /// Parses one or more `<style>` text blocks into a unified [SvgStyleSheet].
+  /// Parses one or more `<style>` text blocks [cssText] into a unified [SvgStyleSheet].
+  /// 将一个或多个 `<style>` 文本块 [cssText] 解析为统一的 [SvgStyleSheet]。
+  ///
+  /// - [cssText]: Concatenated CSS stylesheet text. 拼接后的 CSS 样式表文本。
   static SvgStyleSheet parseStyleSheet(String cssText) {
     final cleaned = _stripCssComments(cssText);
     final rules = <SvgCssRule>[];
@@ -167,16 +181,22 @@ abstract final class SvgCssParser {
     ];
   }
 
-  /// Parses semicolon-separated CSS declarations (`prop: value; ...`) into a
-  /// single merged Map (preserving `--custom-property` case sensitivity).
+  /// Parses semicolon-separated CSS declarations [inlineStyle] into a single merged map
+  /// (preserving `--custom-property` case sensitivity).
+  /// 将分号分隔的 CSS 声明字符串 [inlineStyle] 解析为合并后的属性映射表（保留 `--*` 大小写）。
+  ///
+  /// - [inlineStyle]: Semicolon-separated CSS declaration list. 分号分隔的 CSS 声明列表。
   static Map<String, String> parseDeclarationsMap(String inlineStyle) {
     final (normal, important) = parseDeclarationsSplit(inlineStyle);
     if (important.isEmpty) return normal;
     return <String, String>{...normal, ...important};
   }
 
-  /// Parses semicolon-separated CSS declarations into `(normal, important)` maps
+  /// Parses semicolon-separated CSS declarations [inlineStyle] into `(normal, important)` maps
   /// so W3C `!important` cascade precedence is honored.
+  /// 将分号分隔的 CSS 声明 [inlineStyle] 拆分为 `(普通声明, !important 声明)` 两个映射表。
+  ///
+  /// - [inlineStyle]: Semicolon-separated CSS declaration list. 分号分隔的 CSS 声明列表。
   static (Map<String, String>, Map<String, String>) parseDeclarationsSplit(
     String inlineStyle,
   ) {
@@ -207,8 +227,13 @@ abstract final class SvgCssParser {
     return (normal, important);
   }
 
-  /// Applies parsed CSS declarations to [style] and extracts any `animation`
+  /// Applies parsed CSS declarations [decls] to [style] and extracts any `animation`
   /// configurations into [outAnimations].
+  /// 将解析后的 CSS 声明表 [decls] 应用到 [style]，并提取动画配置写入 [outAnimations]。
+  ///
+  /// - [decls]: Parsed CSS property declarations. 已解析的 CSS 属性声明表。
+  /// - [style]: Target element style object. 目标元素样式对象。
+  /// - [outAnimations]: Optional list collecting parsed CSS animations. 可选动画配置输出列表。
   static void applyDeclarationsToStyle(
     Map<String, String> decls,
     SvgStyle style, [
@@ -337,7 +362,12 @@ abstract final class SvgCssParser {
     }
   }
 
-  /// Applies a single presentation attribute or CSS property to [style].
+  /// Applies a single presentation attribute or CSS property [key] with [rawVal] to [style].
+  /// 将单个 SVG 表现属性或 CSS 属性 [key] 及其原始值 [rawVal] 应用到 [style]。
+  ///
+  /// - [key]: Lowercase CSS/SVG property name (or case-sensitive `--*` custom property). 属性名。
+  /// - [rawVal]: Raw attribute or declaration value. 原始属性值。
+  /// - [style]: Target style object. 目标样式对象。
   static void applySingleAttribute(String key, String rawVal, SvgStyle style) {
     final trimmedRaw = rawVal.trim();
     if (trimmedRaw.isEmpty) return;
@@ -640,8 +670,13 @@ abstract final class SvgCssParser {
     }
   }
 
-  /// Compiles a matched [SvgCssAnimationConfig] and `@keyframes` stop list into
-  /// internal [SvgAnimationTrack] instances on [target].
+  /// Compiles a matched [config] and `@keyframes` [stops] into [SvgAnimationTrack]s on [target].
+  /// 将匹配的 CSS 动画配置 [config] 与关键帧列表 [stops] 编译为 [target] 上的动画轨道。
+  ///
+  /// - [target]: Target element. 目标元素。
+  /// - [config]: Animation configuration. 动画配置。
+  /// - [stops]: Keyframe stop list. 关键帧节点列表。
+  /// - [documentViewBox]: Root SVG `viewBox`. 根 SVG `viewBox`。
   static List<SvgAnimationTrack> compileKeyframesForElement({
     required SvgElement target,
     required SvgCssAnimationConfig config,
@@ -654,57 +689,90 @@ abstract final class SvgCssParser {
     documentViewBox: documentViewBox,
   );
 
-  /// Normalizes a list of `stroke-dasharray` keyframe arrays to their least
-  /// common multiple (LCM) length so they can be interpolated element-by-element.
+  /// Normalizes `stroke-dasharray` keyframe [arrays] to their LCM length for interpolation.
+  /// 将 `stroke-dasharray` 关键帧数组列表 [arrays] 归一化至最小公倍数长度。
+  ///
+  /// - [arrays]: Raw dasharray keyframe buffers. 原始虚线关键帧数组列表。
   static List<Float64List> normalizeDashArrayKeyframes(
     List<Float64List> arrays,
   ) => SvgCssValueParser.normalizeDashArrayKeyframes(arrays);
 
-  /// Parses `transform-origin` supporting pixel lengths, percentages (`50% 50%`),
-  /// and keywords (`center`, `left`, `right`, `top`, `bottom`).
+  /// Parses `transform-origin` [raw] supporting lengths, percentages, and keywords.
+  /// 解析支持像素、百分比与关键字的 `transform-origin` 字符串 [raw]。
+  ///
+  /// - [raw]: Raw `transform-origin` value. 原始 `transform-origin` 值。
   static SvgTransformOrigin parseTransformOrigin(String raw) =>
       SvgCssValueParser.parseTransformOrigin(raw);
 
-  /// Parses an SVG or CSS `transform` string into a list of [SvgTransformOp].
+  /// Parses an SVG or CSS `transform` string [raw] into a list of [SvgTransformOp].
+  /// 将 SVG/CSS `transform` 字符串 [raw] 解析为 [SvgTransformOp] 操作列表。
+  ///
+  /// - [raw]: Raw `transform` value. 原始变换字符串。
   static List<SvgTransformOp> parseTransformOps(String raw) =>
       SvgCssValueParser.parseTransformOps(raw);
 
-  /// Parses an angle (`deg`, `rad`, `turn`, `grad`) or length into degrees / pixels.
+  /// Parses an angle (`deg`, `rad`, `turn`, `grad`) or length [raw] into degrees or pixels.
+  /// 解析角度或长度字符串 [raw] 为度数或像素值。
+  ///
+  /// - [raw]: Raw angle or length string. 原始角度或长度字符串。
   static double? parseAngleOrLength(String raw) =>
       SvgCssValueParser.parseAngleOrLength(raw);
 
-  /// Parses an SVG/CSS clock duration (`500ms`, `2.5s`, `02:30`, `1.5h`) into microseconds.
+  /// Parses an SVG/CSS clock duration [raw] (`500ms`, `2.5s`, `-0.5s`, `02:30`) into microseconds.
+  /// 将 SVG/CSS 时钟时长字符串 [raw] 解析为微秒整数。
+  ///
+  /// - [raw]: Raw clock string. 原始时钟字符串。
   static int? parseClockMicroseconds(String? raw) =>
       SvgCssValueParser.parseClockMicroseconds(raw);
 
-  /// Parses a CSS timing function (`ease`, `linear`, `ease-in`, `ease-out`,
-  /// `ease-in-out`, `cubic-bezier(x1, y1, x2, y2)`) into a Flutter [Cubic].
+  /// Parses a CSS timing function [raw] (`ease`, `linear`, `cubic-bezier(...)`) into a [Cubic].
+  /// 将 CSS 缓动函数字符串 [raw] 解析为 Flutter [Cubic] 曲线。
+  ///
+  /// - [raw]: Raw timing function string. 原始缓动函数字符串。
   static Cubic? parseTimingCubic(String raw) =>
       SvgCssValueParser.parseTimingCubic(raw);
 
-  /// Extracts `id` from `url(#id)`, or from a bare `#id` that is not a color.
+  /// Extracts the referenced `id` from `url(#id)` or a non-hex bare `#id` in [raw].
+  /// 从 [raw] 中的 `url(#id)` 或非十六进制颜色的 `#id` 提取引用标识。
+  ///
+  /// - [raw]: Raw URL or ID reference string. 原始引用字符串。
   static String? extractUrlId(String raw) =>
       SvgCssValueParser.extractUrlId(raw);
 
-  /// Parses an SVG `fill` or `stroke` value into an [SvgPaintServer].
+  /// Parses an SVG `fill` or `stroke` value [raw] into an [SvgPaintServer].
+  /// 将 SVG `fill` 或 `stroke` 值 [raw] 解析为 [SvgPaintServer] 画刷。
+  ///
+  /// - [raw]: Raw paint attribute string. 原始画刷属性值。
   static SvgPaintServer? parsePaintServer(String raw) =>
       SvgCssValueParser.parsePaintServer(raw);
 
-  /// Parses hex (`#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`), `rgb()`, `rgba()`,
-  /// and standard SVG named colors into a [ui.Color] at parse time.
+  /// Parses hex, `rgb()`, `hsl()`, `hwb()`, CSS Color 4, or named color [raw] into a [ui.Color].
+  /// 将十六进制、`rgb()`、`hsl()`、`hwb()`、CSS Color 4 或命名颜色 [raw] 解析为 [ui.Color]。
+  ///
+  /// - [raw]: Raw CSS/SVG color string. 原始颜色字符串。
   static ui.Color? parseColor(String? raw) => SvgCssValueParser.parseColor(raw);
 
-  /// Parses a number or percentage (`50%` -> `0.5`).
+  /// Parses a number, percentage, or CSS math expression [raw] against optional [referenceExtent].
+  /// 解析数值、百分比或 CSS 数学表达式 [raw]，可选按 [referenceExtent] 换算百分比。
+  ///
+  /// - [raw]: Raw numeric or percentage string. 原始数值或百分比字符串。
+  /// - [referenceExtent]: Optional reference extent for `%`. 可选百分比参考基准。
   static double? parseNumberOrPercent(String? raw, {double? referenceExtent}) =>
       SvgCssValueParser.parseNumberOrPercent(
         raw,
         referenceExtent: referenceExtent,
       );
 
-  /// Parses an SVG length (`px`, `pt`, `pc`, `mm`, `cm`, `in`, or unitless number).
+  /// Parses an SVG length [raw] (`px`, `pt`, `pc`, `mm`, `cm`, `in`, `calc()`, or unitless).
+  /// 解析 SVG 长度值 [raw]（支持绝对单位、`calc()` 与无单位数值）。
+  ///
+  /// - [raw]: Raw length string. 原始长度字符串。
   static double? parseLength(String? raw) => SvgCssValueParser.parseLength(raw);
 
-  /// Parses a whitespace- or comma-separated list of numbers/lengths into a [Float64List].
+  /// Parses a whitespace- or comma-separated list of numbers/lengths [raw] into a [Float64List].
+  /// 将空白或逗号分隔的数值/长度列表 [raw] 解析为 [Float64List]。
+  ///
+  /// - [raw]: Raw number list string. 原始数值列表字符串。
   static Float64List parseNumberList(String? raw) =>
       SvgCssValueParser.parseNumberList(raw);
 

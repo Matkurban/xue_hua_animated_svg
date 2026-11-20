@@ -7,27 +7,49 @@ import 'svg_text_style.dart';
 import 'svg_transform.dart';
 
 /// Reference box for `transform-origin` percentages (W3C CSS Transforms Level 1).
-enum SvgTransformBox { fillBox, viewBox }
+/// `transform-origin` 百分比参考盒枚举（W3C CSS Transforms Level 1）。
+enum SvgTransformBox {
+  /// Relative to the element's local bounding box (`fill-box`). 相对元素自身包围盒。
+  fillBox,
+
+  /// Relative to the nearest SVG viewport `viewBox` (`view-box`). 相对最近 SVG `viewBox`。
+  viewBox,
+}
 
 /// How `transform-origin` X/Y coordinates are specified.
+/// `transform-origin` 坐标单位枚举。
 enum SvgOriginUnit {
-  /// Absolute pixel offset in user space (`transform-box: view-box` or pixel coordinates).
+  /// Absolute pixel offset in user space. 用户空间绝对像素偏移。
   pixels,
 
-  /// Percentage `[0.0 .. 1.0]` relative to the node's bounding box (`getBounds()`).
+  /// Percentage `[0.0 .. 1.0]` relative to the node's bounding box. 相对节点包围盒的百分比。
   boundingBoxPercent,
 
-  /// Percentage `[0.0 .. 1.0]` relative to the root SVG `viewBox`.
+  /// Percentage `[0.0 .. 1.0]` relative to the root SVG `viewBox`. 相对根 `viewBox` 的百分比。
   viewBoxPercent,
 }
 
 /// Precompiled `transform-origin` specification.
+/// 预编译的 `transform-origin` 变换原点配置。
 class SvgTransformOrigin {
+  /// X offset or normalized percentage (`0.0..1.0`). X 坐标偏移或归一化百分比。
   final double x;
+
+  /// Y offset or normalized percentage (`0.0..1.0`). Y 坐标偏移或归一化百分比。
   final double y;
+
+  /// Unit for [x]. [x] 的单位类型。
   final SvgOriginUnit unitX;
+
+  /// Unit for [y]. [y] 的单位类型。
   final SvgOriginUnit unitY;
 
+  /// Creates an [SvgTransformOrigin]. 创建一个 [SvgTransformOrigin] 变换原点。
+  ///
+  /// - [x]: X value. X 坐标值。
+  /// - [y]: Y value. Y 坐标值。
+  /// - [unitX]: Unit for [x]. X 单位。
+  /// - [unitY]: Unit for [y]. Y 单位。
   const SvgTransformOrigin({
     this.x = 0.0,
     this.y = 0.0,
@@ -35,8 +57,10 @@ class SvgTransformOrigin {
     this.unitY = SvgOriginUnit.pixels,
   });
 
+  /// Zero pixel origin `(0, 0)`. 零点原点 `(0, 0)`。
   static const SvgTransformOrigin zero = SvgTransformOrigin();
 
+  /// Bounding-box center origin `(50%, 50%)`. 包围盒中心原点 `(50%, 50%)`。
   static const SvgTransformOrigin center = SvgTransformOrigin(
     x: 0.5,
     y: 0.5,
@@ -44,6 +68,7 @@ class SvgTransformOrigin {
     unitY: SvgOriginUnit.boundingBoxPercent,
   );
 
+  /// Whether this origin is `(0px, 0px)`. 是否为零像素原点。
   bool get isZero =>
       x == 0.0 &&
       y == 0.0 &&
@@ -51,6 +76,10 @@ class SvgTransformOrigin {
       unitY == SvgOriginUnit.pixels;
 
   /// Resolves the concrete X anchor in local coordinates given [bounds] and [viewBox].
+  /// 根据节点包围盒 [bounds] 与视口 [viewBox] 解析具体 X 原点坐标。
+  ///
+  /// - [bounds]: Element local bounding box. 元素局部包围盒。
+  /// - [viewBox]: Nearest SVG `viewBox`. 所属 SVG `viewBox`。
   double resolveX(ui.Rect bounds, ui.Rect viewBox) {
     switch (unitX) {
       case SvgOriginUnit.pixels:
@@ -63,6 +92,10 @@ class SvgTransformOrigin {
   }
 
   /// Resolves the concrete Y anchor in local coordinates given [bounds] and [viewBox].
+  /// 根据节点包围盒 [bounds] 与视口 [viewBox] 解析具体 Y 原点坐标。
+  ///
+  /// - [bounds]: Element local bounding box. 元素局部包围盒。
+  /// - [viewBox]: Nearest SVG `viewBox`. 所属 SVG `viewBox`。
   double resolveY(ui.Rect bounds, ui.Rect viewBox) {
     switch (unitY) {
       case SvgOriginUnit.pixels:
@@ -76,17 +109,51 @@ class SvgTransformOrigin {
 }
 
 /// Paint layer token for full 3-layer W3C SVG 2 `paint-order`.
-enum SvgPaintLayer { fill, stroke, markers }
+/// W3C SVG 2 三层 `paint-order` 绘制层枚举。
+enum SvgPaintLayer {
+  /// Fill pass (`fill`). 填充层。
+  fill,
+
+  /// Stroke pass (`stroke`). 描边层。
+  stroke,
+
+  /// Path markers pass (`markers`). 端点标记层。
+  markers,
+}
 
 /// Paint server type for `fill` or `stroke`.
-enum SvgPaintType { none, color, gradient, currentColor }
+/// `fill` 或 `stroke` 画刷服务类型枚举。
+enum SvgPaintType {
+  /// No paint (`none`). 不绘制。
+  none,
+
+  /// Solid sRGB color. 纯色。
+  color,
+
+  /// Reference to `<linearGradient>`, `<radialGradient>`, or `<pattern>` via `url(#id)`.
+  /// 通过 `url(#id)` 引用的渐变或图案画刷。
+  gradient,
+
+  /// Inherits the node's resolved `color` property (`currentColor`).
+  /// 继承元素当前解析的 `color` 属性（`currentColor`）。
+  currentColor,
+}
 
 /// Precompiled paint server (solid color, gradient/pattern reference with
-/// optional W3C fallback color, currentColor, or none).
+/// optional W3C fallback color, `currentColor`, or `none`).
+/// 预编译画刷服务（支持纯色、带可选回退色的渐变/图案引用、`currentColor` 或 `none`）。
 class SvgPaintServer {
+  /// Paint server discriminator. 画刷服务类型。
   final SvgPaintType type;
+
+  /// Solid color payload when [type] is [SvgPaintType.color]. 纯色值。
   final ui.Color color;
+
+  /// Referenced gradient or pattern XML `id` when [type] is [SvgPaintType.gradient]. 引用的渐变/图案 ID。
   final String? gradientId;
+
+  /// Optional W3C fallback color used when [gradientId] is missing (`url(#id) #color`).
+  /// 当 [gradientId] 缺失时使用的可选 W3C 回退色。
   final ui.Color? fallbackColor;
 
   const SvgPaintServer._({
@@ -96,18 +163,32 @@ class SvgPaintServer {
     this.fallbackColor,
   });
 
+  /// Invisible paint (`none`). 不绘制画刷（`none`）。
   static const SvgPaintServer none = SvgPaintServer._(type: SvgPaintType.none);
+
+  /// Dynamic `currentColor` paint server. 动态 `currentColor` 画刷。
   static const SvgPaintServer currentColor = SvgPaintServer._(
     type: SvgPaintType.currentColor,
   );
+
+  /// SVG default solid black fill (`#000000`). SVG 默认纯黑填充。
   static const SvgPaintServer defaultBlack = SvgPaintServer._(
     type: SvgPaintType.color,
     color: ui.Color(0xFF000000),
   );
 
+  /// Creates a solid color [SvgPaintServer] for [color].
+  /// 从纯色 [color] 创建 [SvgPaintServer]。
+  ///
+  /// - [color]: Solid color. 纯色值。
   factory SvgPaintServer.fromColor(ui.Color color) =>
       SvgPaintServer._(type: SvgPaintType.color, color: color);
 
+  /// Creates a gradient/pattern reference [SvgPaintServer] for [id] with optional [fallbackColor].
+  /// 创建引用渐变/图案 [id]（带可选 [fallbackColor]）的 [SvgPaintServer]。
+  ///
+  /// - [id]: Target paint server `id`. 目标画刷服务 ID。
+  /// - [fallbackColor]: Optional fallback solid color. 可选回退纯色。
   factory SvgPaintServer.fromGradient(String id, {ui.Color? fallbackColor}) =>
       SvgPaintServer._(
         type: SvgPaintType.gradient,
@@ -115,10 +196,13 @@ class SvgPaintServer {
         fallbackColor: fallbackColor,
       );
 
+  /// Whether this paint server produces visible output (`type != SvgPaintType.none`).
+  /// 该画刷是否可见（非 `none`）。
   bool get isVisible => type != SvgPaintType.none;
 }
 
-/// Precompiled SVG presentation & CSS style attributes for a single node.
+/// Precompiled SVG presentation and CSS style attributes for a single node.
+/// 单个 SVG 节点的预编译表现属性与 CSS 样式集合（区分不可变基础值与每帧原地更新的运行时值）。
 ///
 /// Separate base (immutable after AST build) and current (mutated in-place by
 /// animations during `tick`) values ensure zero memory allocations in the render loop.
@@ -242,6 +326,9 @@ class SvgStyle {
   ];
 
   /// Resolves inherited style properties from [parentStyle] once during AST finalization.
+  /// 在 AST 构建完成阶段从父节点样式 [parentStyle] 一次性解析继承属性。
+  ///
+  /// - [parentStyle]: Optional parent element style (`null` for root). 可选父节点样式。
   void resolveInheritance(SvgStyle? parentStyle) {
     currentColor =
         baseColor ?? parentStyle?.currentColor ?? const ui.Color(0xFF000000);
@@ -393,8 +480,10 @@ class SvgStyle {
         const [SvgPaintLayer.fill, SvgPaintLayer.stroke, SvgPaintLayer.markers];
   }
 
-  /// Resets runtime values back to resolved initial values without allocating memory
-  /// (except copying dasharray values into the pre-allocated list).
+  /// Resets runtime values back to resolved initial values without allocating memory.
+  /// 将运行时样式值原地重置回初始基值（零堆分配），用于每帧动画求值前复位。
+  ///
+  /// - [parentStyle]: Optional parent element style. 可选父节点样式。
   void resetRuntimeToBase(SvgStyle? parentStyle) {
     currentColor =
         baseColor ?? parentStyle?.currentColor ?? const ui.Color(0xFF000000);
@@ -449,6 +538,9 @@ class SvgStyle {
 
   /// Synchronizes any unset (inherited) presentation properties from [parentStyle]
   /// at render time without allocating heap objects.
+  /// 渲染期零分配同步父节点 [parentStyle] 上已变化的继承属性（如动画驱动的父级样式）。
+  ///
+  /// - [parentStyle]: Optional parent element style. 可选父节点样式。
   void syncInheritedFromParent(SvgStyle? parentStyle) {
     if (parentStyle == null) return;
     if (baseColor == null) {
@@ -552,8 +644,10 @@ class SvgStyle {
     }
   }
 
-  /// Merges incoming style rules (e.g., from CSS selector matching or inline style)
-  /// into this [SvgStyle] during the build phase.
+  /// Merges incoming style rules from [other] into this [SvgStyle] during the build phase.
+  /// 在构建阶段将 [other] 中的样式规则合并覆盖到当前 [SvgStyle]。
+  ///
+  /// - [other]: Incoming style declaration layer. 待合并的样式层。
   void mergeFrom(SvgStyle other) {
     if (other.baseColor != null) baseColor = other.baseColor;
     if (other.baseFill != null) baseFill = other.baseFill;
